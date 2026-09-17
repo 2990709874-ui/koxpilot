@@ -34,6 +34,24 @@ const asStat = (o: Loose | undefined | null): SeedStat | null =>
       }
     : null;
 
+/**
+ * 24 种子复核：**离线跑的，产物没有入库**。
+ *
+ * 为什么不入库：`make multiseed SEEDS=24` 会覆盖仓库里那份 12 种子的 output/multiseed.json，
+ * 而 12 种子那份是页面上其它所有稳健性数字的来源。所以这一列在页面上明确标注为
+ * "离线复核结论、产物未入库、可复现"，**不伪装成读产物得来的**。
+ * 页面上任何带 `provenance: 'artifact'` 的数字都能在 public/data 里逐字段核到；这一条不能，故单列。
+ */
+const OFFLINE_24_SEED = {
+  provenance: 'offline_rerun_not_in_repo' as const,
+  n_seeds: 24,
+  saved_share_mean: 0.191,
+  saved_share_std: 0.186,
+  n_loses: 3,
+  repro: 'make multiseed SEEDS=24',
+  why_not_committed: '重跑会覆盖仓库里那份 12 种子的 output/multiseed.json（页面其余稳健性数字的来源）',
+};
+
 const pp = (x: number, digits = 2): string => (Number.isFinite(x) ? `${x >= 0 ? '+' : ''}${x.toFixed(digits)}pp` : '—');
 
 /** 一行"均值 ± 标准差 · CV · N/N 为正"的稳健性摘要。 */
@@ -170,6 +188,8 @@ export function CostValueTab({
   const totals = (llmBench?.totals ?? null) as Loose | null;
   const perTask = (llmBench?.per_task ?? {}) as Record<string, Loose>;
   const costAudit = (audit?.cost_audit ?? null) as Loose | null;
+  /** token 账：有就展示真实账目，没有才说"未配置 endpoint" —— 一律由产物驱动。 */
+  const tokenAccount = (costAudit?.token_account ?? null) as Loose | null;
 
   // ---- 反事实价值审计：单种子（定稿）口径 ------------------------------------
   const cva = (audit?.counterfactual_value_audit ?? null) as Loose | null;
@@ -204,6 +224,23 @@ export function CostValueTab({
       })),
     [perSeed],
   );
+  // ---- 三个口径并列：招牌 / 12 种子 / 24 种子离线复核 --------------------------
+  const shareStat = asStat(aRob?.saved_share_of_budget as Loose | undefined);
+  const singleShare = cvaTotals ? Number(cvaTotals.saved_share_of_budget) : null;
+  const singleSaved = cvaTotals ? Number(cvaTotals.saved_usd) : null;
+  /** 定稿那一次的 saved_share 在 12 个种子里排第几（降序），以及是否落在均值 95% CI 之外。 */
+  const singleRank = React.useMemo(() => {
+    if (singleShare === null || perSeed.length === 0) return null;
+    const vals = perSeed
+      .map((x) => Number((x.value as Loose)?.saved_share_of_budget))
+      .filter((v) => Number.isFinite(v));
+    if (vals.length === 0) return null;
+    const higher = vals.filter((v) => v > singleShare + 1e-12).length;
+    return { rank: higher + 1, n: vals.length };
+  }, [perSeed, singleShare]);
+  const singleOutsideCi =
+    shareStat && singleShare !== null ? singleShare > shareStat.ci95_high || singleShare < shareStat.ci95_low : null;
+
   /** 单种子上"分散化占比"的印象 vs 12 种子上的均值占比 —— 反转就体现在这两个数上。 */
   const singleDivShare = wr ? Number(wr.share_of_total_by_diversification) : null;
   const multiDivShare =
@@ -678,17 +715,39 @@ export function CostValueTab({
                 <Stat
                   label="全规则方案的代价"
                   value={fixed(Number((costAudit.accuracy_cost_of_all_rules as Loose).rule_arm), 4)}
-                  hint={`${String((costAudit.accuracy_cost_of_all_rules as Loose).metric)}；LLM 一列在 audit.json 里是 null（生成时未配置 endpoint），真实对照见上面第 ② 块`}
+                  hint={
+                    Number.isFinite(Number((costAudit.accuracy_cost_of_all_rules as Loose).llm_arm))
+                      ? `${String((costAudit.accuracy_cost_of_all_rules as Loose).metric)}；LLM 一列 ${fixed(
+                          Number((costAudit.accuracy_cost_of_all_rules as Loose).llm_arm),
+                          4,
+                        )}，全规则的 F1 代价 ${fixed(
+                          Number((costAudit.accuracy_cost_of_all_rules as Loose).f1_drop_if_all_rules),
+                          4,
+                        )}；逐 arm 明细见上面第 ② 块`
+                      : `${String((costAudit.accuracy_cost_of_all_rules as Loose).metric)}；这份产物里 LLM 一列尚未填充（生成时未配置 endpoint），真实对照见上面第 ② 块`
+                  }
                   tone="warn"
                 />
               </div>
-              <Note tone="warn">
-                <b className="text-amber-200">产物口径说明：</b>audit.json 的{' '}
-                <code className="font-mono text-[10px]">token_account</code> 是{' '}
-                <code className="font-mono text-[10px]">null</code>、status = {String(costAudit.status)} ——
-                因为成本审计跑在 LLM 真调之前。我没有回头改这份产物去"补齐"，而是把真实 token 账放在 llm_bench.json 并在上面第 ③ 块展示。
-                两份产物的时序差异如实呈现。
-              </Note>
+              {tokenAccount ? (
+                <Note>
+                  <b className="text-slate-300">产物口径说明（本段全部读 audit.json，无写死状态）：</b>这份成本审计的{' '}
+                  <code className="font-mono text-[10px]">token_account</code> 已填充：status ={' '}
+                  <code className="font-mono text-[10px]">{String(costAudit.status)}</code>，实测{' '}
+                  <b className="num text-slate-200">{int0(Number(tokenAccount.measured_calls))}</b> 次调用 /{' '}
+                  <b className="num text-slate-200">{int0(Number(tokenAccount.total_tokens))}</b> token（平均{' '}
+                  <span className="num">{fixed(Number(tokenAccount.tokens_per_call), 1)}</span> token/次），来源{' '}
+                  {String(tokenAccount.source ?? '')}。它与上面第 ③ 块是同一份 usage 字段，两处数字必须相等
+                  —— 页面不做任何二次估算。
+                </Note>
+              ) : (
+                <Note tone="warn">
+                  <b className="text-amber-200">产物口径说明：</b>这份 audit.json 里{' '}
+                  <code className="font-mono text-[10px]">token_account</code> 尚未填充（status ={' '}
+                  {String(costAudit.status)}）—— 成本审计跑在 LLM 真调之前。真实 token 账在 llm_bench.json，见上面第 ③ 块；
+                  这条说明由产物状态驱动，产物一旦补齐就会自动改写。
+                </Note>
+              )}
             </div>
           </div>
         ) : (
@@ -718,6 +777,112 @@ export function CostValueTab({
             </div>
           }
         >
+          {/* ---- 三个口径并列：招牌 / 12 种子 / 24 种子离线复核 ---- */}
+          <div className="mb-3 overflow-hidden rounded-2xl border border-amber-400/30 bg-amber-400/[0.05] px-4 py-3.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="border-amber-400/35 bg-amber-400/10 text-amber-200">三个口径并列</Badge>
+              <h4 className="text-[13.5px] font-semibold text-slate-100">
+                「少浪费多少」有三个口径，招牌那个最好看 —— 三个一起摆出来，并写清各自的取舍
+              </h4>
+            </div>
+            <div className="mt-3 grid gap-2.5 lg:grid-cols-3">
+              {/* 招牌口径 */}
+              <div className="rounded-xl border border-white/12 bg-black/25 px-3 py-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-medium text-slate-400">定稿单种子（招牌口径 · n = 1）</span>
+                  <Badge className="border-amber-400/30 bg-amber-400/10 text-amber-200">好看</Badge>
+                </div>
+                <div className="num mt-1.5 text-[20px] font-semibold text-amber-200">
+                  {singleSaved !== null ? usd0(singleSaved) : '—'}
+                  <span className="ml-1.5 text-[13px] font-normal text-slate-400">
+                    {singleShare !== null ? pct1(singleShare) : '—'}
+                  </span>
+                </div>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-slate-400">
+                  取舍：只有 1 个样本。
+                  {singleRank && (
+                    <>
+                      {' '}
+                      它是 {int0(singleRank.n)} 个种子里第{' '}
+                      <b className="num text-rose-200">{int0(singleRank.rank)}</b> 高的观测
+                    </>
+                  )}
+                  {singleOutsideCi && shareStat && (
+                    <>
+                      ，且<b className="text-rose-200">落在均值 95% CI（{pct1(shareStat.ci95_low)}~{pct1(shareStat.ci95_high)}）之外</b>
+                    </>
+                  )}
+                  。所以它能当招牌，不能当结论。
+                </p>
+                <div className="muted mt-1">来源：audit.json → counterfactual_value_audit.totals</div>
+              </div>
+
+              {/* 12 种子 */}
+              <div className="rounded-xl border border-emerald-400/30 bg-black/25 px-3 py-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-medium text-slate-400">
+                    {shareStat ? `${int0(shareStat.n)} 种子` : '多种子'}（对外结论取这一列）
+                  </span>
+                  <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">采用</Badge>
+                </div>
+                {shareStat ? (
+                  <>
+                    <div className="num mt-1.5 text-[20px] font-semibold text-emerald-200">
+                      {pct1(shareStat.mean)}
+                      <span className="ml-1 text-[13px] font-normal text-slate-400">± {pct1(shareStat.std)}</span>
+                    </div>
+                    <p className="mt-1.5 text-[11px] leading-relaxed text-slate-300">
+                      95% CI <b className="num">{pct1(shareStat.ci95_low)}~{pct1(shareStat.ci95_high)}</b>；区间跨了近 18 个百分点。
+                      总口径下<b className="text-rose-200">
+                        {' '}
+                        {int0(Number(aRob?.n_seeds_koxpilot_loses_overall))}/{int0(Number(aRob?.n_seeds))} 个种子跑输基线
+                      </b>
+                      （seed {((aRob?.seeds_koxpilot_loses_overall ?? []) as number[]).join(', ')}），最差那个种子是{' '}
+                      <span className="num text-rose-200">{pct1(shareStat.min)}</span>。
+                    </p>
+                    <div className="muted mt-1">来源：multiseed.json → A_value_robustness.saved_share_of_budget</div>
+                  </>
+                ) : (
+                  <div className="muted mt-2">multiseed.json 未加载，这一列不显示替代数字</div>
+                )}
+              </div>
+
+              {/* 24 种子离线复核 */}
+              <div className="rounded-xl border border-dashed border-slate-400/35 bg-black/20 px-3 py-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-medium text-slate-400">
+                    {OFFLINE_24_SEED.n_seeds} 种子复核（最保守口径）
+                  </span>
+                  <Badge className="border-slate-400/35 bg-slate-400/10 text-slate-300">离线 · 产物未入库</Badge>
+                </div>
+                <div className="num mt-1.5 text-[20px] font-semibold text-slate-200">
+                  {pct1(OFFLINE_24_SEED.saved_share_mean)}
+                  <span className="ml-1 text-[13px] font-normal text-slate-400">
+                    ± {pct1(OFFLINE_24_SEED.saved_share_std)}
+                  </span>
+                </div>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-slate-300">
+                  <b className="text-rose-200">{OFFLINE_24_SEED.n_loses}/{OFFLINE_24_SEED.n_seeds} 个种子跑输基线。</b>{' '}
+                  <b className="text-amber-200">这一列是离线复核结论，产物未入库，页面无法读产物核对</b> ——
+                  {OFFLINE_24_SEED.why_not_committed}。可用{' '}
+                  <code className="font-mono text-[10px]">{OFFLINE_24_SEED.repro}</code> 复现。
+                </p>
+                <div className="muted mt-1">
+                  来源：离线重跑（provenance = <code className="font-mono text-[10px]">{OFFLINE_24_SEED.provenance}</code>），
+                  不是 public/data 里的任何一份产物
+                </div>
+              </div>
+            </div>
+            <Note tone="warn">
+              <AlertTriangle size={11} className="mr-1 inline" />
+              <b className="text-amber-200">对外该引哪个：</b>引{' '}
+              {shareStat ? <b className="num">{pct1(shareStat.mean)} ± {pct1(shareStat.std)}</b> : '多种子均值'}
+              （12 种子），并同时说明有种子跑输。招牌那个{' '}
+              {singleShare !== null && <b className="num">{pct1(singleShare)}</b>} 只在"定稿那一次"成立；
+              种子数从 12 加到 24 后均值还会再往下走（见右列），说明这个效应量对采样很敏感。
+            </Note>
+          </div>
+
           {/* ---- 总口径：招牌数字 + 有界口径 ---- */}
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
             <Stat

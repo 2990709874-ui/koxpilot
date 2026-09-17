@@ -96,28 +96,51 @@ export interface BudgetPlan {
   skipped: SkippedRecord[];
 }
 
+/**
+ * 排序依据（对应 Python `allocator.BASIS_VALUE` / `BASIS_VIEWS`）：
+ * - `value`：引擎的质量加权价值（含真实性折扣 / 语义适配 / KPI 权重）；
+ * - `views`：只用名义曝光 avg_views，**不读任何门禁与质量信号**。第三臂
+ *   `diversified_no_gate` 用它，这样"分散化贡献"里不会混进门禁的功劳。
+ */
+export type Basis = 'value' | 'views';
+export const BASIS_VALUE: Basis = 'value';
+export const BASIS_VIEWS: Basis = 'views';
+
+/** 三条臂的采购规则：strategy -> [是否强制结构约束, 排序依据]。 */
+export const STRATEGIES: Record<Strategy, [boolean, Basis]> = {
+  followers: [false, BASIS_VIEWS],
+  diversified_no_gate: [true, BASIS_VIEWS],
+  koxpilot: [true, BASIS_VALUE],
+};
+
+export type Strategy = 'koxpilot' | 'followers' | 'diversified_no_gate';
+
 /** 一个采购名额 = 在某达人身上买的第 index 条内容（index 从 1 开始）。 */
 export interface Slot {
   candidate: Candidate;
   index: number;
   decay: number;
+  basis: Basis;
 }
 
 const slotCost = (s: Slot): number => s.candidate.cost_usd;
-const marginalValue = (s: Slot): number => s.candidate.value * s.decay ** (s.index - 1);
+/** 第 1 条内容的价值（未衰减），按 basis 取质量加权价值或名义曝光。 */
+const baseValue = (s: Slot): number => (s.basis === BASIS_VIEWS ? s.candidate.avg_views : s.candidate.value);
+const marginalValue = (s: Slot): number => baseValue(s) * s.decay ** (s.index - 1);
 const marginalEfficiency = (s: Slot): number => marginalValue(s) / s.candidate.cost_usd;
 
 export function buildSlots(
   pool: readonly Candidate[],
   maxPosts: number = MAX_POSTS_PER_KOX,
   decay: number = POST_MARGINAL_DECAY,
+  basis: Basis = BASIS_VALUE,
 ): Slot[] {
   if (!(decay > 0.0 && decay <= 1.0)) {
     throw new Error('POST_MARGINAL_DECAY 必须落在 (0,1]，否则贪心的凹性前提不成立');
   }
   const out: Slot[] = [];
   for (const c of pool) {
-    for (let i = 1; i <= Math.max(1, maxPosts); i += 1) out.push({ candidate: c, index: i, decay });
+    for (let i = 1; i <= Math.max(1, maxPosts); i += 1) out.push({ candidate: c, index: i, decay, basis });
   }
   return out;
 }
@@ -126,6 +149,7 @@ export function buildSlots(
 class Selection {
   readonly budget: number;
   readonly decay: number;
+  readonly basis: Basis;
   posts = new Map<string, number>();
   candById = new Map<string, Candidate>();
   pickedBy = new Map<string, string>();
@@ -134,9 +158,10 @@ class Selection {
   longtailUsd = 0.0;
   countryUsd = new Map<string, number>();
 
-  constructor(budget: number, decay: number) {
+  constructor(budget: number, decay: number, basis: Basis = BASIS_VALUE) {
     this.budget = budget;
     this.decay = decay;
+    this.basis = basis;
   }
 
   take(slot: Slot, tag: string): void {
@@ -209,7 +234,13 @@ class Selection {
   marginalEfficiencyOfLast(koxId: string): number {
     const n = this.posts.get(koxId) ?? 0;
     if (n <= 0) return 0.0;
-    return marginalEfficiency({ candidate: this.candById.get(koxId) as Candidate, index: n, decay: this.decay });
+    // 用的是本臂自己的 basis：第三臂不看质量加权价值，退让时也不许偷看。
+    return marginalEfficiency({
+      candidate: this.candById.get(koxId) as Candidate,
+      index: n,
+      decay: this.decay,
+      basis: this.basis,
+    });
   }
 }
 
@@ -495,7 +526,7 @@ function mix(sel: Selection, key: 'bucket' | 'country' | 'platform'): Record<str
 }
 
 export interface AllocateOptions {
-  strategy?: 'koxpilot' | 'followers';
+  strategy?: Strategy;
   budgetUsd?: number | null;
   skipped?: readonly SkippedRecord[];
   maxPosts?: number;
@@ -511,16 +542,17 @@ export function allocate(
   spec: CampaignSpec,
   options: AllocateOptions = {},
 ): BudgetPlan {
-  const strategy = options.strategy ?? 'koxpilot';
+  const strategy: Strategy = options.strategy ?? 'koxpilot';
+  const [strictFromTable, basis] = STRATEGIES[strategy];
   const maxPosts = options.maxPosts ?? MAX_POSTS_PER_KOX;
   const decay = options.decay ?? POST_MARGINAL_DECAY;
   const skipped = [...(options.skipped ?? [])];
   const pool = [...candidates];
   const budget = Number(options.budgetUsd ?? spec.budget_usd);
-  const sel = new Selection(budget, decay);
+  const sel = new Selection(budget, decay, basis);
   const trace: string[] = [];
-  const strict = strategy === 'koxpilot';
-  const slots = buildSlots(pool, maxPosts, decay);
+  const strict = strictFromTable;
+  const slots = buildSlots(pool, maxPosts, decay, basis);
   const purchaseModel = { max_posts_per_kox: maxPosts, post_marginal_decay: decay };
 
   if (budget <= 0 || pool.length === 0) {
@@ -558,11 +590,11 @@ export function allocate(
     }
     let totalPosts = 0;
     for (const v of sel.posts.values()) totalPosts += v;
+    // 排序依据要写进 trace：本轮起浏览器引擎也实现了第三臂（同一套结构约束、排序换成
+    // "名义曝光/报价"），所以这句话必须点明"这一臂按什么排"，否则两臂的 trace 长得一样。
+    const ruler = basis === BASIS_VALUE ? '质量加权价值/报价' : '名义曝光/报价（不含门禁与真实性信号）';
     trace.push(
-      // 排序依据要写进 trace：Python 侧本轮起有第三臂（同一套结构约束、排序换成"名义曝光/报价"），
-      // 所以这句话必须点明"这一臂按什么排"，否则两个臂的 trace 长得一样、也就看不出差别在哪。
-      // 浏览器引擎只实现 koxpilot（质量加权价值）与 followers（粉丝量降序）两臂，故这里固定是价值口径。
-      `边际性价比贪心（排序依据：质量加权价值/报价）：候选 ${pool.length} 人 / ${slots.length} 个内容名额，` +
+      `边际性价比贪心（排序依据：${ruler}）：候选 ${pool.length} 人 / ${slots.length} 个内容名额，` +
         `选入 ${sel.candById.size} 人共 ${totalPosts} 条，花费 ${fmtUsd0(sel.spent)}` +
         `（长尾 ${fmtPct1(sel.longtailShare)}，头部 ${fmtPct1(sel.headShare)}）`,
     );

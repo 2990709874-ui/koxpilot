@@ -29,7 +29,14 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 import { NEUTRAL_SPEC, Thresholds, evaluate, pyRound, specFromDict } from '../src/engine/index.ts';
-import { counterfactualRow, gateResultsFor, gtIndex, planBaseline, planCampaign } from '../src/budget/index.ts';
+import {
+  counterfactualRow,
+  gateResultsFor,
+  gtIndex,
+  planBaseline,
+  planCampaign,
+  planDiversifiedNoGate,
+} from '../src/budget/index.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WEB_DIR = path.resolve(HERE, '..');
@@ -207,11 +214,16 @@ function main() {
       const results = gateResultsFor(records, spec, thresholds);
       const tsPlan = planCampaign(records, spec, thresholds, results);
       const tsBase = planBaseline(records, spec, thresholds, results);
+      const tsDiv = planDiversifiedNoGate(records, spec, thresholds, results);
 
-      for (const [armName, tsArm, pyArm] of [
-        ['koxpilot', tsPlan, refPlan.koxpilot],
-        ['baseline_followers', tsBase, refPlan.baseline_followers],
+      // 第三臂在 Python 侧只落摘要（不含逐人明细，见 cli.py 的 selected_note），
+      // 所以它的逐人 selected[] 无法比对；其余字段（含 trace 与约束检查）照常逐字段比。
+      for (const [armName, tsArm, pyArm, perPersonComparable] of [
+        ['koxpilot', tsPlan, refPlan.koxpilot, true],
+        ['baseline_followers', tsBase, refPlan.baseline_followers, true],
+        ['diversified_no_gate', tsDiv, refPlan.diversified_no_gate, false],
       ]) {
+        if (!pyArm) continue;
         const diffs = [];
         for (const f of PLAN_SCALARS) {
           if (tsArm[f] !== pyArm[f]) diffs.push({ field: f, ts: tsArm[f], py: pyArm[f] });
@@ -222,7 +234,10 @@ function main() {
             diffs.push({ field: mixKey, ts: tsMix, py: pyArm[mixKey] });
           }
         }
-        const tsIds = tsArm.selected.map((a) => a.kox_id);
+        const tsIds = perPersonComparable ? tsArm.selected.map((a) => a.kox_id) : null;
+        if (!perPersonComparable) {
+          // 只比摘要：跳过 selected[] 明细
+        } else {
         const pyIds = (pyArm.selected ?? []).map((a) => a.kox_id);
         if (JSON.stringify(tsIds) !== JSON.stringify(pyIds)) {
           const firstIdx = tsIds.findIndex((v, i) => v !== pyIds[i]);
@@ -241,6 +256,7 @@ function main() {
             if (diffs.length > 0) break;
           }
         }
+        }
         const tsChecks = tsArm.constraints.checks.map((c) => [c.name, c.actual, c.satisfied, c.enforced]);
         const pyChecks = (pyArm.constraints?.checks ?? []).map((c) => [c.name, c.actual, c.satisfied, c.enforced]);
         if (JSON.stringify(tsChecks) !== JSON.stringify(pyChecks)) {
@@ -255,6 +271,7 @@ function main() {
           campaign_id: cid,
           arm: armName,
           matched: diffs.length === 0,
+          per_person_compared: perPersonComparable,
           n_selected: tsArm.n_selected,
           n_posts: tsArm.n_posts,
           spent_usd: tsArm.spent_usd,

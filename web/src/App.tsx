@@ -16,6 +16,7 @@ import { CostValueTab } from './tabs/CostValue';
 import { DecisionTab } from './tabs/Decision';
 import { EvaluationTab } from './tabs/Evaluation';
 import { NotesTab } from './tabs/Notes';
+import { TabErrorBoundary } from './components/TabErrorBoundary';
 import { GATE_ROLES, ablationVariant, evaluateDataset, runPipeline, sensitivityScan } from './lib/pipeline';
 import type { AblationRow, EvalReport, PipelineResult, SensitivityPoint, StageReport } from './lib/pipeline';
 import { loadArtifacts, type Artifacts } from './lib/artifacts';
@@ -289,6 +290,8 @@ export default function App(): React.ReactElement {
       {/* ================= Body ================= */}
       <main className="mx-auto max-w-[1560px] px-4 py-4">
         <div key={tab} className="animate-fade-up">
+          {/* 页签级错误边界：渲染异常只退化成一张错误卡片，绝不把 root 清空成白屏。 */}
+          <TabErrorBoundary tab={tab}>
           {tab === 'console' && (
             <ConsoleTab
               briefs={art.briefs}
@@ -352,6 +355,7 @@ export default function App(): React.ReactElement {
           {tab === 'notes' && (
             <NotesTab promptBench={art.promptBench} audit={art.audit} metrics={art.metrics} multiseed={art.multiseed} />
           )}
+          </TabErrorBoundary>
         </div>
       </main>
 

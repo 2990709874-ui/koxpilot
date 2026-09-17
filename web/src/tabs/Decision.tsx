@@ -118,6 +118,8 @@ export function DecisionTab({
 
   const cfTotals = (auditArtifact?.counterfactual_value_audit?.totals ?? null) as Loose | null;
   const cfPer = (auditArtifact?.counterfactual_value_audit?.per_campaign ?? []) as Loose[];
+  /** 为负的 campaign 从产物里现算，不写死是哪一个、也不写死金额。 */
+  const cfLosers = cfPer.filter((c) => Number(c.saved_usd) < 0);
 
   return (
     <div className="space-y-4">
@@ -472,11 +474,26 @@ export function DecisionTab({
                   ))}
                 </tbody>
               </table>
-              <Note tone="warn">
-                <AlertTriangle size={11} className="mr-1 inline" />
-                BRIEF-002 是负的（少浪费 −$5,118、有效曝光 −2.3%）。这一格没有被藏起来：它说明门禁的价值依赖候选池里真有水号，
-                当基线恰好没踩坑时，结构约束带来的分散反而略微拖累了单次结果。
-              </Note>
+              {cfLosers.length > 0 ? (
+                <Note tone="warn">
+                  <AlertTriangle size={11} className="mr-1 inline" />
+                  {cfLosers
+                    .map(
+                      (c) =>
+                        `${String(c.campaign_id)} 是负的（少浪费 −${usd0(Math.abs(Number(c.saved_usd)))}、有效曝光 ${signedPct1(
+                          Number(c.effective_view_uplift),
+                        )}）`,
+                    )
+                    .join('；')}
+                  。这一格没有被藏起来（哪个 campaign 为负由 audit.json 现算，不写死）：它说明门禁的价值依赖候选池里真有水号，
+                  当基线恰好没踩坑时，结构约束带来的分散反而略微拖累了单次结果。
+                </Note>
+              ) : (
+                <Note tone="good">
+                  本轮 {cfPer.length} 个 campaign 的少浪费全部为非负（这一句同样由 audit.json 现算 —— 一旦有 campaign 转负，
+                  上面这行会自动变成点名说明）。
+                </Note>
+              )}
             </>
           ) : (
             <Note tone="warn">audit.json 未生成，本板块留空。</Note>

@@ -82,6 +82,12 @@ export function EvaluationTab({
   const t4 = metrics?.table_4_ablation as Loose | undefined;
   const t5 = metrics?.table_5_sensitivity as Loose | undefined;
   const weak = (metrics?.weak_spots ?? []) as Loose[];
+  /** F1 最低的那一格：从产物里现算，页面上不写死"mega 0.467"这类会过期的描述。 */
+  const worstWeakSpot = weak.reduce<Loose | null>((acc, w) => {
+    const f1 = Number(w.f1);
+    if (!Number.isFinite(f1)) return acc;
+    return acc === null || f1 < Number(acc.f1) ? w : acc;
+  }, null);
 
   /** 按层消融里第一个"关掉它三分类反而更好"的层。用来把反例写成数据驱动，而不是写死 −G2。 */
   const negLayer = ((t4?.by_layer ?? []) as Loose[]).find(
@@ -403,8 +409,19 @@ export function EvaluationTab({
         </div>
         <Note tone="warn">
           <AlertTriangle size={11} className="mr-1 inline" />
-          弱项板块直接渲染 metrics.json 的 weak_spots 数组，顺序与内容都不挑选。头部达人（mega）F1 只有 0.467 是最刺眼的一格：
-          样本少、互动率天然偏低，与买粉特征混淆。
+          弱项板块直接渲染 metrics.json 的 weak_spots 数组，顺序与内容都不挑选。
+          {worstWeakSpot ? (
+            <>
+              {' '}
+              当前最刺眼的一格是 <b className="text-amber-200">
+                {String(worstWeakSpot.dimension)}={String(worstWeakSpot.cell)}
+              </b>
+              ，F1 只有 <b className="num text-rose-200">{fixed(Number(worstWeakSpot.f1), 3)}</b>（这一句由产物现算，不写死是哪个分层）：
+              样本少、互动率天然偏低，与买粉特征混淆。
+            </>
+          ) : (
+            ' 本轮 weak_spots 里没有可比的 F1 字段，故不点名。'
+          )}
         </Note>
       </Panel>
 

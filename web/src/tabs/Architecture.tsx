@@ -86,6 +86,13 @@ function ParityCard({
   );
 }
 
+/** 臂名的中文标签；未知臂名原样显示（不猜、不写死数量）。 */
+const ARM_LABEL: Record<string, string> = {
+  koxpilot: 'KOXPilot',
+  baseline_followers: '按粉丝量基线',
+  diversified_no_gate: '第三臂 diversified_no_gate',
+};
+
 export function ArchitectureTab({
   manifest,
   consistency,
@@ -99,6 +106,10 @@ export function ArchitectureTab({
 }): React.ReactElement {
   const stageMs = new Map((result?.stages ?? []).map((s) => [s.id, s.elapsedMs]));
   const c = consistency;
+  /** 一致性面板里"覆盖了哪些臂"一律从产物读，不写死臂数与臂名。 */
+  const parityArms = c?.budget.arms ?? [];
+  const armNames = [...new Set(parityArms.map((a) => ARM_LABEL[a.arm] ?? a.arm))];
+  const summaryOnlyArms = [...new Set(parityArms.filter((a) => a.per_person_compared === false).map((a) => ARM_LABEL[a.arm] ?? a.arm))];
 
   return (
     <div className="space-y-4">
@@ -226,7 +237,11 @@ export function ArchitectureTab({
                   ['反事实审计', `${int0(c.budget.matched_audits ?? 0)} / ${int0(c.budget.compared_audits ?? 0)} 一致`],
                   ['来源', (c.budget.source ?? []).join('、')],
                 ]}
-                note="含 selected[] 逐条金额/posts/顺序、约束检查与 trace 中文措辞逐字符；不含第三臂（浏览器引擎只实现 koxpilot 与 baseline_followers 两臂）"
+                note={`覆盖的臂（读 consistency.json 的 arms 数组）：${armNames.join('、')}。${
+                  summaryOnlyArms.length > 0
+                    ? `其中 ${summaryOnlyArms.join('、')} 在 Python 侧只落摘要（无逐人明细），故只比摘要标量、约束检查与 trace；`
+                    : ''
+                }其余臂含 selected[] 逐条金额/posts/顺序、约束检查与 trace 中文措辞逐字符。`}
               />
             </div>
 
@@ -250,7 +265,14 @@ export function ArchitectureTab({
                     {(c.budget.arms ?? []).map((a) => (
                       <tr key={`${a.campaign_id}-${a.arm}`} className="hairline">
                         <td className="td num">{a.campaign_id}</td>
-                        <td className="td text-[11px] text-slate-400">{a.arm === 'koxpilot' ? 'KOXPilot' : '按粉丝量基线'}</td>
+                        <td className="td text-[11px] text-slate-400">
+                          {ARM_LABEL[a.arm] ?? a.arm}
+                          {a.per_person_compared === false && (
+                            <span className="ml-1 text-[10px] text-amber-300/90" title="Python 侧只落摘要（无逐人明细），本臂只比摘要标量、约束检查与 trace">
+                              仅摘要
+                            </span>
+                          )}
+                        </td>
                         <td className="td num text-right">
                           {a.n_selected} / {a.n_posts}
                         </td>

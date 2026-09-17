@@ -107,7 +107,7 @@ export interface ConsistencyReport {
     matched_arms?: number;
     compared_audits?: number;
     matched_audits?: number;
-    arms?: Array<{ campaign_id: string; arm: string; matched: boolean; n_selected: number; n_posts: number; spent_usd: number; utilization: number; est_cpm_usd: number }>;
+    arms?: Array<{ campaign_id: string; arm: string; matched: boolean; per_person_compared?: boolean; n_selected: number; n_posts: number; spent_usd: number; utilization: number; est_cpm_usd: number }>;
     audits?: Array<{ campaign_id: string; matched: boolean; saved_usd: number; effective_view_uplift: number }>;
     fields_compared?: string[];
     first_diffs?: unknown[];
