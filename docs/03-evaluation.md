@@ -1,0 +1,459 @@
+# 03 · 评测方法与结果：重点是"怎么防止自己骗自己"
+
+> README 已经给了指标数字。这份文档不复述数字，它回答两个问题：
+> **① 每个数字是按什么口径算出来的**；**② 我怎么确认这些数字不是自证出来的**。
+>
+> 第 2 节是这份文档的核心：**三次我真的自证成功过，指标很漂亮，然后被自己抓回来**。这一节比任何指标都更能说明这套评测值不值得信。
+>
+> 相关文档：[01 架构](01-architecture.md) · [02 门禁规则](02-gates.md) · [04 Prompt 与成本](04-prompt-and-cost.md) · [05 边界声明](05-boundaries.md)
+
+---
+
+## 1. 口径先于数字
+
+评测最大的风险不是"算错"，是**"算对了但没意义"**。而"没意义"最常见的形态是：各张表各算一套口径，最后挑好看的报。
+
+所以 `src/koxpilot/eval/metrics.py` 把三个口径写死成函数，**所有表格必须复用**，不允许各表自己实现：
+
+| 口径 | 定义 | 对应的运营动作 | 用在哪 |
+| --- | --- | --- | --- |
+| `fraud_pred_strict` | `authenticity < 0.50` **或** 硬信号 ≥ 2 条 | **产品会自动拦掉的人**（精确率优先） | 表 1 主指标、表 3/4/5 |
+| `fraud_pred_loose` | G1 命中**任意一条** | **进人核队列的人**（召回优先） | 表 1 对照 |
+| `fraud_score` | 连续异常分 | 排序 / 阈值探索 | AUC、PR 曲线 |
+
+三条纪律：
+
+1. **离散命中数不能当连续分用。** `fraud_score` 是按百分位 ramp 出来的连续值（真实数据上去重后 > 500 个取值，有测试守），否则 AUC 只是几个台阶点连出来的假曲线。见 [02 §5.5](02-gates.md#55-fraud_score-是连续分不是命中计数)。
+2. **`metrics.py` 和 `audit.py` 是全项目唯一两处允许读 `gt` 的地方**，且只作为**裁判**读取。任何被评测的逻辑都不得从这里取值。
+3. **同时报 P / R / F1 / 特异度 / 支撑数**，少一个就会被追问，也确实该被追问。
+
+数据前提：`n=5000`，`seed=20270919`，`prevalence=0.16`（800 个真水号），数据集 sha256 `29500afd5390f3fd9…`。
+
+---
+
+## 2. 三道反自证的网（我真的踩进去过三次）
+
+### 2.1 第一道网：标签错配的 F1 曾经是 1.0
+
+**症状**：标签错配（G2.1）的判定 F1 接近 1.0，各消融 arm 的召回/精确率**完全相同或呈整齐阶跃**。看起来像"这个特征极强"。
+
+**真相**：数据生成器早期把"标签不匹配"实现成**整组替换品类**——于是正例的 declared∩observed 几乎恒为空集（Jaccard = 0），负例几乎完全重合（Jaccard = 1）。**答案被写在输入里了**，一条 `jaccard < t` 的朴素规则就能拿接近满分。
+
+**怎么发现的**：不是靠看指标（1.0 只会让人高兴），是靠**"各 arm 指标完全相同"这个异常**。指标相同意味着不同规则组合的决策边界完全一致，说明可分性已经退化到单特征——这是数据集有问题的信号，不是模型强的信号。
+
+**修法 + 固化成测试**：生成器改为保留中间带（正例 Jaccard 落在 `(0.15, 0.85)` 的占 **39.2%**，恰好为 0 的占 60.0%）。然后写了两条**会失败的**守卫，放在 `tests/test_no_leakage.py`：
+
+- `test_positive_jaccard_distribution_is_not_bimodal`：正例中间带 ≥ 20%、恰好 0 ≤ 75%、恰好 1 ≤ 20%。
+- `test_naive_jaccard_rule_is_far_from_perfect`：以 0.02 步长扫 49 个阈值，**最佳 F1 必须 < 0.90**（不是送分题）**且 > 0.30**（Jaccard 与标签也不能毫无关系，否则是标注口径坏了）。
+
+**方法论**：F1 过高时，第一反应应该是"**ground truth 和某个输入特征是不是等价的**"，而不是"我的方法真好"。
+
+### 2.2 第二道网：缓存 key 只 hash 了 `kox_id`
+
+**症状**：没有症状。指标完全正常。
+
+**真相**：`llm/runner.py::run_fit` 的缓存 key 是 `_sha1([spec, [r['kox_id'] for r in batch]])`，`llm/promptbench.py::run_arm` 是 `_sha1([r['kox_id'] for r in batch])`。后果：
+
+> **prompt 文案改版、或数据重新生成后同 `kox_id` 内容变了，仍然命中旧缓存。**
+> bench 出来的是"上一版的答案"，而指标看起来完全正常。
+
+这是**靠看数字永远发现不了的静默评测作弊**——我改了 prompt，跑出来"新结果"，实际上模型一次都没被调用。
+
+**怎么发现的**：写了一条静态扫描测试 `test_static_cache_keys_are_derived_from_actual_prompt_content`，一上线就抓到两处。
+
+**修法**：统一为 `key = 任务 + 模型/版本 + _sha1(实际发给模型的完整 messages)`，四处全改：
+
+| 位置 | 修改前 | 修改后 |
+| --- | --- | --- |
+| `runner.run_brief` | `_sha1(brief['raw_text'])` | `_sha1(msgs)`（system 文案改版也会失效） |
+| `runner.run_tag` | `_sha1(payload)`（内容对了但漏了 prompt 版本） | `_sha1(msgs)` |
+| `runner.run_fit` | `_sha1([spec, [kox_id...]])` ❌ | `_sha1(msgs)` |
+| `promptbench.run_arm` | `_sha1([kox_id...])` ❌ | `_sha1(msgs)` |
+
+顺带把 `provider.chat(...)` 改成复用同一个 `msgs`，消除"key 和实际请求算的是两份东西"的隐患。**直接 hash messages 而不是手抄一遍字段清单**，好处是以后 prompt 加字段，key 自动跟着变。
+
+测试写成**正向**断言（key 必须从 `msgs` 派生），而不是只写"不许出现 kox_id"——后者换成 hash 一个无关的 batch 序号照样能骗过去。
+
+### 2.3 第三道网：表 6 的语义适配分曾经恒等于 1.0
+
+**症状**：表 6 里 `semantic_fit` 的分布是**全部 1.0**，p10 = p50 = p90 = 1.0。
+
+**真相**：调用方给 `rule_fit_distribution` 传的是**中性 `CampaignSpec()`**（空 spec）。而 `rule_fit_score` 在 `target_categories` 为空时返回 1.0——**这是正确的语义**：没有品类要求，就不该扣适配分。
+
+所以：**中性 spec 没错，`rule_fit_score` 也没错，错在用中性 spec 去报 campaign-specific 的指标。** 一个语义上完全正确的函数，被放在语义上完全错误的位置调用，产出一张恒等于 1.0 的无意义表。而这张表看起来不像 bug——它看起来像"规则版适配打分表现完美"。
+
+**怎么发现的**：靠"分布全等"这个异常。**任何真实分布都不该 p10 = p90**。
+
+**修法**：`eval/llm_compare.py` 的 `rule_fit_distribution` 遇到中性 spec **显式跳过并标注状态**，只在真实 campaign 下报分布：
+
+```json
+"semantic_fit": { "status": "skipped_neutral_spec" },
+"semantic_fit_by_campaign": {
+  "BRIEF-001": { "mean": 0.6044, "p10": 0.2, "p50": 0.65, "p90": 1.0 },
+  "BRIEF-002": { "mean": 0.6223, "p10": 0.2, "p50": 0.65, "p90": 1.0 },
+  "BRIEF-003": { "mean": 0.6133, "p10": 0.2, "p50": 0.65, "p90": 1.0 }
+}
+```
+
+修完的分布 mean 落在 0.60–0.62，p10=0.2、p50=0.65、p90=1.0——这才是一个有信息量的分布。
+
+**方法论**：`skipped` 这个状态字段比一个漂亮的 1.0 有价值得多。**评测代码宁可显式报"这个口径下我不算"，也不要在错误口径下算出一个能填表的数。**
+
+### 2.4 三次的共同点
+
+| 症状 | 第一反应应该是 |
+| --- | --- |
+| 指标高得反常（F1 → 1.0） | ground truth 与某个输入特征是否等价？ |
+| 多个 arm 指标**完全相同** | 可分性是否已退化到单特征？ |
+| 分布 p10 = p50 = p90 | 调用方的语义边界是否错配？ |
+| 改了东西但指标毫无变化 | 缓存 key 是否与实际输入脱钩？ |
+
+四条都不是"看数字"能发现的，全部是**结构性异常**。所以我的结论是：评测的可信度不来自指标本身，来自**有多少条会失败的守卫在盯着指标**。
+
+---
+
+## 3. 物理隔离：让"读到答案"这件事在代码层面不可能
+
+光靠纪律不够，我用了三张互补的网（单靠任何一张都能被绕过），全部在 `tests/test_no_leakage.py`（35 项）：
+
+### 3.1 入口剥离
+
+`gates/engine.py::observable_view` 在门禁入口**物理删除 `gt`**。所以 G0–G3 即使写了 `kox["gt"]` 也只会 `KeyError`，而不是"读到答案"。
+
+### 3.2 AST 静态扫描（覆盖测试跑不到的分支）
+
+- 17 个生产模块逐个参数化，可执行代码里**零**裁判字段引用（`gt` / `true_categories` / `is_fraud` / `fraud_type` / `mismatch_injected`）。
+- 扫的是 **AST 不是 grep**，所以 docstring 里解释"为什么不读 gt"不会误报。
+- `engine.py` 单独一条：除 `observable_view` 外任何函数都不许提裁判字段，且 `observable_view` 必须含 `!=` / `not in`（证明它是"剥离"语义而非"读取"）。
+- `llm/runner.py` / `llm/promptbench.py`：能看 `gt` 的函数集合必须**恰好等于**打分白名单（`bench_tag` / `run_arm` / `main`）。**用 `==` 而不是 `<=` 是刻意的**——以后有人在 `run_tag` 的推理闭包里加一句 `r["gt"]`，测试立刻红，而不是等指标虚高时靠人眼发现。
+
+### 3.3 运行期哨兵（抓静态扫描绕不过的动态取键）
+
+`LeakGuard(dict)`：`__getitem__` / `get` / `pop` 读到裁判字段就抛 `LeakAccess`。
+
+- **故意不拦 `items()` / `keys()`**，因为 `observable_view` 正是靠遍历键名剔除 `gt` 的——这条边界恰好把"枚举字段"和"读取裁判值"分开。
+- 先跑 `test_leakguard_itself_actually_fires` 证明**哨兵不是哑弹**，否则下面所有"没抛错"的测试都是空气。
+- 哨兵是**直接喂给 g0/g1/g2/g3** 的，不是只喂给 `evaluate()`——只测 `evaluate()` 会被 §3.1 的剥离掩盖，测不出子门禁的问题。
+- 覆盖范围包括 `calibrate`（**阈值标定必须无监督**）、`extract_signals`、逐层门禁、`build_candidates`、三个 prompt 构造器。
+
+### 3.4 通道封闭 + prompt 全文体检
+
+- `extract_signals` 输出必须是扁平标量白名单（不许夹带结构化 `gt`）。
+- `GateResult.to_dict()` 序列化后不含任何裁判字段（否则前端和下游会"顺便"拿到答案）。
+- **prompt 全文体检**是我最想强调的一条：拼出 tag / fit / 3 个 variant 的所有消息，不仅检查裁判字段名不出现，还**逐条**检查"该达人隐藏真实品类中既非 declared 也非 observed 的那部分"不出现在 prompt 里。
+
+> **把答案写进 prompt 是最隐蔽的泄漏**：模型"猜得准"其实是抄的，而 token 账、延迟、输出格式全都正常。
+
+---
+
+## 4. 六张表：口径、怎么读、别怎么读
+
+### 表 1 · 水号识别（`table_1_fraud_detection`）
+
+| 口径 | P | R | F1 |
+| --- | --- | --- | --- |
+| strict（自动拦） | 0.7714 | 0.6750 | **0.7200** |
+| loose（进人核） | 0.3969 | 0.8225 | 0.5354 |
+
+AUC = **0.8809**（用连续分算，与离散判定无关）。
+
+**两个口径都报，是因为它们对应两个不同的产品决策**，不是为了挑好看的：自动拦人要精确率（拦错一个真达人就是得罪一个供应商），进人核队列要召回率（漏一个水号就是真金白银）。loose 的精确率只有 0.3969，读作"人核队列里约 6 成是虚警"——这个数字直接决定人核成本，该报。
+
+按造假类型的漏检（`missed_fraud_profile`）：
+
+| 造假类型 | 抓到 | 漏 | 漏检率 |
+| --- | --- | --- | --- |
+| bought_followers 买粉 | 239 | 61 | 20.33% |
+| engagement_pod 互赞群 | 134 | 66 | 33.00% |
+| bot_comments 机器评论 | 96 | 54 | 36.00% |
+| **view_inflation 刷播放** | 71 | 79 | **52.67%** |
+
+刷播放漏一半以上。原因写在产物里：**漏检主要来自 weak 偏移样本**——`datagen` 刻意让一部分问题号的偏移量落在正常区间内（`STRONG_SHARE < 1`）。如果所有水号都被造成极端值，召回率会虚高到没有参考意义。刷播放尤其难，因为它只体现在 `view_follower_ratio` 一个维度，而真实号里天然存在爆款高播放，两者在特征空间本来就重叠。
+
+**别这么读**：F1=0.7200 不等于"能识别 72% 的真实水号"。这是合成数据上的数字，见 [05 §2](05-boundaries.md#2-边界一数据是我自己造的)。
+
+### 表 2 · 三分类判定（`table_2_verdict_confusion`）
+
+accuracy = **0.6590**，macro F1 = **0.6731**。混淆矩阵（行 = `gt.verdict`，列 = 门禁判定）：
+
+| gt ↓ / 判定 → | pass | review | reject |
+| --- | --- | --- | --- |
+| **pass** | 1,647 | **1,281** | 130 |
+| **review** | 17 | 994 | 23 |
+| **reject** | 76 | 178 | 654 |
+
+分档指标：
+
+| 档 | P | R | F1 |
+| --- | --- | --- | --- |
+| pass | 0.9466 | 0.5386 | 0.6865 |
+| review | **0.4052** | 0.9613 | 0.5701 |
+| reject | 0.8104 | 0.7203 | 0.7627 |
+
+**怎么读**：`review` 的精确率只有 0.4052，但召回 0.9613。这是**保守型门禁的正常形态**——它宁可把人推进人核队列也不放过，代价是队列里有虚警。真正致命的格是 `gt=reject → pred=pass`（**76 人**，漏放了真该拦的人）和 `gt=pass → pred=reject`（**130 人**，误杀）。这两格才是产品事故来源，accuracy 不是。
+
+**最大的假阳性格 `gt=pass → pred=review`（1,281 例）有完整归因**（`review_false_positive_attribution`）：
+
+| 命中签名 | 数量 | 占比 |
+| --- | --- | --- |
+| **只有 G2.2** | **467** | 36.46% |
+| G2.1 + G2.2 | 189 | 14.75% |
+| 只有 G1.6 | 137 | 10.69% |
+| 只有 G1.3 | 73 | 5.70% |
+| 只有 G1.4 | 63 | 4.92% |
+
+规则参与度：G2.2 涉及 **831** 例、G2.1 261、G1.6 203。
+
+**根因是两处口径不一致，我把它写进 `honesty_notes` 而不是藏起来**：SPEC 3.3 合成 `gt.verdict` 时**没把"多源标签冲突"计入 review**，而 SPEC 4.G2.2 要求口径冲突需人核。所以这 467 例是**纯口径性假阳性**——产品上它们确实该进人核队列，只是 ground truth 不这么认为。
+
+处理方式：**保留 G2.2 判定**，同时给出屏蔽 G2.2 的对照矩阵（`variant_rule_disabled_G2_2`）：accuracy **0.6590 → 0.7504**、macro F1 **0.6731 → 0.7397**，其中 `pass` 档 F1 从 0.6865 升到 0.7992。
+
+> 我可以关掉 G2.2 让 accuracy 直接多 9 个点。我没关，因为三源标签打架在真实供应商数据里是常态，"需人工核定主品类"是正确的产品动作。**把两个口径都摆出来让人自己判断，比替读者做决定更诚实。**
+
+### 表 3 · 分层表现（`table_3_strata`）
+
+按 platform / follower_bucket / country / platform×bucket 四个维度切，`min_support_positive = 10`（正例不足 10 的格标 `low_support: true`，不参与弱项排序）。
+
+按平台：
+
+| 平台 | n | 正例 | P | R | F1 |
+| --- | --- | --- | --- | --- | --- |
+| tiktok | 1,921 | 317 | 0.8175 | 0.7066 | **0.7580** |
+| x | 510 | 89 | 0.7895 | 0.6742 | 0.7273 |
+| instagram | 1,253 | 203 | 0.7403 | 0.6601 | 0.6979 |
+| kwai | 314 | 47 | 0.7692 | 0.6383 | 0.6977 |
+| youtube | 1,002 | 144 | 0.7077 | 0.6389 | 0.6715 |
+
+按粉丝量级：
+
+| 桶 | n | 正例 | P | R | F1 |
+| --- | --- | --- | --- | --- | --- |
+| nano | 1,814 | 322 | 0.8222 | 0.6894 | 0.7500 |
+| micro | 1,780 | 252 | 0.7521 | 0.7103 | 0.7306 |
+| mid | 849 | 134 | 0.8317 | 0.6269 | 0.7149 |
+| macro | 424 | 73 | 0.8200 | 0.5616 | 0.6667 |
+| **mega** | 133 | 19 | **0.3415** | 0.7368 | **0.4667** |
+
+**分层表是为了自己找弱项，不是为了展示均值。** 均值 0.7200 掩盖了 mega 桶的 0.4667——精确率只有 0.3415，意味着在头部达人上，门禁判"水号"三次里有两次是错的。原因是头部样本只有 133 条、正例 19 个，分位数标定在这个规模上不稳，且头部达人的指标天然离散（一条爆款就能把 `view_follower_ratio` 推上 P98）。
+
+**弱项由代码自动挑，不由我手挑**（`weak_spots` 字段，按 F1 升序、过滤 low_support）：
+
+| 维度 | 格 | F1 | P | R | 该格规模 |
+| --- | --- | --- | --- | --- | --- |
+| follower_bucket | **mega** | 0.4667 | 0.3415 | 0.7368 | 133 人 / 19 正例 |
+| country | **SA** | 0.4762 | 0.8333 | 0.3333 | 87 / 15 |
+| platform×bucket | **youtube\|macro** | 0.4762 | 0.6250 | 0.3846 | 84 / 13 |
+| country | DE | 0.5753 | 0.6000 | 0.5526 | 225 / 38 |
+| country | MX | 0.5965 | 0.7391 | 0.5000 | 190 / 34 |
+| country | AE | 0.6364 | 0.7000 | 0.5833 | 90 / 12 |
+
+自动生成的意义：**我没有筛选权**。哪个格最差就报哪个，包括我不想看到的那个。
+
+### 表 4 · 消融（`table_4_ablation`）
+
+`delta = 变体 - 全量`，**负值 = 关掉它指标下降 = 它有正向贡献**；**正值 = 关掉它指标反而上升 = 它在这个指标上是负担**。产物按 `contribution_criteria` 分三档（`eps = 0.001`）：
+
+| 档位 | 判据（`d_fraud_f1_strict`） | 落在哪个字段 |
+| --- | --- | --- |
+| `positive` | `delta ≤ −0.001` | `positive_rules`，且 `contributes: true` |
+| `negative` | `delta ≥ +0.001` | `negative_rules`，且 `contributes: false` |
+| `negligible` | `abs(delta) < 0.001` | `dead_rules`，且 `contributes: false` |
+
+`contributes` **只表示正贡献**；每行还带一个 `contribution`（三档枚举）和 `contribution_note`（人话解释），`by_layer` 的 `contribution` 则同时给出 `fraud_f1_strict` 与 `verdict_accuracy` 两个指标各自的符号。
+
+按层：
+
+| 变体 | fraud F1 | Δ F1 | AUC | verdict acc | Δ acc |
+| --- | --- | --- | --- | --- | --- |
+| 全量 | 0.7200 | — | 0.8809 | 0.6590 | — |
+| −G0 | 0.7186 | −0.0014 | 0.8809 | 0.6232 | −0.0358 |
+| **−G1** | **0.0000** | **−0.7200** | **0.5000** | 0.6602 | +0.0012 |
+| **−G2** | 0.7200 | 0.0000 | 0.8809 | **0.7354** | **+0.0764** |
+| −G3 | 0.7200 | 0.0000 | 0.8809 | 0.6102 | −0.0488 |
+| only G1 | 0.7186 | −0.0014 | 0.8809 | 0.6128 | −0.0462 |
+
+三个必须解释的地方：
+
+1. **−G1 让 fraud F1 归零、AUC 掉到 0.5**——这是一条**自洽性检查**，不是发现。G1 是水号指标的唯一来源，如果关掉它 F1 还有值，说明表 1 的口径串味了。这条"意料之中"的结果其实是在验证消融实现本身是对的。
+2. **−G2 让三分类 accuracy 上升 0.0764**。也就是说，**关掉整个一致性层，三分类指标会变好**。根因就是表 2 里那 467 例 G2.2 口径性假阳性。我照实报，并保留 G2。
+3. **−G0 只影响三分类不影响 fraud**（Δ F1 仅 −0.0014，AUC 完全不变）：符合设计——G0 只做 review 与置信度打折，不参与 reject 路径。
+
+按 G1 单条规则（这张表最有信息量）：
+
+| 变体 | 权重 | 关掉后 P | 关掉后 R | Δ F1 |
+| --- | --- | --- | --- | --- |
+| −G1.7 评论重复率 | 0.26 | 0.7358 | 0.5188 | **−0.1115** |
+| −G1.5 粉丝突刺 | 0.30 | 0.7538 | 0.5550 | **−0.0807** |
+| −G1.1 互动率上尾 | 0.30 | 0.8205 | 0.6000 | −0.0269 |
+| −G1.2 互动率下尾 | 0.28 | 0.8100 | 0.6075 | −0.0257 |
+| −G1.3 评论/点赞比 | 0.12 | 0.7745 | 0.6312 | −0.0244 |
+| −G1.4 播放/粉丝比 | 0.26 | 0.8116 | 0.6300 | −0.0106 |
+| **−G1.6 日均涨粉** | 0.14 | 0.8233 | 0.6637 | **+0.0149** |
+
+**权重排序 ≠ 贡献排序**：G1.3 权重只有 0.12（最低），边际贡献却和权重 0.28 的 G1.2 相当；G1.4 权重 0.26，贡献只有 −0.0106。这说明权重是按"证据强度"设的，不是按"对指标的贡献"设的——**如果我按贡献反向调权重，那就是在用测试集调参**，所以我没有调。
+
+**`−G1.6` 的 delta 是正的 +0.0149——关掉 G1.6，严口径 F1 反而变好。** 这是一条我留着的、对我不利的数据：
+
+- 机理清楚：G1.6（日均涨粉超同组 P97）是**软信号**，它把一批增长快但真实的号（MCN 起号）推高了扣分，精确率 0.7714 → 0.8233 就是证据。
+- 为什么留：它在 `gt=pass → pred=review` 里贡献 203 例，但**它推进的是 review 队列而不是 reject**，产品上"增长曲线异常，人工看一眼"是合理动作；而且它是 loose 口径召回的重要来源。为了 1.5pp 的 F1 删掉一条语义正确的规则，是**对着指标做产品**。
+- **产物如何标它**：`contribution: "negative"`、`contributes: false`、`negative_rules: ["-G1.6"]`，`note` 里点名它并附上 `ΔF1 +0.0149`。**这里曾经有一个真 bug**：早期 `contributes = abs(d_fraud_f1_strict) >= 0.001` 不看符号，于是 G1.6 被标成 `contributes: true`，`note` 还跟着写「所有 G1 规则对严口径 F1 都有可测量的边际贡献」——一个绝对值把结论说反了。现在符号判定钉在 `contribution_sign()` 上，并由 `tests/test_eval_metrics.py::TestAblation::test_contribution_is_signed_not_absolute` 等 4 条测试守着（含一条专门断言 note 不出现那句总括句）。
+
+`dead_rules` 当前为空——没有对严口径 F1 完全不起作用（`abs(ΔF1) < 0.001`）的 G1 规则；但"不为空的 `negative_rules`"说明**7 条规则并非都对严口径 F1 有正向贡献**，是 6/7。层级表里同理：`−G2` 的 `contribution.verdict_accuracy` 是 `negative`，`−G2`/`−G3` 的 `contribution.fraud_f1_strict` 是 `negligible`（Δ 恰为 0，因为水号指标只由 G1 产生）。
+
+### 表 5 · 阈值敏感性（`table_5_sensitivity`）
+
+扫描 `factors = [0.8, 0.9, 1.0, 1.1, 1.2]`，缩放 6 个信号阈值（`engagement_rate` / `comment_like_ratio` / `view_follower_ratio` / `followers_per_day` / `comment_dup_rate` / `comment_emoji_only_rate`）。
+
+| factor | P | R | F1 | Δ F1 | n_reject |
+| --- | --- | --- | --- | --- | --- |
+| 0.8 | 0.6405 | 0.7150 | 0.6757 | −0.0443 | 996 |
+| 0.9 | 0.7435 | 0.6775 | 0.7090 | −0.0110 | 834 |
+| **1.0（基线）** | 0.7714 | 0.6750 | **0.7200** | — | 807 |
+| 1.1 | 0.7650 | 0.6713 | 0.7150 | −0.0050 | 813 |
+| 1.2 | 0.7001 | 0.6275 | 0.6618 | **−0.0582** | 827 |
+
+**`max_abs_f1_shift = 0.0582`，`stability_tolerance = 0.05`，`stable = false`。**
+最敏感的单信号是 `engagement_rate`（单独缩放的最大偏移 0.0354），其余五个信号单独扰动的偏移都 ≤ 0.0174——**敏感性主要由互动率这一个信号带来**，这条 `per_signal` 分解比一个总体的 `stable=false` 有用得多。
+
+三点说明：
+
+1. **`factor` 的语义要看清**：它是判定阈值的整体缩放系数。**对上尾规则放大 = 放松，对下尾规则放大 = 收紧**——所以一次扫描同时覆盖了两个方向，不是单向"变严"。这句话我写进了 `honesty_notes`，因为不写清就会被误读成"越大越严"。注意 `n_reject` 在 factor=0.8 时反而涨到 996，就是这个双向效应的体现。
+2. **`stable=false` 是我自己设的 5% 线判出来的，我没有改线。** 正确读法是"F1 ≈ 0.72 ± 0.06 这个量级"，而不是四位有效数字的精确结论。
+3. **为什么不去优化它**：让它稳定的最直接手段是把规则做钝（阈值取更极端分位，只抓最明显的水号），扰动 ±20% 也不改判定——代价是召回崩掉。我选了敏感但有召回的版本，把敏感性摊在指标里。
+
+### 表 6 · LLM vs 规则（`table_6_llm_vs_rule`）
+
+标签错配判定，**同 600 样本、同 batch、同 user message，唯一变量是判定方式**：
+
+| arm | 样本 | 覆盖率 | P | R | F1 |
+| --- | --- | --- | --- | --- | --- |
+| 规则 G2.1（全量库） | 5,000 | 1.0 | 0.4278 | 0.8521 | 0.5696 |
+| **规则 G2.1（同 600 样本）** | 600 | 1.0 | 0.4186 | 0.8571 | **0.5625** |
+| LLM · ark | 600 判 600 | 1.00 | 0.6154 | 0.7619 | 0.6809 |
+| LLM · azure | 600 判 **588** | **0.98** | 0.6744 | 0.6905 | **0.6824** |
+
+产物里直接给了 `f1_gain_llm_over_rule = 0.1199`。
+
+**必须用"同 600 样本"那一行做对比**，不能拿全量 0.5696 去比 LLM 的 600 样本结果——样本不同的两个数字放在一起比是最常见的指标注水手法。两个数字都落盘正是为了让人看到差异只有 0.0071，说明 600 样本子集没有偏。
+
+**结论**：LLM 相对规则 F1 提升 **+0.1199**（0.5625 → 0.6824）。规则版是"高召回低精确"（R=0.857 / P=0.419），LLM 是"两边都均衡"（R≈0.69–0.76 / P≈0.62–0.67）——**LLM 赚的主要是精确率**，因为它能读懂"美妆博主偶尔发一条穿搭"和"美妆标签实际全是游戏内容"的区别，而 Jaccard 只会数集合交集。这是"该不该用 LLM"这个问题在本项目里唯一的量化答案，成本侧的账在 [04](04-prompt-and-cost.md)。
+
+**不能得出的结论**：ark 0.6809 vs azure 0.6824 差 0.0015 → **两个模型打平**。理由有两条而不是一条：① 单轮实验、temperature 不为 0，这个差距在噪声范围内；② **两者的样本量不同**——azure 有一个 batch 调用失败，覆盖率 0.98（判了 588 条），而失败批次按"未覆盖"处理、不用默认值填充。拿 588 条的 F1 去和 600 条的比，本来就不该比出 0.0015 的名次。我没做多轮重复取均值方差（[05 §3.3](05-boundaries.md#33-单次运行的波动没有被消掉)）。
+
+语义适配部分（`semantic_fit`）当前是 `status: "skipped_neutral_spec"`，产物里的 note 写得很直接：「中性 spec 不做品类约束，`rule_fit_score` 恒为 1.0，报分布无意义」。真实分布按 campaign 分报，三个 campaign 的 `share_below_review_threshold`（低于 0.5 需 review 的比例）分别是 **37.26% / 35.28% / 35.88%**。这就是 §2.3 那次自证的修复结果。
+
+**语义适配这一项没有 ground truth，所以只报分布、不报准确率**——产物 note 里明写"准确率对照需 LLM 真调后由人工抽检补齐"。这是一个没做完的事，写在表里而不是留白。
+
+### 附 · 反事实价值审计的 uplift 口径（`counterfactual_value_audit`）
+
+这不是六张表之一，但它是唯一一处**用比率讲钱**的地方，口径必须先说清。
+
+`effective_view_uplift = (KOXPilot 有效曝光 − 基线有效曝光) / 基线有效曝光`。分母是**基线**的有效曝光，而基线只选 4~7 个头部号；某些样本它几乎把钱全花在水号上，分母就趋近 0，比率随之爆炸。这不是假设：`output/multiseed.json` 里单 campaign 出现过 **+358,535%（+3585×）** 的观测，导致 BRIEF-003 的跨种子 mean 变成 **+29,977%**（median 只有 +124.5%）。**一个样本绑架整个均值。**
+
+所以产物里现在同时给三组数，且明确写出哪一组能聚合：
+
+| 字段 | 含义 | 取值范围 | 能不能跨样本平均 |
+| --- | --- | --- | --- |
+| `effective_view_uplift` | 以基线为分母的相对提升（主口径） | **无界** | ❌ 只能单条看 |
+| `effective_view_uplift_lenient` | 同上，水号曝光按 50% 计 | **无界** | ❌ |
+| `..._bounded.rate_gap_pp` | 两臂"有效曝光率（有效/名义）"之差 | **[−100, +100] pp** | ✅ 推荐 |
+| `..._bounded.symmetric_uplift` | `(kox − base) / (kox + base)` | **[−1, +1]** | ✅ 推荐（符号与相对提升一致） |
+| `..._bounded.absolute_gain_views` | 绝对差值（曝光数） | 无除法 | ✅ |
+
+配套的两个诚实性开关：
+
+- `ratio_denominator_fragile`：基线有效曝光率低于名义曝光的 5%（含为 0）时置 `true`，`headline` 随之**不再引用那个比率**，改用"有效曝光率 x% → y%（+zpp）"叙述；比率本体仍留在字段里供核对，不删数字。
+- 分母为 0 时 `effective_view_uplift` 是 **`null`（无定义）而不是 `0.0`**。旧实现返回 `0.0`，等于把"基线全打水漂、KOXPilot 全中"这个最有利的样本记成"没有提升"——方向相反的虚假声称，同样得修。
+
+定稿数据集上的总口径（分母 678 万曝光，`ratio_denominator_fragile = false`）：主口径 **+98.6%**、宽松口径 **+64.7%**、有界口径 **有效曝光率 67.3% → 94.2%（+26.9pp，symmetric_uplift +0.3303）**。三个口径同向，所以"结论不依赖水号曝光按 0 计"这句话在总口径上现在有产物支撑（`totals.effective_view_uplift_lenient`，此前只有 per-campaign 有）。
+
+守护测试：`tests/test_audit_value.py`（9 条，含一条先构造出 +7900% 再断言有界口径仍在界内的回归）。跨种子聚合口径的切换见 [06 §局限](06-robustness.md)。
+
+---
+
+## 5. 逐字节回归：`metrics.json` 里没有时间戳
+
+`eval/harness.py` 刻意**不往 metrics 里写任何时间戳或环境信息**。理由：
+
+> 只要数据集 sha256 和代码不变，`make eval` 两次产出的 `metrics.json` 必须**逐字节相同**。
+
+这让"指标回归"退化成一次 `diff`——不需要人去比对 47 个数字有没有变。任何一处改动（包括我以为无害的重构）如果动了指标，`git diff` 会直接摊在眼前。
+
+配套的可复现链条：
+
+- `generate_dataset(n, seed)` 同种子两次**逐字段相等**；换种子必须变（防止"可复现"其实是把数据写死了）。
+- `build_kox(index, ...)` 单条隔离重建一致，不依赖前面生成过多少条。
+- `data/kox_5000.json` 用自报的 seed/n 重新生成后**比字节**相等。
+- `evaluate_all` 结果与记录顺序无关（排除跨记录状态污染）。
+
+---
+
+## 6. 这套评测答不上来的问题
+
+写在这里而不是等被问：
+
+1. **门禁在真实达人库上的召回是多少？** 不知道。所有指标都在合成数据上（[05 §2](05-boundaries.md#2-边界一数据是我自己造的)）。
+2. **5 条 campaign 相关规则（G2.3/2.4/2.6/G3.3/G3.5）准不准？** 不知道。它们没有 ground truth，从未被评测过。表 2 覆盖的是 15/20 条（[05 §4](05-boundaries.md#4-边界三报告的三分类指标只覆盖-1520-条规则)）。
+3. **LLM 版 fit 分接进正式链路后，指标会变好还是变坏？** 不知道。当前正式链路走规则版（[05 §3.2](05-boundaries.md#32-这里有一个我必须点明的落差)）。
+4. **预算方案离最优差多少？** 不知道。没有 MILP 对照（[05 §7](05-boundaries.md#7-边界六预算分配是启发式不是最优解)）。
+5. **反事实里有多少增量真的来自质量门禁？** 不知道。基线只选了 8/4/6 个头部号，而 KOXPilot 选了 69/39/73 个，增量里混着"分散投放 vs 集中押注"的效应，缺一条"同样分散买但不看门禁"的归因隔离臂（[05 §7](05-boundaries.md#反事实价值审计的边界)）。
+6. **模型/prompt 之间的差异有多少是噪声？** 不知道。单轮实验（§4 表 6）。
+
+---
+
+## 7. 如何自己验证这份文档里的数字
+
+```bash
+cd koxpilot
+make all                  # 全确定性，无需 key。跑两次 metrics.json 应逐字节相同
+
+# ① 逐字节回归（§5）
+make eval && sha256sum output/metrics.json && make eval && sha256sum output/metrics.json
+
+# ② 表 1 / 表 2（含 467 例 G2.2 归因）
+PYTHONPATH=src python -c "
+import json; m=json.load(open('output/metrics.json'))
+t1=m['table_1_fraud_detection']; t2=m['table_2_verdict_confusion']
+print('strict',{k:t1['strict'][k] for k in ('precision','recall','f1')}, 'auc',round(t1['auc'],4))
+print('loose',{k:t1['loose'][k] for k in ('precision','recall','f1')}, 'prevalence',t1['prevalence'])
+print('miss',json.dumps(t2['missed_fraud_profile']['by_fraud_type'],ensure_ascii=False))
+print('acc',t2['accuracy'],'macroF1',t2['macro_f1'])
+print('屏蔽G2.2',t2['variant_rule_disabled_G2_2']['accuracy'],t2['variant_rule_disabled_G2_2']['macro_f1'])
+a=t2['review_false_positive_attribution']
+print('gt=pass->review',a['n'],'纯G2.2',a['solely_caused_by_G2_2'],'涉及G2.2',a['involving_G2_2'])"
+
+# ③ 表 3 弱项（由代码自动挑，不是我手挑）
+PYTHONPATH=src python -c "
+import json; m=json.load(open('output/metrics.json'))
+[print(w['note']) for w in m['weak_spots']]"
+
+# ④ 表 4 消融，注意 -G2 的 Δacc 为正、-G1.6 的 ΔF1 为正（= 负贡献，不是"有贡献"）
+PYTHONPATH=src python -c "
+import json; t=json.load(open('output/metrics.json'))['table_4_ablation']
+for r in t['by_layer']: print(r['variant'], r['delta'], r['contribution'])
+for r in t['by_g1_rule']: print(r['variant'],'w=',r['weight'],r['delta']['d_fraud_f1_strict'],r['contribution'],r['contributes'])
+print('positive',t['positive_rules']); print('negative',t['negative_rules']); print('dead_rules',t['dead_rules'])"
+
+# ⑤ 表 5 敏感性（factor 语义见 honesty_notes）
+PYTHONPATH=src python -c "
+import json; t=json.load(open('output/metrics.json'))['table_5_sensitivity']
+print(t['factors'], t['max_abs_f1_shift'], t['stable'])
+for r in t['overall']: print(r['factor'], r['metrics']['fraud_f1_strict'], r['d_fraud_f1_strict'])"
+
+# ⑥ 表 6：注意用「同 600 样本」的规则 arm 做对比
+PYTHONPATH=src python -c "
+import json; t=json.load(open('output/metrics.json'))['table_6_llm_vs_rule']
+print(json.dumps(t,ensure_ascii=False,indent=1)[:1800])"
+
+# ⑦ 诚实性说明（口径不一致、weak 偏移、factor 语义都在这）
+PYTHONPATH=src python -c "
+import json; [print('-',n) for n in json.load(open('output/metrics.json'))['honesty_notes']]"
+
+# ⑧ 反自证的三张网（35 项）+ 全量（162 项）
+PYTHONPATH=src python -m pytest tests/test_no_leakage.py -q
+make test
+```
+
+---
+
+**上一篇** ← [02 · 四层质量门禁规则手册](02-gates.md) ｜ **下一篇** → [04 · Prompt 工程与成本决策](04-prompt-and-cost.md)

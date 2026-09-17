@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "koxpilot"
+version = "1.0.0"
+description = "KOXPilot — 出海达人营销投前决策智能体（Python 核心：合成数据集 / 四层门禁 / 预算分配 / 评测 harness）"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Ji Hui" }]
+dependencies = [
+    # 零第三方运行依赖：分位数、鲁棒 z、AUC、混淆矩阵全部手写（见 src/koxpilot/stats.py）。
+    # 这样前端 TS 侧才能逐行对照复算出同样的数字，也避免版本漂移导致指标不可复现。
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4"]
+
+[project.scripts]
+koxpilot = "koxpilot.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"

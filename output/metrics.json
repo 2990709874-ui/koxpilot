@@ -1,0 +1,2929 @@
+{
+  "meta": {
+    "eval_version": "1.0.0",
+    "thresholds_version": "1.1.0",
+    "dataset_version": "1.0.0",
+    "dataset_seed": 20270919,
+    "dataset_n": 5000,
+    "dataset_sha256": "29500afd5390f3fd93245c2247281ae1f311e92009c6f374a330ec08434338d1",
+    "no_timestamp_note": "本文件刻意不含生成时间：同一份代码 + 同一份数据必须产出逐字节相同的 metrics.json，这样任何指标变化都可归因到代码或数据的变化。"
+  },
+  "definitions": {
+    "strict": "authenticity < 地板 或 硬信号 ≥2 条（门禁自动拦掉的人）",
+    "loose": "G1 命中任意一条（进人核队列的人）",
+    "auc": "用连续异常分 fraud_score 算，与离散判定无关",
+    "auc_vs_clean": "该造假类型 vs 全部真实号的一对多 AUC",
+    "verdict_gt": "gt.verdict 为 campaign 无关的库级判定，故门禁按中性画像口径评测",
+    "anti_self_proof": "门禁入口物理剥离 gt 字段；datagen 只注入可观测信号的统计偏移；审计一律以 gt 为裁判，不用引擎自身分数。"
+  },
+  "gate_policy": {
+    "critical_fields": [
+      "followers",
+      "avg_views",
+      "engagement_rate",
+      "audience_geo",
+      "quoted_price_usd"
+    ],
+    "completeness_review_max": 0.8,
+    "low_confidence_discount": 0.85,
+    "spike_zscore_min": 2.5,
+    "viral_support_lag_months": 1,
+    "min_history_months": 6,
+    "spec_reference_comment_dup_abs": 0.35,
+    "spec_reference_comment_emoji_abs": 0.4,
+    "g1_weights": {
+      "G1.1": 0.3,
+      "G1.2": 0.28,
+      "G1.3": 0.12,
+      "G1.4": 0.26,
+      "G1.5": 0.3,
+      "G1.6": 0.14,
+      "G1.7": 0.26
+    },
+    "graded_penalty_gain": 1.2,
+    "g1_hard_rules": [
+      "G1.1",
+      "G1.2",
+      "G1.4",
+      "G1.5",
+      "G1.7"
+    ],
+    "authenticity_floor_reject": 0.5,
+    "hard_hits_reject_min": 2,
+    "fraud_score_ramp_upper": 0.8,
+    "fraud_score_ramp_lower": 0.2,
+    "fraud_score_z_ramp": [
+      1.0,
+      3.5
+    ],
+    "declared_observed_jaccard_min": 0.34,
+    "source_jaccard_min": 0.5,
+    "fit_score_review_max": 0.5,
+    "audience_geo_min": 0.35,
+    "audience_match_min": 0.4,
+    "audience_age_weight": 0.6,
+    "audience_gender_weight": 0.4,
+    "g2_weights": {
+      "G2.1": 0.3,
+      "G2.2": 0.2,
+      "G2.3": 0.25,
+      "G2.4": 0.2,
+      "G2.5": 0.25,
+      "G2.6": 0.2
+    },
+    "severity_points": {
+      "low": 1.0,
+      "medium": 2.5,
+      "high": 10.0
+    },
+    "severity_hits_cap": 3,
+    "competitor_recent_months": 6,
+    "competitor_hard_months": 3,
+    "regulated_severity_multiplier": 0.5,
+    "g3_weights": {
+      "G3.1": 1.0,
+      "G3.2": 0.3,
+      "G3.3": 0.35,
+      "G3.4": 0.3,
+      "G3.5": 0.45
+    },
+    "min_group_samples": 60,
+    "grid_step_pct": 2
+  },
+  "table_1_fraud_detection": {
+    "strict": {
+      "tp": 540,
+      "fp": 160,
+      "fn": 260,
+      "precision": 0.7714,
+      "recall": 0.675,
+      "f1": 0.72,
+      "tn": 4040,
+      "specificity": 0.9619,
+      "accuracy": 0.916,
+      "n": 5000
+    },
+    "loose": {
+      "tp": 658,
+      "fp": 1000,
+      "fn": 142,
+      "precision": 0.3969,
+      "recall": 0.8225,
+      "f1": 0.5354,
+      "tn": 3200,
+      "specificity": 0.7619,
+      "accuracy": 0.7716,
+      "n": 5000
+    },
+    "auc": 0.8808568452380953,
+    "prevalence": 0.16,
+    "per_fraud_type": {
+      "bought_followers": {
+        "n": 300,
+        "recall_strict": 0.7967,
+        "recall_loose": 0.8833,
+        "mean_fraud_score": 0.3869,
+        "auc_vs_clean": 0.9188722222222222
+      },
+      "engagement_pod": {
+        "n": 200,
+        "recall_strict": 0.67,
+        "recall_loose": 0.795,
+        "mean_fraud_score": 0.3164,
+        "auc_vs_clean": 0.879925
+      },
+      "bot_comments": {
+        "n": 150,
+        "recall_strict": 0.64,
+        "recall_loose": 0.86,
+        "mean_fraud_score": 0.2722,
+        "auc_vs_clean": 0.892968253968254
+      },
+      "view_inflation": {
+        "n": 150,
+        "recall_strict": 0.4733,
+        "recall_loose": 0.7,
+        "mean_fraud_score": 0.2463,
+        "auc_vs_clean": 0.7939571428571428
+      }
+    },
+    "definitions": {
+      "strict": "authenticity < 地板 或 硬信号 ≥2 条（门禁自动拦掉的人）",
+      "loose": "G1 命中任意一条（进人核队列的人）",
+      "auc": "用连续异常分 fraud_score 算，与离散判定无关",
+      "auc_vs_clean": "该造假类型 vs 全部真实号的一对多 AUC"
+    }
+  },
+  "table_2_verdict_confusion": {
+    "n": 5000,
+    "accuracy": 0.659,
+    "macro_f1": 0.6731,
+    "matrix": {
+      "pass": {
+        "pass": 1647,
+        "review": 1281,
+        "reject": 130
+      },
+      "review": {
+        "pass": 17,
+        "review": 994,
+        "reject": 23
+      },
+      "reject": {
+        "pass": 76,
+        "review": 178,
+        "reject": 654
+      }
+    },
+    "per_class": {
+      "pass": {
+        "tp": 1647,
+        "fp": 93,
+        "fn": 1411,
+        "precision": 0.9466,
+        "recall": 0.5386,
+        "f1": 0.6865,
+        "tn": 1849,
+        "specificity": 0.9521,
+        "accuracy": 0.6992,
+        "n": 5000
+      },
+      "review": {
+        "tp": 994,
+        "fp": 1459,
+        "fn": 40,
+        "precision": 0.4052,
+        "recall": 0.9613,
+        "f1": 0.5701,
+        "tn": 2507,
+        "specificity": 0.6321,
+        "accuracy": 0.7002,
+        "n": 5000
+      },
+      "reject": {
+        "tp": 654,
+        "fp": 153,
+        "fn": 254,
+        "precision": 0.8104,
+        "recall": 0.7203,
+        "f1": 0.7627,
+        "tn": 3939,
+        "specificity": 0.9626,
+        "accuracy": 0.9186,
+        "n": 5000
+      }
+    },
+    "matrix_note": "行 = gt.verdict，列 = 门禁判定；对角线为一致格",
+    "variant_rule_disabled_G2_2": {
+      "n": 5000,
+      "accuracy": 0.7504,
+      "macro_f1": 0.7397,
+      "matrix": {
+        "pass": {
+          "pass": 2114,
+          "review": 814,
+          "reject": 130
+        },
+        "review": {
+          "pass": 27,
+          "review": 984,
+          "reject": 23
+        },
+        "reject": {
+          "pass": 91,
+          "review": 163,
+          "reject": 654
+        }
+      },
+      "per_class": {
+        "pass": {
+          "tp": 2114,
+          "fp": 118,
+          "fn": 944,
+          "precision": 0.9471,
+          "recall": 0.6913,
+          "f1": 0.7992,
+          "tn": 1824,
+          "specificity": 0.9392,
+          "accuracy": 0.7876,
+          "n": 5000
+        },
+        "review": {
+          "tp": 984,
+          "fp": 977,
+          "fn": 50,
+          "precision": 0.5018,
+          "recall": 0.9516,
+          "f1": 0.6571,
+          "tn": 2989,
+          "specificity": 0.7537,
+          "accuracy": 0.7946,
+          "n": 5000
+        },
+        "reject": {
+          "tp": 654,
+          "fp": 153,
+          "fn": 254,
+          "precision": 0.8104,
+          "recall": 0.7203,
+          "f1": 0.7627,
+          "tn": 3939,
+          "specificity": 0.9626,
+          "accuracy": 0.9186,
+          "n": 5000
+        }
+      },
+      "matrix_note": "行 = gt.verdict，列 = 门禁判定；对角线为一致格"
+    },
+    "review_false_positive_attribution": {
+      "cell": "gt=pass -> pred=review",
+      "n": 1281,
+      "top_rule_signatures": [
+        {
+          "rules": "G2.2",
+          "n": 467,
+          "share": 0.3646
+        },
+        {
+          "rules": "G2.1+G2.2",
+          "n": 189,
+          "share": 0.1475
+        },
+        {
+          "rules": "G1.6",
+          "n": 137,
+          "share": 0.1069
+        },
+        {
+          "rules": "G1.3",
+          "n": 73,
+          "share": 0.057
+        },
+        {
+          "rules": "G1.4",
+          "n": 63,
+          "share": 0.0492
+        },
+        {
+          "rules": "G1.2",
+          "n": 53,
+          "share": 0.0414
+        },
+        {
+          "rules": "G1.1",
+          "n": 49,
+          "share": 0.0383
+        },
+        {
+          "rules": "G1.6+G2.2",
+          "n": 45,
+          "share": 0.0351
+        }
+      ],
+      "rule_involvement": {
+        "G2.2": 831,
+        "G2.1": 261,
+        "G1.6": 203,
+        "G1.3": 109,
+        "G1.4": 87,
+        "G1.1": 83,
+        "G1.2": 74,
+        "G1.5": 36,
+        "G1.7": 27
+      },
+      "solely_caused_by_G2_2": 467,
+      "involving_G2_2": 831,
+      "solely_G2_2_share": 0.3646,
+      "calibration_note": "SPEC 3.3 合成 gt.verdict 时未把「多源标签冲突」计入 review，而 SPEC 4.G2.2 要求口径冲突需人核 —— 两处口径不一致。因此这 1281 个假阳性里有 467 个是**纯口径性**的（唯一命中就是 G2.2），产品上它们确实该进人核队列。本实现选择保留 G2.2 判定，并在 variant_rule_disabled_G2_2 里给出对照矩阵。"
+    },
+    "reject_false_positive_attribution": {
+      "cell": "gt=pass -> pred=reject",
+      "n": 130,
+      "top_rule_signatures": [
+        {
+          "rules": "G1.1",
+          "n": 21,
+          "share": 0.1615
+        },
+        {
+          "rules": "G1.2+G1.6",
+          "n": 15,
+          "share": 0.1154
+        },
+        {
+          "rules": "G1.1+G2.2",
+          "n": 9,
+          "share": 0.0692
+        },
+        {
+          "rules": "G1.4+G1.6",
+          "n": 6,
+          "share": 0.0462
+        },
+        {
+          "rules": "G1.1+G1.4",
+          "n": 5,
+          "share": 0.0385
+        },
+        {
+          "rules": "G1.2",
+          "n": 4,
+          "share": 0.0308
+        },
+        {
+          "rules": "G1.6+G1.7",
+          "n": 4,
+          "share": 0.0308
+        },
+        {
+          "rules": "G1.1+G1.4+G1.6",
+          "n": 3,
+          "share": 0.0231
+        }
+      ],
+      "rule_involvement": {
+        "G1.6": 48,
+        "G1.1": 46,
+        "G1.2": 46,
+        "G1.4": 43,
+        "G2.2": 43,
+        "G1.5": 17,
+        "G1.3": 15,
+        "G2.1": 10,
+        "G1.7": 9
+      }
+    },
+    "missed_fraud_profile": {
+      "by_fraud_type": [
+        {
+          "fraud_type": "view_inflation",
+          "caught": 71,
+          "missed": 79,
+          "miss_rate": 0.5267
+        },
+        {
+          "fraud_type": "bot_comments",
+          "caught": 96,
+          "missed": 54,
+          "miss_rate": 0.36
+        },
+        {
+          "fraud_type": "engagement_pod",
+          "caught": 134,
+          "missed": 66,
+          "miss_rate": 0.33
+        },
+        {
+          "fraud_type": "bought_followers",
+          "caught": 239,
+          "missed": 61,
+          "miss_rate": 0.2033
+        }
+      ],
+      "note": "漏检主要来自 weak 偏移样本：datagen 刻意让一部分问题号的偏移量落在正常区间内（STRONG_SHARE < 1），这是为了避免评测自证——如果所有水号都被造成极端值，召回率会虚高到没有参考意义。"
+    }
+  },
+  "table_3_strata": {
+    "min_support_positive": 10,
+    "by_platform": {
+      "tiktok": {
+        "tp": 224,
+        "fp": 50,
+        "fn": 93,
+        "precision": 0.8175,
+        "recall": 0.7066,
+        "f1": 0.758,
+        "tn": 1554,
+        "specificity": 0.9688,
+        "accuracy": 0.9256,
+        "n": 1921,
+        "positives": 317,
+        "verdict_accuracy": 0.6882,
+        "low_support": false
+      },
+      "youtube": {
+        "tp": 92,
+        "fp": 38,
+        "fn": 52,
+        "precision": 0.7077,
+        "recall": 0.6389,
+        "f1": 0.6715,
+        "tn": 820,
+        "specificity": 0.9557,
+        "accuracy": 0.9102,
+        "n": 1002,
+        "positives": 144,
+        "verdict_accuracy": 0.6347,
+        "low_support": false
+      },
+      "instagram": {
+        "tp": 134,
+        "fp": 47,
+        "fn": 69,
+        "precision": 0.7403,
+        "recall": 0.6601,
+        "f1": 0.6979,
+        "tn": 1003,
+        "specificity": 0.9552,
+        "accuracy": 0.9074,
+        "n": 1253,
+        "positives": 203,
+        "verdict_accuracy": 0.6608,
+        "low_support": false
+      },
+      "x": {
+        "tp": 60,
+        "fp": 16,
+        "fn": 29,
+        "precision": 0.7895,
+        "recall": 0.6742,
+        "f1": 0.7273,
+        "tn": 405,
+        "specificity": 0.962,
+        "accuracy": 0.9118,
+        "n": 510,
+        "positives": 89,
+        "verdict_accuracy": 0.6216,
+        "low_support": false
+      },
+      "kwai": {
+        "tp": 30,
+        "fp": 9,
+        "fn": 17,
+        "precision": 0.7692,
+        "recall": 0.6383,
+        "f1": 0.6977,
+        "tn": 258,
+        "specificity": 0.9663,
+        "accuracy": 0.9172,
+        "n": 314,
+        "positives": 47,
+        "verdict_accuracy": 0.6115,
+        "low_support": false
+      }
+    },
+    "by_follower_bucket": {
+      "nano": {
+        "tp": 222,
+        "fp": 48,
+        "fn": 100,
+        "precision": 0.8222,
+        "recall": 0.6894,
+        "f1": 0.75,
+        "tn": 1444,
+        "specificity": 0.9678,
+        "accuracy": 0.9184,
+        "n": 1814,
+        "positives": 322,
+        "verdict_accuracy": 0.6714,
+        "low_support": false
+      },
+      "micro": {
+        "tp": 179,
+        "fp": 59,
+        "fn": 73,
+        "precision": 0.7521,
+        "recall": 0.7103,
+        "f1": 0.7306,
+        "tn": 1469,
+        "specificity": 0.9614,
+        "accuracy": 0.9258,
+        "n": 1780,
+        "positives": 252,
+        "verdict_accuracy": 0.6837,
+        "low_support": false
+      },
+      "mid": {
+        "tp": 84,
+        "fp": 17,
+        "fn": 50,
+        "precision": 0.8317,
+        "recall": 0.6269,
+        "f1": 0.7149,
+        "tn": 698,
+        "specificity": 0.9762,
+        "accuracy": 0.9211,
+        "n": 849,
+        "positives": 134,
+        "verdict_accuracy": 0.6631,
+        "low_support": false
+      },
+      "macro": {
+        "tp": 41,
+        "fp": 9,
+        "fn": 32,
+        "precision": 0.82,
+        "recall": 0.5616,
+        "f1": 0.6667,
+        "tn": 342,
+        "specificity": 0.9744,
+        "accuracy": 0.9033,
+        "n": 424,
+        "positives": 73,
+        "verdict_accuracy": 0.5873,
+        "low_support": false
+      },
+      "mega": {
+        "tp": 14,
+        "fp": 27,
+        "fn": 5,
+        "precision": 0.3415,
+        "recall": 0.7368,
+        "f1": 0.4667,
+        "tn": 87,
+        "specificity": 0.7632,
+        "accuracy": 0.7594,
+        "n": 133,
+        "positives": 19,
+        "verdict_accuracy": 0.3609,
+        "low_support": false
+      }
+    },
+    "by_country": {
+      "AE": {
+        "tp": 7,
+        "fp": 3,
+        "fn": 5,
+        "precision": 0.7,
+        "recall": 0.5833,
+        "f1": 0.6364,
+        "tn": 75,
+        "specificity": 0.9615,
+        "accuracy": 0.9111,
+        "n": 90,
+        "positives": 12,
+        "verdict_accuracy": 0.7222,
+        "low_support": false
+      },
+      "AR": {
+        "tp": 11,
+        "fp": 0,
+        "fn": 5,
+        "precision": 1.0,
+        "recall": 0.6875,
+        "f1": 0.8148,
+        "tn": 59,
+        "specificity": 1.0,
+        "accuracy": 0.9333,
+        "n": 75,
+        "positives": 16,
+        "verdict_accuracy": 0.6,
+        "low_support": false
+      },
+      "AU": {
+        "tp": 18,
+        "fp": 2,
+        "fn": 6,
+        "precision": 0.9,
+        "recall": 0.75,
+        "f1": 0.8182,
+        "tn": 124,
+        "specificity": 0.9841,
+        "accuracy": 0.9467,
+        "n": 150,
+        "positives": 24,
+        "verdict_accuracy": 0.64,
+        "low_support": false
+      },
+      "BD": {
+        "tp": 8,
+        "fp": 1,
+        "fn": 0,
+        "precision": 0.8889,
+        "recall": 1.0,
+        "f1": 0.9412,
+        "tn": 25,
+        "specificity": 0.9615,
+        "accuracy": 0.9706,
+        "n": 34,
+        "positives": 8,
+        "verdict_accuracy": 0.6176,
+        "low_support": true
+      },
+      "BR": {
+        "tp": 24,
+        "fp": 6,
+        "fn": 13,
+        "precision": 0.8,
+        "recall": 0.6486,
+        "f1": 0.7164,
+        "tn": 180,
+        "specificity": 0.9677,
+        "accuracy": 0.9148,
+        "n": 223,
+        "positives": 37,
+        "verdict_accuracy": 0.6726,
+        "low_support": false
+      },
+      "CA": {
+        "tp": 16,
+        "fp": 4,
+        "fn": 8,
+        "precision": 0.8,
+        "recall": 0.6667,
+        "f1": 0.7273,
+        "tn": 146,
+        "specificity": 0.9733,
+        "accuracy": 0.931,
+        "n": 174,
+        "positives": 24,
+        "verdict_accuracy": 0.6494,
+        "low_support": false
+      },
+      "CL": {
+        "tp": 2,
+        "fp": 2,
+        "fn": 1,
+        "precision": 0.5,
+        "recall": 0.6667,
+        "f1": 0.5714,
+        "tn": 30,
+        "specificity": 0.9375,
+        "accuracy": 0.9143,
+        "n": 35,
+        "positives": 3,
+        "verdict_accuracy": 0.5429,
+        "low_support": true
+      },
+      "CO": {
+        "tp": 10,
+        "fp": 2,
+        "fn": 4,
+        "precision": 0.8333,
+        "recall": 0.7143,
+        "f1": 0.7692,
+        "tn": 43,
+        "specificity": 0.9556,
+        "accuracy": 0.8983,
+        "n": 59,
+        "positives": 14,
+        "verdict_accuracy": 0.6102,
+        "low_support": false
+      },
+      "DE": {
+        "tp": 21,
+        "fp": 14,
+        "fn": 17,
+        "precision": 0.6,
+        "recall": 0.5526,
+        "f1": 0.5753,
+        "tn": 173,
+        "specificity": 0.9251,
+        "accuracy": 0.8622,
+        "n": 225,
+        "positives": 38,
+        "verdict_accuracy": 0.6044,
+        "low_support": false
+      },
+      "EG": {
+        "tp": 3,
+        "fp": 2,
+        "fn": 3,
+        "precision": 0.6,
+        "recall": 0.5,
+        "f1": 0.5455,
+        "tn": 67,
+        "specificity": 0.971,
+        "accuracy": 0.9333,
+        "n": 75,
+        "positives": 6,
+        "verdict_accuracy": 0.56,
+        "low_support": true
+      },
+      "ES": {
+        "tp": 13,
+        "fp": 5,
+        "fn": 5,
+        "precision": 0.7222,
+        "recall": 0.7222,
+        "f1": 0.7222,
+        "tn": 97,
+        "specificity": 0.951,
+        "accuracy": 0.9167,
+        "n": 120,
+        "positives": 18,
+        "verdict_accuracy": 0.6833,
+        "low_support": false
+      },
+      "FR": {
+        "tp": 15,
+        "fp": 6,
+        "fn": 8,
+        "precision": 0.7143,
+        "recall": 0.6522,
+        "f1": 0.6818,
+        "tn": 163,
+        "specificity": 0.9645,
+        "accuracy": 0.9271,
+        "n": 192,
+        "positives": 23,
+        "verdict_accuracy": 0.7031,
+        "low_support": false
+      },
+      "GB": {
+        "tp": 36,
+        "fp": 10,
+        "fn": 11,
+        "precision": 0.7826,
+        "recall": 0.766,
+        "f1": 0.7742,
+        "tn": 215,
+        "specificity": 0.9556,
+        "accuracy": 0.9228,
+        "n": 272,
+        "positives": 47,
+        "verdict_accuracy": 0.6985,
+        "low_support": false
+      },
+      "HK": {
+        "tp": 5,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.8333,
+        "recall": 0.8333,
+        "f1": 0.8333,
+        "tn": 35,
+        "specificity": 0.9722,
+        "accuracy": 0.9524,
+        "n": 42,
+        "positives": 6,
+        "verdict_accuracy": 0.7381,
+        "low_support": true
+      },
+      "ID": {
+        "tp": 20,
+        "fp": 8,
+        "fn": 11,
+        "precision": 0.7143,
+        "recall": 0.6452,
+        "f1": 0.678,
+        "tn": 167,
+        "specificity": 0.9543,
+        "accuracy": 0.9078,
+        "n": 206,
+        "positives": 31,
+        "verdict_accuracy": 0.6796,
+        "low_support": false
+      },
+      "IL": {
+        "tp": 5,
+        "fp": 2,
+        "fn": 1,
+        "precision": 0.7143,
+        "recall": 0.8333,
+        "f1": 0.7692,
+        "tn": 31,
+        "specificity": 0.9394,
+        "accuracy": 0.9231,
+        "n": 39,
+        "positives": 6,
+        "verdict_accuracy": 0.6923,
+        "low_support": true
+      },
+      "IN": {
+        "tp": 22,
+        "fp": 10,
+        "fn": 13,
+        "precision": 0.6875,
+        "recall": 0.6286,
+        "f1": 0.6567,
+        "tn": 132,
+        "specificity": 0.9296,
+        "accuracy": 0.8701,
+        "n": 177,
+        "positives": 35,
+        "verdict_accuracy": 0.6667,
+        "low_support": false
+      },
+      "IT": {
+        "tp": 14,
+        "fp": 4,
+        "fn": 6,
+        "precision": 0.7778,
+        "recall": 0.7,
+        "f1": 0.7368,
+        "tn": 98,
+        "specificity": 0.9608,
+        "accuracy": 0.918,
+        "n": 122,
+        "positives": 20,
+        "verdict_accuracy": 0.6475,
+        "low_support": false
+      },
+      "JP": {
+        "tp": 28,
+        "fp": 2,
+        "fn": 10,
+        "precision": 0.9333,
+        "recall": 0.7368,
+        "f1": 0.8235,
+        "tn": 199,
+        "specificity": 0.99,
+        "accuracy": 0.9498,
+        "n": 239,
+        "positives": 38,
+        "verdict_accuracy": 0.7448,
+        "low_support": false
+      },
+      "KE": {
+        "tp": 1,
+        "fp": 1,
+        "fn": 2,
+        "precision": 0.5,
+        "recall": 0.3333,
+        "f1": 0.4,
+        "tn": 29,
+        "specificity": 0.9667,
+        "accuracy": 0.9091,
+        "n": 33,
+        "positives": 3,
+        "verdict_accuracy": 0.6364,
+        "low_support": true
+      },
+      "KR": {
+        "tp": 25,
+        "fp": 4,
+        "fn": 11,
+        "precision": 0.8621,
+        "recall": 0.6944,
+        "f1": 0.7692,
+        "tn": 149,
+        "specificity": 0.9739,
+        "accuracy": 0.9206,
+        "n": 189,
+        "positives": 36,
+        "verdict_accuracy": 0.6772,
+        "low_support": false
+      },
+      "MX": {
+        "tp": 17,
+        "fp": 6,
+        "fn": 17,
+        "precision": 0.7391,
+        "recall": 0.5,
+        "f1": 0.5965,
+        "tn": 150,
+        "specificity": 0.9615,
+        "accuracy": 0.8789,
+        "n": 190,
+        "positives": 34,
+        "verdict_accuracy": 0.6263,
+        "low_support": false
+      },
+      "MY": {
+        "tp": 11,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.7857,
+        "recall": 0.7857,
+        "f1": 0.7857,
+        "tn": 78,
+        "specificity": 0.963,
+        "accuracy": 0.9368,
+        "n": 95,
+        "positives": 14,
+        "verdict_accuracy": 0.6842,
+        "low_support": false
+      },
+      "NG": {
+        "tp": 3,
+        "fp": 0,
+        "fn": 4,
+        "precision": 1.0,
+        "recall": 0.4286,
+        "f1": 0.6,
+        "tn": 46,
+        "specificity": 1.0,
+        "accuracy": 0.9245,
+        "n": 53,
+        "positives": 7,
+        "verdict_accuracy": 0.717,
+        "low_support": true
+      },
+      "NL": {
+        "tp": 8,
+        "fp": 2,
+        "fn": 2,
+        "precision": 0.8,
+        "recall": 0.8,
+        "f1": 0.8,
+        "tn": 50,
+        "specificity": 0.9615,
+        "accuracy": 0.9355,
+        "n": 62,
+        "positives": 10,
+        "verdict_accuracy": 0.7742,
+        "low_support": false
+      },
+      "PE": {
+        "tp": 2,
+        "fp": 1,
+        "fn": 3,
+        "precision": 0.6667,
+        "recall": 0.4,
+        "f1": 0.5,
+        "tn": 26,
+        "specificity": 0.963,
+        "accuracy": 0.875,
+        "n": 32,
+        "positives": 5,
+        "verdict_accuracy": 0.6562,
+        "low_support": true
+      },
+      "PH": {
+        "tp": 17,
+        "fp": 5,
+        "fn": 5,
+        "precision": 0.7727,
+        "recall": 0.7727,
+        "f1": 0.7727,
+        "tn": 114,
+        "specificity": 0.958,
+        "accuracy": 0.9291,
+        "n": 141,
+        "positives": 22,
+        "verdict_accuracy": 0.6667,
+        "low_support": false
+      },
+      "PK": {
+        "tp": 5,
+        "fp": 3,
+        "fn": 2,
+        "precision": 0.625,
+        "recall": 0.7143,
+        "f1": 0.6667,
+        "tn": 40,
+        "specificity": 0.9302,
+        "accuracy": 0.9,
+        "n": 50,
+        "positives": 7,
+        "verdict_accuracy": 0.66,
+        "low_support": true
+      },
+      "PL": {
+        "tp": 5,
+        "fp": 2,
+        "fn": 4,
+        "precision": 0.7143,
+        "recall": 0.5556,
+        "f1": 0.625,
+        "tn": 56,
+        "specificity": 0.9655,
+        "accuracy": 0.9104,
+        "n": 67,
+        "positives": 9,
+        "verdict_accuracy": 0.7015,
+        "low_support": true
+      },
+      "RU": {
+        "tp": 11,
+        "fp": 1,
+        "fn": 6,
+        "precision": 0.9167,
+        "recall": 0.6471,
+        "f1": 0.7586,
+        "tn": 66,
+        "specificity": 0.9851,
+        "accuracy": 0.9167,
+        "n": 84,
+        "positives": 17,
+        "verdict_accuracy": 0.5952,
+        "low_support": false
+      },
+      "SA": {
+        "tp": 5,
+        "fp": 1,
+        "fn": 10,
+        "precision": 0.8333,
+        "recall": 0.3333,
+        "f1": 0.4762,
+        "tn": 71,
+        "specificity": 0.9861,
+        "accuracy": 0.8736,
+        "n": 87,
+        "positives": 15,
+        "verdict_accuracy": 0.6207,
+        "low_support": false
+      },
+      "SE": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 3,
+        "precision": 1.0,
+        "recall": 0.5714,
+        "f1": 0.7273,
+        "tn": 27,
+        "specificity": 1.0,
+        "accuracy": 0.9118,
+        "n": 34,
+        "positives": 7,
+        "verdict_accuracy": 0.6471,
+        "low_support": true
+      },
+      "SG": {
+        "tp": 3,
+        "fp": 2,
+        "fn": 3,
+        "precision": 0.6,
+        "recall": 0.5,
+        "f1": 0.5455,
+        "tn": 56,
+        "specificity": 0.9655,
+        "accuracy": 0.9219,
+        "n": 64,
+        "positives": 6,
+        "verdict_accuracy": 0.4531,
+        "low_support": true
+      },
+      "TH": {
+        "tp": 18,
+        "fp": 8,
+        "fn": 8,
+        "precision": 0.6923,
+        "recall": 0.6923,
+        "f1": 0.6923,
+        "tn": 120,
+        "specificity": 0.9375,
+        "accuracy": 0.8961,
+        "n": 154,
+        "positives": 26,
+        "verdict_accuracy": 0.6623,
+        "low_support": false
+      },
+      "TR": {
+        "tp": 6,
+        "fp": 3,
+        "fn": 3,
+        "precision": 0.6667,
+        "recall": 0.6667,
+        "f1": 0.6667,
+        "tn": 79,
+        "specificity": 0.9634,
+        "accuracy": 0.9341,
+        "n": 91,
+        "positives": 9,
+        "verdict_accuracy": 0.6593,
+        "low_support": true
+      },
+      "TW": {
+        "tp": 6,
+        "fp": 2,
+        "fn": 3,
+        "precision": 0.75,
+        "recall": 0.6667,
+        "f1": 0.7059,
+        "tn": 52,
+        "specificity": 0.963,
+        "accuracy": 0.9206,
+        "n": 63,
+        "positives": 9,
+        "verdict_accuracy": 0.6667,
+        "low_support": true
+      },
+      "UA": {
+        "tp": 5,
+        "fp": 0,
+        "fn": 3,
+        "precision": 1.0,
+        "recall": 0.625,
+        "f1": 0.7692,
+        "tn": 42,
+        "specificity": 1.0,
+        "accuracy": 0.94,
+        "n": 50,
+        "positives": 8,
+        "verdict_accuracy": 0.62,
+        "low_support": true
+      },
+      "US": {
+        "tp": 80,
+        "fp": 23,
+        "fn": 26,
+        "precision": 0.7767,
+        "recall": 0.7547,
+        "f1": 0.7656,
+        "tn": 578,
+        "specificity": 0.9617,
+        "accuracy": 0.9307,
+        "n": 707,
+        "positives": 106,
+        "verdict_accuracy": 0.6549,
+        "low_support": false
+      },
+      "VN": {
+        "tp": 24,
+        "fp": 7,
+        "fn": 10,
+        "precision": 0.7742,
+        "recall": 0.7059,
+        "f1": 0.7385,
+        "tn": 111,
+        "specificity": 0.9407,
+        "accuracy": 0.8882,
+        "n": 152,
+        "positives": 34,
+        "verdict_accuracy": 0.6184,
+        "low_support": false
+      },
+      "ZA": {
+        "tp": 6,
+        "fp": 2,
+        "fn": 4,
+        "precision": 0.75,
+        "recall": 0.6,
+        "f1": 0.6667,
+        "tn": 41,
+        "specificity": 0.9535,
+        "accuracy": 0.8868,
+        "n": 53,
+        "positives": 10,
+        "verdict_accuracy": 0.5849,
+        "low_support": false
+      }
+    },
+    "by_platform_bucket": {
+      "instagram|macro": {
+        "tp": 13,
+        "fp": 2,
+        "fn": 10,
+        "precision": 0.8667,
+        "recall": 0.5652,
+        "f1": 0.6842,
+        "tn": 81,
+        "specificity": 0.9759,
+        "accuracy": 0.8868,
+        "n": 106,
+        "positives": 23,
+        "verdict_accuracy": 0.5189,
+        "low_support": false
+      },
+      "instagram|mega": {
+        "tp": 6,
+        "fp": 4,
+        "fn": 1,
+        "precision": 0.6,
+        "recall": 0.8571,
+        "f1": 0.7059,
+        "tn": 26,
+        "specificity": 0.8667,
+        "accuracy": 0.8649,
+        "n": 37,
+        "positives": 7,
+        "verdict_accuracy": 0.4595,
+        "low_support": true
+      },
+      "instagram|micro": {
+        "tp": 42,
+        "fp": 19,
+        "fn": 18,
+        "precision": 0.6885,
+        "recall": 0.7,
+        "f1": 0.6942,
+        "tn": 362,
+        "specificity": 0.9501,
+        "accuracy": 0.9161,
+        "n": 441,
+        "positives": 60,
+        "verdict_accuracy": 0.6825,
+        "low_support": false
+      },
+      "instagram|mid": {
+        "tp": 18,
+        "fp": 6,
+        "fn": 14,
+        "precision": 0.75,
+        "recall": 0.5625,
+        "f1": 0.6429,
+        "tn": 194,
+        "specificity": 0.97,
+        "accuracy": 0.9138,
+        "n": 232,
+        "positives": 32,
+        "verdict_accuracy": 0.6466,
+        "low_support": false
+      },
+      "instagram|nano": {
+        "tp": 55,
+        "fp": 16,
+        "fn": 26,
+        "precision": 0.7746,
+        "recall": 0.679,
+        "f1": 0.7237,
+        "tn": 340,
+        "specificity": 0.9551,
+        "accuracy": 0.9039,
+        "n": 437,
+        "positives": 81,
+        "verdict_accuracy": 0.6979,
+        "low_support": false
+      },
+      "kwai|macro": {
+        "tp": 2,
+        "fp": 0,
+        "fn": 2,
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1": 0.6667,
+        "tn": 24,
+        "specificity": 1.0,
+        "accuracy": 0.9286,
+        "n": 28,
+        "positives": 4,
+        "verdict_accuracy": 0.6429,
+        "low_support": true
+      },
+      "kwai|mega": {
+        "tp": 0,
+        "fp": 2,
+        "fn": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tn": 3,
+        "specificity": 0.6,
+        "accuracy": 0.6,
+        "n": 5,
+        "positives": 0,
+        "verdict_accuracy": 0.0,
+        "low_support": true
+      },
+      "kwai|micro": {
+        "tp": 13,
+        "fp": 4,
+        "fn": 4,
+        "precision": 0.7647,
+        "recall": 0.7647,
+        "f1": 0.7647,
+        "tn": 96,
+        "specificity": 0.96,
+        "accuracy": 0.9316,
+        "n": 117,
+        "positives": 17,
+        "verdict_accuracy": 0.641,
+        "low_support": false
+      },
+      "kwai|mid": {
+        "tp": 4,
+        "fp": 1,
+        "fn": 3,
+        "precision": 0.8,
+        "recall": 0.5714,
+        "f1": 0.6667,
+        "tn": 46,
+        "specificity": 0.9787,
+        "accuracy": 0.9259,
+        "n": 54,
+        "positives": 7,
+        "verdict_accuracy": 0.6296,
+        "low_support": true
+      },
+      "kwai|nano": {
+        "tp": 11,
+        "fp": 2,
+        "fn": 8,
+        "precision": 0.8462,
+        "recall": 0.5789,
+        "f1": 0.6875,
+        "tn": 89,
+        "specificity": 0.978,
+        "accuracy": 0.9091,
+        "n": 110,
+        "positives": 19,
+        "verdict_accuracy": 0.5909,
+        "low_support": false
+      },
+      "tiktok|macro": {
+        "tp": 16,
+        "fp": 4,
+        "fn": 10,
+        "precision": 0.8,
+        "recall": 0.6154,
+        "f1": 0.6957,
+        "tn": 134,
+        "specificity": 0.971,
+        "accuracy": 0.9146,
+        "n": 164,
+        "positives": 26,
+        "verdict_accuracy": 0.6402,
+        "low_support": false
+      },
+      "tiktok|mega": {
+        "tp": 5,
+        "fp": 15,
+        "fn": 2,
+        "precision": 0.25,
+        "recall": 0.7143,
+        "f1": 0.3704,
+        "tn": 32,
+        "specificity": 0.6809,
+        "accuracy": 0.6852,
+        "n": 54,
+        "positives": 7,
+        "verdict_accuracy": 0.2963,
+        "low_support": true
+      },
+      "tiktok|micro": {
+        "tp": 80,
+        "fp": 16,
+        "fn": 31,
+        "precision": 0.8333,
+        "recall": 0.7207,
+        "f1": 0.7729,
+        "tn": 567,
+        "specificity": 0.9726,
+        "accuracy": 0.9323,
+        "n": 694,
+        "positives": 111,
+        "verdict_accuracy": 0.7089,
+        "low_support": false
+      },
+      "tiktok|mid": {
+        "tp": 29,
+        "fp": 5,
+        "fn": 19,
+        "precision": 0.8529,
+        "recall": 0.6042,
+        "f1": 0.7073,
+        "tn": 249,
+        "specificity": 0.9803,
+        "accuracy": 0.9205,
+        "n": 302,
+        "positives": 48,
+        "verdict_accuracy": 0.6954,
+        "low_support": false
+      },
+      "tiktok|nano": {
+        "tp": 94,
+        "fp": 10,
+        "fn": 31,
+        "precision": 0.9038,
+        "recall": 0.752,
+        "f1": 0.821,
+        "tn": 572,
+        "specificity": 0.9828,
+        "accuracy": 0.942,
+        "n": 707,
+        "positives": 125,
+        "verdict_accuracy": 0.7058,
+        "low_support": false
+      },
+      "x|macro": {
+        "tp": 5,
+        "fp": 0,
+        "fn": 2,
+        "precision": 1.0,
+        "recall": 0.7143,
+        "f1": 0.8333,
+        "tn": 35,
+        "specificity": 1.0,
+        "accuracy": 0.9524,
+        "n": 42,
+        "positives": 7,
+        "verdict_accuracy": 0.6429,
+        "low_support": true
+      },
+      "x|mega": {
+        "tp": 0,
+        "fp": 3,
+        "fn": 1,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tn": 10,
+        "specificity": 0.7692,
+        "accuracy": 0.7143,
+        "n": 14,
+        "positives": 1,
+        "verdict_accuracy": 0.2857,
+        "low_support": true
+      },
+      "x|micro": {
+        "tp": 16,
+        "fp": 8,
+        "fn": 4,
+        "precision": 0.6667,
+        "recall": 0.8,
+        "f1": 0.7273,
+        "tn": 145,
+        "specificity": 0.9477,
+        "accuracy": 0.9306,
+        "n": 173,
+        "positives": 20,
+        "verdict_accuracy": 0.6821,
+        "low_support": false
+      },
+      "x|mid": {
+        "tp": 9,
+        "fp": 0,
+        "fn": 6,
+        "precision": 1.0,
+        "recall": 0.6,
+        "f1": 0.75,
+        "tn": 65,
+        "specificity": 1.0,
+        "accuracy": 0.925,
+        "n": 80,
+        "positives": 15,
+        "verdict_accuracy": 0.625,
+        "low_support": false
+      },
+      "x|nano": {
+        "tp": 30,
+        "fp": 5,
+        "fn": 16,
+        "precision": 0.8571,
+        "recall": 0.6522,
+        "f1": 0.7407,
+        "tn": 150,
+        "specificity": 0.9677,
+        "accuracy": 0.8955,
+        "n": 201,
+        "positives": 46,
+        "verdict_accuracy": 0.5871,
+        "low_support": false
+      },
+      "youtube|macro": {
+        "tp": 5,
+        "fp": 3,
+        "fn": 8,
+        "precision": 0.625,
+        "recall": 0.3846,
+        "f1": 0.4762,
+        "tn": 68,
+        "specificity": 0.9577,
+        "accuracy": 0.869,
+        "n": 84,
+        "positives": 13,
+        "verdict_accuracy": 0.5238,
+        "low_support": false
+      },
+      "youtube|mega": {
+        "tp": 3,
+        "fp": 3,
+        "fn": 1,
+        "precision": 0.5,
+        "recall": 0.75,
+        "f1": 0.6,
+        "tn": 16,
+        "specificity": 0.8421,
+        "accuracy": 0.8261,
+        "n": 23,
+        "positives": 4,
+        "verdict_accuracy": 0.4783,
+        "low_support": true
+      },
+      "youtube|micro": {
+        "tp": 28,
+        "fp": 12,
+        "fn": 16,
+        "precision": 0.7,
+        "recall": 0.6364,
+        "f1": 0.6667,
+        "tn": 299,
+        "specificity": 0.9614,
+        "accuracy": 0.9211,
+        "n": 355,
+        "positives": 44,
+        "verdict_accuracy": 0.6507,
+        "low_support": false
+      },
+      "youtube|mid": {
+        "tp": 24,
+        "fp": 5,
+        "fn": 8,
+        "precision": 0.8276,
+        "recall": 0.75,
+        "f1": 0.7869,
+        "tn": 144,
+        "specificity": 0.9664,
+        "accuracy": 0.9282,
+        "n": 181,
+        "positives": 32,
+        "verdict_accuracy": 0.6575,
+        "low_support": false
+      },
+      "youtube|nano": {
+        "tp": 32,
+        "fp": 15,
+        "fn": 19,
+        "precision": 0.6809,
+        "recall": 0.6275,
+        "f1": 0.6531,
+        "tn": 293,
+        "specificity": 0.9513,
+        "accuracy": 0.9053,
+        "n": 359,
+        "positives": 51,
+        "verdict_accuracy": 0.6435,
+        "low_support": false
+      }
+    },
+    "weak_spots": [
+      {
+        "dimension": "follower_bucket",
+        "cell": "mega",
+        "f1": 0.4667,
+        "precision": 0.3415,
+        "recall": 0.7368,
+        "positives": 19,
+        "n": 133,
+        "note": "follower_bucket=mega 的水号识别 F1 为 0.467（精确率 0.342 / 召回率 0.737，该格 133 人含 19 个真水号）"
+      },
+      {
+        "dimension": "country",
+        "cell": "SA",
+        "f1": 0.4762,
+        "precision": 0.8333,
+        "recall": 0.3333,
+        "positives": 15,
+        "n": 87,
+        "note": "country=SA 的水号识别 F1 为 0.476（精确率 0.833 / 召回率 0.333，该格 87 人含 15 个真水号）"
+      },
+      {
+        "dimension": "platform×bucket",
+        "cell": "youtube|macro",
+        "f1": 0.4762,
+        "precision": 0.625,
+        "recall": 0.3846,
+        "positives": 13,
+        "n": 84,
+        "note": "platform×bucket=youtube|macro 的水号识别 F1 为 0.476（精确率 0.625 / 召回率 0.385，该格 84 人含 13 个真水号）"
+      },
+      {
+        "dimension": "country",
+        "cell": "DE",
+        "f1": 0.5753,
+        "precision": 0.6,
+        "recall": 0.5526,
+        "positives": 38,
+        "n": 225,
+        "note": "country=DE 的水号识别 F1 为 0.575（精确率 0.600 / 召回率 0.553，该格 225 人含 38 个真水号）"
+      },
+      {
+        "dimension": "country",
+        "cell": "MX",
+        "f1": 0.5965,
+        "precision": 0.7391,
+        "recall": 0.5,
+        "positives": 34,
+        "n": 190,
+        "note": "country=MX 的水号识别 F1 为 0.597（精确率 0.739 / 召回率 0.500，该格 190 人含 34 个真水号）"
+      },
+      {
+        "dimension": "country",
+        "cell": "AE",
+        "f1": 0.6364,
+        "precision": 0.7,
+        "recall": 0.5833,
+        "positives": 12,
+        "n": 90,
+        "note": "country=AE 的水号识别 F1 为 0.636（精确率 0.700 / 召回率 0.583，该格 90 人含 12 个真水号）"
+      }
+    ],
+    "note": "低支撑格子（真水号 < 10）照实输出但不参与弱项排序，避免用高方差数字下结论。"
+  },
+  "table_4_ablation": {
+    "full": {
+      "fraud_f1_strict": 0.72,
+      "fraud_precision_strict": 0.7714,
+      "fraud_recall_strict": 0.675,
+      "fraud_auc": 0.8808568452380953,
+      "verdict_accuracy": 0.659,
+      "verdict_macro_f1": 0.6731,
+      "n_reject": 807,
+      "n_review": 2453,
+      "n_pass": 1740
+    },
+    "by_layer": [
+      {
+        "variant": "-G0",
+        "enabled_gates": [
+          "G1",
+          "G2",
+          "G3"
+        ],
+        "role": "数据完整性：缺关键字段的号降置信度并进人核，防止用残缺数据下判定",
+        "metrics": {
+          "fraud_f1_strict": 0.7186,
+          "fraud_precision_strict": 0.7681,
+          "fraud_recall_strict": 0.675,
+          "fraud_auc": 0.8808568452380953,
+          "verdict_accuracy": 0.6232,
+          "verdict_macro_f1": 0.6388,
+          "n_reject": 810,
+          "n_review": 2268,
+          "n_pass": 1922
+        },
+        "delta": {
+          "d_fraud_f1_strict": -0.0014,
+          "d_fraud_auc": 0.0,
+          "d_verdict_accuracy": -0.0358,
+          "d_verdict_macro_f1": -0.0343
+        },
+        "contribution": {
+          "fraud_f1_strict": "positive",
+          "verdict_accuracy": "positive"
+        }
+      },
+      {
+        "variant": "-G1",
+        "enabled_gates": [
+          "G0",
+          "G2",
+          "G3"
+        ],
+        "role": "真实性：7 条统计信号识别水号，是水号指标的唯一来源",
+        "metrics": {
+          "fraud_f1_strict": 0.0,
+          "fraud_precision_strict": 0.0,
+          "fraud_recall_strict": 0.0,
+          "fraud_auc": 0.5,
+          "verdict_accuracy": 0.6602,
+          "verdict_macro_f1": 0.5397,
+          "n_reject": 125,
+          "n_review": 2253,
+          "n_pass": 2622
+        },
+        "delta": {
+          "d_fraud_f1_strict": -0.72,
+          "d_fraud_auc": -0.3809,
+          "d_verdict_accuracy": 0.0012,
+          "d_verdict_macro_f1": -0.1334
+        },
+        "contribution": {
+          "fraud_f1_strict": "positive",
+          "verdict_accuracy": "negative"
+        }
+      },
+      {
+        "variant": "-G2",
+        "enabled_gates": [
+          "G0",
+          "G1",
+          "G3"
+        ],
+        "role": "一致性：品类/多源/语言/受众匹配，campaign 相关的错配拦截",
+        "metrics": {
+          "fraud_f1_strict": 0.72,
+          "fraud_precision_strict": 0.7714,
+          "fraud_recall_strict": 0.675,
+          "fraud_auc": 0.8808568452380953,
+          "verdict_accuracy": 0.7354,
+          "verdict_macro_f1": 0.71,
+          "n_reject": 807,
+          "n_review": 1454,
+          "n_pass": 2739
+        },
+        "delta": {
+          "d_fraud_f1_strict": 0.0,
+          "d_fraud_auc": 0.0,
+          "d_verdict_accuracy": 0.0764,
+          "d_verdict_macro_f1": 0.0369
+        },
+        "contribution": {
+          "fraud_f1_strict": "negligible",
+          "verdict_accuracy": "negative"
+        }
+      },
+      {
+        "variant": "-G3",
+        "enabled_gates": [
+          "G0",
+          "G1",
+          "G2"
+        ],
+        "role": "品牌安全：高危内容硬阻断、竞品冲突与争议历史",
+        "metrics": {
+          "fraud_f1_strict": 0.72,
+          "fraud_precision_strict": 0.7714,
+          "fraud_recall_strict": 0.675,
+          "fraud_auc": 0.8808568452380953,
+          "verdict_accuracy": 0.6102,
+          "verdict_macro_f1": 0.6147,
+          "n_reject": 700,
+          "n_review": 2370,
+          "n_pass": 1930
+        },
+        "delta": {
+          "d_fraud_f1_strict": 0.0,
+          "d_fraud_auc": 0.0,
+          "d_verdict_accuracy": -0.0488,
+          "d_verdict_macro_f1": -0.0584
+        },
+        "contribution": {
+          "fraud_f1_strict": "negligible",
+          "verdict_accuracy": "positive"
+        }
+      },
+      {
+        "variant": "only G1",
+        "enabled_gates": [
+          "G1"
+        ],
+        "role": "只留真实性层：看其余三层对三分类到底贡献多少",
+        "metrics": {
+          "fraud_f1_strict": 0.7186,
+          "fraud_precision_strict": 0.7681,
+          "fraud_recall_strict": 0.675,
+          "fraud_auc": 0.8808568452380953,
+          "verdict_accuracy": 0.6128,
+          "verdict_macro_f1": 0.535,
+          "n_reject": 703,
+          "n_review": 955,
+          "n_pass": 3342
+        },
+        "delta": {
+          "d_fraud_f1_strict": -0.0014,
+          "d_fraud_auc": 0.0,
+          "d_verdict_accuracy": -0.0462,
+          "d_verdict_macro_f1": -0.1381
+        },
+        "contribution": {
+          "fraud_f1_strict": "positive",
+          "verdict_accuracy": "positive"
+        }
+      }
+    ],
+    "by_g1_rule": [
+      {
+        "variant": "-G1.1",
+        "disabled_rules": [
+          "G1.1"
+        ],
+        "weight": 0.3,
+        "metrics": {
+          "fraud_f1_strict": 0.6931,
+          "fraud_precision_strict": 0.8205,
+          "fraud_recall_strict": 0.6,
+          "fraud_auc": 0.8808568452380953,
+          "verdict_accuracy": 0.6624,
+          "verdict_macro_f1": 0.6711,
+          "n_reject": 697,
+          "n_review": 2487,
+          "n_pass": 1816
+        },
+        "delta": {
+          "d_fraud_f1_strict": -0.0269,
+          "d_fraud_auc": 0.0,
+          "d_verdict_accuracy": 0.0034,
+          "d_verdict_macro_f1": -0.002
+        },
+        "contributes": true,
+        "contribution": "positive",
+        "contribution_note": "关掉它严口径 F1 下降：对该指标有正向贡献"
+      },
+      {
+        "variant": "-G1.2",
+        "disabled_rules": [
+          "G1.2"
+        ],
+        "weight": 0.28,
+        "metrics": {
+          "fraud_f1_strict": 0.6943,
+          "fraud_precision_strict": 0.81,
+          "fraud_recall_strict": 0.6075,
+          "fraud_auc": 0.8808568452380953,
+          "verdict_accuracy": 0.6606,
+          "verdict_macro_f1": 0.6707,
+          "n_reject": 709,
+          "n_review": 2481,
+          "n_pass": 1810
+        },
+        "delta": {
+          "d_fraud_f1_strict": -0.0257,
+          "d_fraud_auc": 0.0,
+          "d_verdict_accuracy": 0.0016,
+          "d_verdict_macro_f1": -0.0024
+        },
+        "contributes": true,
+        "contribution": "positive",
+        "contribution_note": "关掉它严口径 F1 下降：对该指标有正向贡献"
+      },
+      {
+        "variant": "-G1.3",
+        "disabled_rules": [
+          "G1.3"
+        ],
+        "weight": 0.12,
+        "metrics": {
+          "fraud_f1_strict": 0.6956,
+          "fraud_precision_strict": 0.7745,
+          "fraud_recall_strict": 0.6312,
+          "fraud_auc": 0.8808568452380953,
+          "verdict_accuracy": 0.667,
+          "verdict_macro_f1": 0.6748,
+          "n_reject": 759,
+          "n_review": 2425,
+          "n_pass": 1816
+        },
+        "delta": {
+          "d_fraud_f1_strict": -0.0244,
+          "d_fraud_auc": 0.0,
+          "d_verdict_accuracy": 0.008,
+          "d_verdict_macro_f1": 0.0017
+        },
+        "contributes": true,
+        "contribution": "positive",
+        "contribution_note": "关掉它严口径 F1 下降：对该指标有正向贡献"
+      },
+      {
+        "variant": "-G1.4",
+        "disabled_rules": [
+          "G1.4"
+        ],
+        "weight": 0.26,
+        "metrics": {
+          "fraud_f1_strict": 0.7094,
+          "fraud_precision_strict": 0.8116,
+          "fraud_recall_strict": 0.63,
+          "fraud_auc": 0.8808568452380953,
+          "verdict_accuracy": 0.6666,
+          "verdict_macro_f1": 0.6774,
+          "n_reject": 730,
+          "n_review": 2451,
+          "n_pass": 1819
+        },
+        "delta": {
+          "d_fraud_f1_strict": -0.0106,
+          "d_fraud_auc": 0.0,
+          "d_verdict_accuracy": 0.0076,
+          "d_verdict_macro_f1": 0.0043
+        },
+        "contributes": true,
+        "contribution": "positive",
+        "contribution_note": "关掉它严口径 F1 下降：对该指标有正向贡献"
+      },
+      {
+        "variant": "-G1.5",
+        "disabled_rules": [
+          "G1.5"
+        ],
+        "weight": 0.3,
+        "metrics": {
+          "fraud_f1_strict": 0.6393,
+          "fraud_precision_strict": 0.7538,
+          "fraud_recall_strict": 0.555,
+          "fraud_auc": 0.8808568452380953,
+          "verdict_accuracy": 0.647,
+          "verdict_macro_f1": 0.6507,
+          "n_reject": 698,
+          "n_review": 2497,
+          "n_pass": 1805
+        },
+        "delta": {
+          "d_fraud_f1_strict": -0.0807,
+          "d_fraud_auc": 0.0,
+          "d_verdict_accuracy": -0.012,
+          "d_verdict_macro_f1": -0.0224
+        },
+        "contributes": true,
+        "contribution": "positive",
+        "contribution_note": "关掉它严口径 F1 下降：对该指标有正向贡献"
+      },
+      {
+        "variant": "-G1.6",
+        "disabled_rules": [
+          "G1.6"
+        ],
+        "weight": 0.14,
+        "metrics": {
+          "fraud_f1_strict": 0.7349,
+          "fraud_precision_strict": 0.8233,
+          "fraud_recall_strict": 0.6637,
+          "fraud_auc": 0.8808568452380953,
+          "verdict_accuracy": 0.6866,
+          "verdict_macro_f1": 0.6966,
+          "n_reject": 757,
+          "n_review": 2359,
+          "n_pass": 1884
+        },
+        "delta": {
+          "d_fraud_f1_strict": 0.0149,
+          "d_fraud_auc": 0.0,
+          "d_verdict_accuracy": 0.0276,
+          "d_verdict_macro_f1": 0.0235
+        },
+        "contributes": false,
+        "contribution": "negative",
+        "contribution_note": "关掉它严口径 F1 反而上升：该规则在严口径上是净负担（保留与否见 docs/03 §表 4）"
+      },
+      {
+        "variant": "-G1.7",
+        "disabled_rules": [
+          "G1.7"
+        ],
+        "weight": 0.26,
+        "metrics": {
+          "fraud_f1_strict": 0.6085,
+          "fraud_precision_strict": 0.7358,
+          "fraud_recall_strict": 0.5188,
+          "fraud_auc": 0.8808568452380953,
+          "verdict_accuracy": 0.6388,
+          "verdict_macro_f1": 0.639,
+          "n_reject": 674,
+          "n_review": 2532,
+          "n_pass": 1794
+        },
+        "delta": {
+          "d_fraud_f1_strict": -0.1115,
+          "d_fraud_auc": 0.0,
+          "d_verdict_accuracy": -0.0202,
+          "d_verdict_macro_f1": -0.0341
+        },
+        "contributes": true,
+        "contribution": "positive",
+        "contribution_note": "关掉它严口径 F1 下降：对该指标有正向贡献"
+      }
+    ],
+    "dead_rules": [],
+    "negative_rules": [
+      "-G1.6"
+    ],
+    "positive_rules": [
+      "-G1.1",
+      "-G1.2",
+      "-G1.3",
+      "-G1.4",
+      "-G1.5",
+      "-G1.7"
+    ],
+    "contribution_criteria": {
+      "eps": 0.001,
+      "metric": "d_fraud_f1_strict（严口径 F1 的「变体 − 全量」）",
+      "positive": "delta ≤ −0.001：关掉它 F1 下降，该规则有正向贡献",
+      "negative": "delta ≥ +0.001：关掉它 F1 反而上升，该规则拖累该指标",
+      "negligible": "|delta| < 0.001：对该指标近乎无影响（= dead_rules）",
+      "note": "contributes 字段只在 positive 档为真。早期实现用 abs(delta) 判定，会把负贡献规则也标成「有贡献」。"
+    },
+    "note": "delta 为「变体 − 全量」：负值 = 关掉后指标下降（该规则有正向贡献），正值 = 关掉后指标上升（该规则拖累该指标），|delta| < 0.001 视为无影响。严口径 F1 上：6/7 条为正向贡献（-G1.1, -G1.2, -G1.3, -G1.4, -G1.5, -G1.7）。如实记录 1 条**负贡献**规则：-G1.6（ΔF1 +0.0149）——关掉后严口径 F1 反而上升，因此不属于「对 F1 有正向贡献」的规则；保留理由（软信号、只推 review、宽口径召回来源）写在 docs/03-evaluation.md 表 4 一节，不靠这条 note 一句话带过。没有 |ΔF1| < 0.001 的死规则（dead_rules 为空）。"
+  },
+  "table_5_sensitivity": {
+    "baseline": {
+      "fraud_precision_strict": 0.7714,
+      "fraud_recall_strict": 0.675,
+      "fraud_f1_strict": 0.72,
+      "fraud_auc": 0.8808568452380953,
+      "verdict_accuracy": 0.659,
+      "n_reject": 807.0
+    },
+    "factors": [
+      0.8,
+      0.9,
+      1.0,
+      1.1,
+      1.2
+    ],
+    "scaled_signals": [
+      "engagement_rate",
+      "comment_like_ratio",
+      "view_follower_ratio",
+      "followers_per_day",
+      "comment_dup_rate",
+      "comment_emoji_only_rate"
+    ],
+    "overall": [
+      {
+        "factor": 0.8,
+        "metrics": {
+          "fraud_precision_strict": 0.6405,
+          "fraud_recall_strict": 0.715,
+          "fraud_f1_strict": 0.6757,
+          "fraud_auc": 0.8816761904761905,
+          "verdict_accuracy": 0.6122,
+          "n_reject": 996.0
+        },
+        "d_fraud_f1_strict": -0.0443,
+        "d_verdict_accuracy": -0.0468
+      },
+      {
+        "factor": 0.9,
+        "metrics": {
+          "fraud_precision_strict": 0.7435,
+          "fraud_recall_strict": 0.6775,
+          "fraud_f1_strict": 0.709,
+          "fraud_auc": 0.8815558035714286,
+          "verdict_accuracy": 0.6494,
+          "n_reject": 834.0
+        },
+        "d_fraud_f1_strict": -0.011,
+        "d_verdict_accuracy": -0.0096
+      },
+      {
+        "factor": 1.0,
+        "metrics": {
+          "fraud_precision_strict": 0.7714,
+          "fraud_recall_strict": 0.675,
+          "fraud_f1_strict": 0.72,
+          "fraud_auc": 0.8808568452380953,
+          "verdict_accuracy": 0.659,
+          "n_reject": 807.0
+        },
+        "d_fraud_f1_strict": 0.0,
+        "d_verdict_accuracy": 0.0
+      },
+      {
+        "factor": 1.1,
+        "metrics": {
+          "fraud_precision_strict": 0.765,
+          "fraud_recall_strict": 0.6713,
+          "fraud_f1_strict": 0.715,
+          "fraud_auc": 0.8815324404761905,
+          "verdict_accuracy": 0.6496,
+          "n_reject": 813.0
+        },
+        "d_fraud_f1_strict": -0.005,
+        "d_verdict_accuracy": -0.0094
+      },
+      {
+        "factor": 1.2,
+        "metrics": {
+          "fraud_precision_strict": 0.7001,
+          "fraud_recall_strict": 0.6275,
+          "fraud_f1_strict": 0.6618,
+          "fraud_auc": 0.8792822916666667,
+          "verdict_accuracy": 0.623,
+          "n_reject": 827.0
+        },
+        "d_fraud_f1_strict": -0.0582,
+        "d_verdict_accuracy": -0.036
+      }
+    ],
+    "per_signal": [
+      {
+        "signal": "engagement_rate",
+        "points": [
+          {
+            "factor": 0.8,
+            "fraud_f1_strict": 0.6846,
+            "delta": -0.0354
+          },
+          {
+            "factor": 1.2,
+            "fraud_f1_strict": 0.705,
+            "delta": -0.015
+          }
+        ],
+        "max_abs_shift": 0.0354
+      },
+      {
+        "signal": "comment_like_ratio",
+        "points": [
+          {
+            "factor": 0.8,
+            "fraud_f1_strict": 0.7261,
+            "delta": 0.0061
+          },
+          {
+            "factor": 1.2,
+            "fraud_f1_strict": 0.7026,
+            "delta": -0.0174
+          }
+        ],
+        "max_abs_shift": 0.0174
+      },
+      {
+        "signal": "view_follower_ratio",
+        "points": [
+          {
+            "factor": 0.8,
+            "fraud_f1_strict": 0.716,
+            "delta": -0.004
+          },
+          {
+            "factor": 1.2,
+            "fraud_f1_strict": 0.7062,
+            "delta": -0.0138
+          }
+        ],
+        "max_abs_shift": 0.0138
+      },
+      {
+        "signal": "comment_dup_rate",
+        "points": [
+          {
+            "factor": 0.8,
+            "fraud_f1_strict": 0.7294,
+            "delta": 0.0094
+          },
+          {
+            "factor": 1.2,
+            "fraud_f1_strict": 0.7149,
+            "delta": -0.0051
+          }
+        ],
+        "max_abs_shift": 0.0094
+      },
+      {
+        "signal": "comment_emoji_only_rate",
+        "points": [
+          {
+            "factor": 0.8,
+            "fraud_f1_strict": 0.7116,
+            "delta": -0.0084
+          },
+          {
+            "factor": 1.2,
+            "fraud_f1_strict": 0.7183,
+            "delta": -0.0017
+          }
+        ],
+        "max_abs_shift": 0.0084
+      },
+      {
+        "signal": "followers_per_day",
+        "points": [
+          {
+            "factor": 0.8,
+            "fraud_f1_strict": 0.7166,
+            "delta": -0.0034
+          },
+          {
+            "factor": 1.2,
+            "fraud_f1_strict": 0.7233,
+            "delta": 0.0033
+          }
+        ],
+        "max_abs_shift": 0.0034
+      }
+    ],
+    "max_abs_f1_shift": 0.0582,
+    "stability_tolerance": 0.05,
+    "stable": false,
+    "most_sensitive_signal": "engagement_rate",
+    "note": "factor 是判定阈值的整体缩放系数：对上尾规则放大=放松、对下尾规则放大=收紧，因此一次扫描同时覆盖两个方向。"
+  },
+  "table_6_llm_vs_rule": {
+    "rule_arm": {
+      "tag_mismatch": {
+        "tp": 311,
+        "fp": 416,
+        "fn": 54,
+        "precision": 0.4278,
+        "recall": 0.8521,
+        "f1": 0.5696,
+        "tn": 4219,
+        "specificity": 0.9102,
+        "accuracy": 0.906,
+        "n": 5000,
+        "threshold": 0.34,
+        "rule": "G2.1：declared/observed 品类 Jaccard < 阈值即判错配"
+      },
+      "semantic_fit": {
+        "n": 5000,
+        "status": "skipped_neutral_spec",
+        "note": "中性 spec 不做品类约束，rule_fit_score 恒为 1.0，报分布无意义。语义适配分布请看 by_campaign。"
+      },
+      "semantic_fit_by_campaign": [
+        {
+          "campaign_id": "BRIEF-001",
+          "n": 5000,
+          "mean": 0.6044,
+          "quantiles": {
+            "p10": 0.2,
+            "p25": 0.2,
+            "p50": 0.65,
+            "p75": 1.0,
+            "p90": 1.0
+          },
+          "share_below_review_threshold": 0.3726,
+          "review_threshold": 0.5,
+          "note": "语义适配没有 ground truth，只报分布；准确率对照需 LLM 真调后由人工抽检补齐"
+        },
+        {
+          "campaign_id": "BRIEF-002",
+          "n": 5000,
+          "mean": 0.6223,
+          "quantiles": {
+            "p10": 0.2,
+            "p25": 0.2,
+            "p50": 0.65,
+            "p75": 1.0,
+            "p90": 1.0
+          },
+          "share_below_review_threshold": 0.3528,
+          "review_threshold": 0.5,
+          "note": "语义适配没有 ground truth，只报分布；准确率对照需 LLM 真调后由人工抽检补齐"
+        },
+        {
+          "campaign_id": "BRIEF-003",
+          "n": 5000,
+          "mean": 0.6133,
+          "quantiles": {
+            "p10": 0.2,
+            "p25": 0.2,
+            "p50": 0.65,
+            "p75": 1.0,
+            "p90": 1.0
+          },
+          "share_below_review_threshold": 0.3588,
+          "review_threshold": 0.5,
+          "note": "语义适配没有 ground truth，只报分布；准确率对照需 LLM 真调后由人工抽检补齐"
+        }
+      ]
+    },
+    "llm_bench_path": "llm_bench.json",
+    "status": "ok",
+    "models": {
+      "ark": "ep-20260308011145-z5d47",
+      "azure": "gpt-5.5-2026-04-24"
+    },
+    "sample_n": 600,
+    "llm_arm": {
+      "ark": {
+        "kind": "llm",
+        "coverage": 1.0,
+        "n_judged": 600,
+        "confusion": {
+          "tp": 32,
+          "fp": 20,
+          "fn": 10,
+          "tn": 538
+        },
+        "precision": 0.6154,
+        "recall": 0.7619,
+        "f1": 0.6809,
+        "accuracy": 0.95
+      },
+      "azure": {
+        "kind": "llm",
+        "coverage": 0.98,
+        "n_judged": 588,
+        "confusion": {
+          "tp": 29,
+          "fp": 14,
+          "fn": 13,
+          "tn": 532
+        },
+        "precision": 0.6744,
+        "recall": 0.6905,
+        "f1": 0.6824,
+        "accuracy": 0.9541
+      }
+    },
+    "rule_arm_same_sample": {
+      "kind": "rule",
+      "tokens": 0,
+      "coverage": 1.0,
+      "confusion": {
+        "tp": 36,
+        "fp": 50,
+        "fn": 6,
+        "tn": 508
+      },
+      "precision": 0.4186,
+      "recall": 0.8571,
+      "f1": 0.5625,
+      "accuracy": 0.9067
+    },
+    "best_llm_model": "azure",
+    "f1_gain_llm_over_rule": 0.1199,
+    "explanation": "同一抽样、同一 ground truth 下比较；规则列在 rule_arm_same_sample，全量规则指标在 rule_arm.tag_mismatch。"
+  },
+  "budget": {
+    "constraint_policy": {
+      "single_kox_max_share": 0.2,
+      "head_max_share": 0.45,
+      "longtail_min_share": 0.25,
+      "country_max_share": 0.6,
+      "min_utilization_target": 0.9,
+      "max_posts_per_kox": 3,
+      "post_marginal_decay": 0.7
+    },
+    "per_campaign": [
+      {
+        "campaign_id": "BRIEF-001",
+        "name": "3C 小家电新品 · 北美 · 看转化",
+        "kpi": "conversion",
+        "budget_usd": 80000.0,
+        "candidate_pool": 93,
+        "n_selected": 69,
+        "spent_usd": 79855.29,
+        "utilization": 0.9982,
+        "est_cpm_usd": 17.014,
+        "est_cpe_usd": 0.2769,
+        "tier_mix": {
+          "mid": 0.3959,
+          "macro": 0.3019,
+          "micro": 0.2889,
+          "nano": 0.0133
+        },
+        "country_mix": {
+          "US": 0.6,
+          "CA": 0.4
+        },
+        "n_price_estimated": 0,
+        "constraints_ok": true,
+        "trace": [
+          "边际性价比贪心：候选 93 人 / 279 个内容名额，选入 69 人共 148 条，花费 $79,940（长尾 30.3%，头部 30.2%）",
+          "地域分散修正：退掉 US 的 3 条内容，单一国家占比降至 60.0%（上限 60%）",
+          "约束内补位：追加 3 条内容，预算利用率 99.8%"
+        ]
+      },
+      {
+        "campaign_id": "BRIEF-002",
+        "name": "国货彩妆 · 东南亚 · 看互动",
+        "kpi": "engagement",
+        "budget_usd": 45000.0,
+        "candidate_pool": 50,
+        "n_selected": 39,
+        "spent_usd": 44995.72,
+        "utilization": 0.9999,
+        "est_cpm_usd": 13.749,
+        "est_cpe_usd": 0.1938,
+        "tier_mix": {
+          "mid": 0.5512,
+          "micro": 0.2161,
+          "macro": 0.1981,
+          "nano": 0.0346
+        },
+        "country_mix": {
+          "ID": 0.5356,
+          "MY": 0.2706,
+          "VN": 0.1938
+        },
+        "n_price_estimated": 0,
+        "constraints_ok": true,
+        "trace": [
+          "边际性价比贪心：候选 50 人 / 150 个内容名额，选入 39 人共 95 条，花费 $44,996（长尾 25.1%，头部 19.8%）"
+        ]
+      },
+      {
+        "campaign_id": "BRIEF-003",
+        "name": "休闲手游全球上线 · 日韩+巴西 · 看曝光",
+        "kpi": "reach",
+        "budget_usd": 120000.0,
+        "candidate_pool": 79,
+        "n_selected": 73,
+        "spent_usd": 119966.67,
+        "utilization": 0.9997,
+        "est_cpm_usd": 18.948,
+        "est_cpe_usd": 0.3251,
+        "tier_mix": {
+          "mid": 0.597,
+          "micro": 0.229,
+          "macro": 0.146,
+          "nano": 0.0281
+        },
+        "country_mix": {
+          "BR": 0.4332,
+          "KR": 0.3261,
+          "JP": 0.2406
+        },
+        "n_price_estimated": 0,
+        "constraints_ok": true,
+        "trace": [
+          "边际性价比贪心：候选 79 人 / 237 个内容名额，选入 69 人共 176 条，花费 $119,992（长尾 21.6%，头部 14.6%）",
+          "分层修正：退掉非长尾达人 @smart_lab（mid）的 1 条内容（$5,486）以腾出长尾名额",
+          "分层修正：追加 18 条长尾内容，长尾金额占比抬到 25.4%（下限 25%）",
+          "约束内补位：追加 6 条内容，预算利用率 100.0%"
+        ]
+      }
+    ]
+  },
+  "counterfactual_value_audit": {
+    "method": {
+      "baseline": "按粉丝量降序选人直到花完预算（不看门禁、不做结构约束），行业最朴素做法",
+      "shared": "两臂共用同一份定向筛选与同一份报价/估价口径，唯一差异是选人依据",
+      "judge": "浪费金额与有效曝光全部按 gt 计算，不使用引擎自身分数（防自证）",
+      "conservative_assumption": "主口径下水号曝光按 0 计入有效曝光",
+      "lenient_assumption": "对照口径下水号曝光按 50% 计",
+      "uplift_metrics": "effective_view_uplift 是以基线为分母的相对提升（无界，分母趋 0 会爆炸）；effective_view_uplift_bounded 提供有界替代（rate_gap_pp ∈[−100,100] pp、symmetric_uplift ∈[−1,1]、absolute_gain_views）。跨 campaign / 跨种子聚合一律用有界口径。"
+    },
+    "per_campaign": [
+      {
+        "campaign_id": "BRIEF-001",
+        "budget_usd": 80000.0,
+        "baseline": {
+          "strategy": "followers",
+          "n_selected": 8,
+          "spent_usd": 79998.19,
+          "utilization": 1.0,
+          "n_fraud_selected": 5,
+          "n_high_risk_selected": 0,
+          "fraud_spend_usd": 53581.31,
+          "fraud_spend_share": 0.6698,
+          "high_risk_spend_usd": 0.0,
+          "high_risk_spend_share": 0.0,
+          "wasted_spend_usd": 53581.31,
+          "wasted_spend_share": 0.6698,
+          "spend_on_gate_review_usd": 9071.37,
+          "spend_on_gate_reject_usd": 70758.35,
+          "nominal_views": 3542612.0,
+          "effective_views_gt": 957096.0,
+          "effective_views_gt_lenient": 2249854.0,
+          "effective_view_rate": 0.2702,
+          "effective_view_rate_lenient": 0.6351,
+          "effective_cpm_usd": 83.584,
+          "effective_views_per_1k_usd": 11964.0
+        },
+        "koxpilot": {
+          "strategy": "koxpilot",
+          "n_selected": 69,
+          "spent_usd": 79855.29,
+          "utilization": 0.9982,
+          "n_fraud_selected": 2,
+          "n_high_risk_selected": 0,
+          "fraud_spend_usd": 2174.72,
+          "fraud_spend_share": 0.0272,
+          "high_risk_spend_usd": 0.0,
+          "high_risk_spend_share": 0.0,
+          "wasted_spend_usd": 2174.72,
+          "wasted_spend_share": 0.0272,
+          "spend_on_gate_review_usd": 0.0,
+          "spend_on_gate_reject_usd": 0.0,
+          "nominal_views": 4693453.0,
+          "effective_views_gt": 4531721.0,
+          "effective_views_gt_lenient": 4612587.0,
+          "effective_view_rate": 0.9655,
+          "effective_view_rate_lenient": 0.9828,
+          "effective_cpm_usd": 17.621,
+          "effective_views_per_1k_usd": 56749.0
+        },
+        "saved_usd": 51406.59,
+        "saved_share_of_budget": 0.6426,
+        "effective_view_uplift": 3.7349,
+        "effective_view_uplift_lenient": 1.0502,
+        "effective_view_uplift_bounded": {
+          "definition": "rate_gap_pp = KOXPilot 有效曝光率 − 基线有效曝光率（百分点，∈[−100,100]）；symmetric_uplift = (kox − base)/(kox + base)（∈[−1,1]，符号同相对提升）；absolute_gain_views = kox − base（曝光数）。三者均不以基线为分母。",
+          "baseline_effective_view_rate": 0.2702,
+          "koxpilot_effective_view_rate": 0.9655,
+          "rate_gap_pp": 69.54,
+          "symmetric_uplift": 0.6513,
+          "absolute_gain_views": 3574625.0,
+          "ratio_denominator_views": 957096.0,
+          "ratio_denominator_fragile": false,
+          "fragile_threshold_baseline_rate": 0.05
+        },
+        "effective_view_uplift_bounded_lenient": {
+          "definition": "rate_gap_pp = KOXPilot 有效曝光率 − 基线有效曝光率（百分点，∈[−100,100]）；symmetric_uplift = (kox − base)/(kox + base)（∈[−1,1]，符号同相对提升）；absolute_gain_views = kox − base（曝光数）。三者均不以基线为分母。",
+          "baseline_effective_view_rate": 0.6351,
+          "koxpilot_effective_view_rate": 0.9828,
+          "rate_gap_pp": 34.77,
+          "symmetric_uplift": 0.3443,
+          "absolute_gain_views": 2362733.0,
+          "ratio_denominator_views": 2249854.0,
+          "ratio_denominator_fragile": false,
+          "fragile_threshold_baseline_rate": 0.05
+        },
+        "effective_view_uplift_caveat": "该比率的分母是基线有效曝光 957,096 次（占基线名义曝光 27.0%）。本样本分母充足，比率可读；但跨样本聚合仍应统一用有界口径，聚合请用 effective_view_uplift_bounded 里的 rate_gap_pp 或 symmetric_uplift。",
+        "effective_views_per_1k_usd": {
+          "baseline": 11964.0,
+          "koxpilot": 56749.0,
+          "uplift": 3.7433
+        },
+        "headline": "同样 $80,000 预算，少浪费 $51,407（占预算 64.3%），按 ground truth 计的有效曝光提升 +373.5%；有效曝光率 27.0% → 96.5%（+69.5pp）"
+      },
+      {
+        "campaign_id": "BRIEF-002",
+        "budget_usd": 45000.0,
+        "baseline": {
+          "strategy": "followers",
+          "n_selected": 4,
+          "spent_usd": 44999.6,
+          "utilization": 1.0,
+          "n_fraud_selected": 2,
+          "n_high_risk_selected": 0,
+          "fraud_spend_usd": 375.93,
+          "fraud_spend_share": 0.0084,
+          "high_risk_spend_usd": 0.0,
+          "high_risk_spend_share": 0.0,
+          "wasted_spend_usd": 375.93,
+          "wasted_spend_share": 0.0084,
+          "spend_on_gate_review_usd": 44623.67,
+          "spend_on_gate_reject_usd": 375.93,
+          "nominal_views": 2950830.0,
+          "effective_views_gt": 2918116.0,
+          "effective_views_gt_lenient": 2934473.0,
+          "effective_view_rate": 0.9889,
+          "effective_view_rate_lenient": 0.9945,
+          "effective_cpm_usd": 15.421,
+          "effective_views_per_1k_usd": 64848.0
+        },
+        "koxpilot": {
+          "strategy": "koxpilot",
+          "n_selected": 39,
+          "spent_usd": 44995.72,
+          "utilization": 0.9999,
+          "n_fraud_selected": 3,
+          "n_high_risk_selected": 0,
+          "fraud_spend_usd": 5493.63,
+          "fraud_spend_share": 0.1221,
+          "high_risk_spend_usd": 0.0,
+          "high_risk_spend_share": 0.0,
+          "wasted_spend_usd": 5493.63,
+          "wasted_spend_share": 0.1221,
+          "spend_on_gate_review_usd": 0.0,
+          "spend_on_gate_reject_usd": 0.0,
+          "nominal_views": 3272717.0,
+          "effective_views_gt": 2850866.0,
+          "effective_views_gt_lenient": 3061791.0,
+          "effective_view_rate": 0.8711,
+          "effective_view_rate_lenient": 0.9356,
+          "effective_cpm_usd": 15.783,
+          "effective_views_per_1k_usd": 63359.0
+        },
+        "saved_usd": -5117.7,
+        "saved_share_of_budget": -0.1137,
+        "effective_view_uplift": -0.023,
+        "effective_view_uplift_lenient": 0.0434,
+        "effective_view_uplift_bounded": {
+          "definition": "rate_gap_pp = KOXPilot 有效曝光率 − 基线有效曝光率（百分点，∈[−100,100]）；symmetric_uplift = (kox − base)/(kox + base)（∈[−1,1]，符号同相对提升）；absolute_gain_views = kox − base（曝光数）。三者均不以基线为分母。",
+          "baseline_effective_view_rate": 0.9889,
+          "koxpilot_effective_view_rate": 0.8711,
+          "rate_gap_pp": -11.78,
+          "symmetric_uplift": -0.0117,
+          "absolute_gain_views": -67250.0,
+          "ratio_denominator_views": 2918116.0,
+          "ratio_denominator_fragile": false,
+          "fragile_threshold_baseline_rate": 0.05
+        },
+        "effective_view_uplift_bounded_lenient": {
+          "definition": "rate_gap_pp = KOXPilot 有效曝光率 − 基线有效曝光率（百分点，∈[−100,100]）；symmetric_uplift = (kox − base)/(kox + base)（∈[−1,1]，符号同相对提升）；absolute_gain_views = kox − base（曝光数）。三者均不以基线为分母。",
+          "baseline_effective_view_rate": 0.9945,
+          "koxpilot_effective_view_rate": 0.9356,
+          "rate_gap_pp": -5.89,
+          "symmetric_uplift": 0.0212,
+          "absolute_gain_views": 127318.0,
+          "ratio_denominator_views": 2934473.0,
+          "ratio_denominator_fragile": false,
+          "fragile_threshold_baseline_rate": 0.05
+        },
+        "effective_view_uplift_caveat": "该比率的分母是基线有效曝光 2,918,116 次（占基线名义曝光 98.9%）。本样本分母充足，比率可读；但跨样本聚合仍应统一用有界口径，聚合请用 effective_view_uplift_bounded 里的 rate_gap_pp 或 symmetric_uplift。",
+        "effective_views_per_1k_usd": {
+          "baseline": 64848.0,
+          "koxpilot": 63359.0,
+          "uplift": -0.023
+        },
+        "headline": "同样 $45,000 预算，反而比基线多浪费 $5,118（占预算 11.4%），按 ground truth 计的有效曝光提升 -2.3%；有效曝光率 98.9% → 87.1%（-11.8pp）"
+      },
+      {
+        "campaign_id": "BRIEF-003",
+        "budget_usd": 120000.0,
+        "baseline": {
+          "strategy": "followers",
+          "n_selected": 6,
+          "spent_usd": 119997.49,
+          "utilization": 1.0,
+          "n_fraud_selected": 1,
+          "n_high_risk_selected": 0,
+          "fraud_spend_usd": 37062.57,
+          "fraud_spend_share": 0.3089,
+          "high_risk_spend_usd": 0.0,
+          "high_risk_spend_share": 0.0,
+          "wasted_spend_usd": 37062.57,
+          "wasted_spend_share": 0.3089,
+          "spend_on_gate_review_usd": 16885.56,
+          "spend_on_gate_reject_usd": 102935.13,
+          "nominal_views": 3584630.0,
+          "effective_views_gt": 2907546.0,
+          "effective_views_gt_lenient": 3246088.0,
+          "effective_view_rate": 0.8111,
+          "effective_view_rate_lenient": 0.9056,
+          "effective_cpm_usd": 41.271,
+          "effective_views_per_1k_usd": 24230.0
+        },
+        "koxpilot": {
+          "strategy": "koxpilot",
+          "n_selected": 73,
+          "spent_usd": 119966.67,
+          "utilization": 0.9997,
+          "n_fraud_selected": 2,
+          "n_high_risk_selected": 0,
+          "fraud_spend_usd": 3632.91,
+          "fraud_spend_share": 0.0303,
+          "high_risk_spend_usd": 0.0,
+          "high_risk_spend_share": 0.0,
+          "wasted_spend_usd": 3632.91,
+          "wasted_spend_share": 0.0303,
+          "spend_on_gate_review_usd": 0.0,
+          "spend_on_gate_reject_usd": 0.0,
+          "nominal_views": 6331362.0,
+          "effective_views_gt": 6090615.0,
+          "effective_views_gt_lenient": 6210989.0,
+          "effective_view_rate": 0.962,
+          "effective_view_rate_lenient": 0.981,
+          "effective_cpm_usd": 19.697,
+          "effective_views_per_1k_usd": 50769.0
+        },
+        "saved_usd": 33429.66,
+        "saved_share_of_budget": 0.2786,
+        "effective_view_uplift": 1.0948,
+        "effective_view_uplift_lenient": 0.9134,
+        "effective_view_uplift_bounded": {
+          "definition": "rate_gap_pp = KOXPilot 有效曝光率 − 基线有效曝光率（百分点，∈[−100,100]）；symmetric_uplift = (kox − base)/(kox + base)（∈[−1,1]，符号同相对提升）；absolute_gain_views = kox − base（曝光数）。三者均不以基线为分母。",
+          "baseline_effective_view_rate": 0.8111,
+          "koxpilot_effective_view_rate": 0.962,
+          "rate_gap_pp": 15.09,
+          "symmetric_uplift": 0.3537,
+          "absolute_gain_views": 3183069.0,
+          "ratio_denominator_views": 2907546.0,
+          "ratio_denominator_fragile": false,
+          "fragile_threshold_baseline_rate": 0.05
+        },
+        "effective_view_uplift_bounded_lenient": {
+          "definition": "rate_gap_pp = KOXPilot 有效曝光率 − 基线有效曝光率（百分点，∈[−100,100]）；symmetric_uplift = (kox − base)/(kox + base)（∈[−1,1]，符号同相对提升）；absolute_gain_views = kox − base（曝光数）。三者均不以基线为分母。",
+          "baseline_effective_view_rate": 0.9056,
+          "koxpilot_effective_view_rate": 0.981,
+          "rate_gap_pp": 7.54,
+          "symmetric_uplift": 0.3135,
+          "absolute_gain_views": 2964901.0,
+          "ratio_denominator_views": 3246088.0,
+          "ratio_denominator_fragile": false,
+          "fragile_threshold_baseline_rate": 0.05
+        },
+        "effective_view_uplift_caveat": "该比率的分母是基线有效曝光 2,907,546 次（占基线名义曝光 81.1%）。本样本分母充足，比率可读；但跨样本聚合仍应统一用有界口径，聚合请用 effective_view_uplift_bounded 里的 rate_gap_pp 或 symmetric_uplift。",
+        "effective_views_per_1k_usd": {
+          "baseline": 24230.0,
+          "koxpilot": 50769.0,
+          "uplift": 1.0953
+        },
+        "headline": "同样 $120,000 预算，少浪费 $33,430（占预算 27.9%），按 ground truth 计的有效曝光提升 +109.5%；有效曝光率 81.1% → 96.2%（+15.1pp）"
+      }
+    ],
+    "totals": {
+      "budget_usd": 245000.0,
+      "saved_usd": 79718.55,
+      "saved_share_of_budget": 0.3254,
+      "effective_views_baseline": 6782758.0,
+      "effective_views_koxpilot": 13473202.0,
+      "effective_view_uplift": 0.9864,
+      "effective_views_baseline_lenient": 8430415.0,
+      "effective_views_koxpilot_lenient": 13885367.0,
+      "effective_view_uplift_lenient": 0.6471,
+      "effective_view_uplift_bounded": {
+        "definition": "rate_gap_pp = KOXPilot 有效曝光率 − 基线有效曝光率（百分点，∈[−100,100]）；symmetric_uplift = (kox − base)/(kox + base)（∈[−1,1]，符号同相对提升）；absolute_gain_views = kox − base（曝光数）。三者均不以基线为分母。",
+        "baseline_effective_view_rate": 0.673,
+        "koxpilot_effective_view_rate": 0.9423,
+        "rate_gap_pp": 26.93,
+        "symmetric_uplift": 0.3303,
+        "absolute_gain_views": 6690444.0,
+        "ratio_denominator_views": 6782758.0,
+        "ratio_denominator_fragile": false,
+        "fragile_threshold_baseline_rate": 0.05
+      },
+      "lenient_assumption": "宽松口径 = 水号曝光按 50% 计入有效曝光（主口径按 0 计）。两个口径同向才说明结论不依赖该假设。"
+    },
+    "headline": "三个 campaign 合计 $245,000 预算，少浪费 $79,719（32.5%），有效曝光提升 +98.6%，宽松口径（水号曝光按 50% 计）+64.7%，有界口径：有效曝光率 67.3% → 94.2%（+26.9pp，symmetric_uplift +0.3303）"
+  },
+  "cost_audit": {
+    "candidate_pool_per_campaign": {
+      "BRIEF-001": 93,
+      "BRIEF-002": 50,
+      "BRIEF-003": 79
+    },
+    "schemes": [
+      {
+        "scheme": "全 LLM",
+        "desc": "每个达人的每层判定都问模型",
+        "calls_per_campaign": {
+          "BRIEF-001": 372,
+          "BRIEF-002": 200,
+          "BRIEF-003": 316
+        },
+        "calls_total": 888
+      },
+      {
+        "scheme": "KOXPilot 混合",
+        "desc": "G0/G1 纯规则，G2 部分规则，仅 brief 解析与语义适配用 LLM",
+        "calls_per_campaign": {
+          "BRIEF-001": 94,
+          "BRIEF-002": 51,
+          "BRIEF-003": 80
+        },
+        "calls_total": 225
+      },
+      {
+        "scheme": "全规则",
+        "desc": "不用 LLM，语义适配退化为关键词匹配",
+        "calls_per_campaign": {
+          "BRIEF-001": 0,
+          "BRIEF-002": 0,
+          "BRIEF-003": 0
+        },
+        "calls_total": 0
+      }
+    ],
+    "call_reduction_vs_full_llm": 3.95,
+    "accuracy_cost_of_all_rules": {
+      "metric": "标签错配 F1（同一抽样、同一 ground truth）",
+      "rule_arm": 0.5625,
+      "llm_arm": 0.6824,
+      "f1_drop_if_all_rules": 0.1199
+    },
+    "status": "ok",
+    "token_account": {
+      "source": "output/llm_bench.json（各 API 返回的 usage 字段，非估算）",
+      "models": {
+        "ark": "ep-20260308011145-z5d47",
+        "azure": "gpt-5.5-2026-04-24"
+      },
+      "measured_calls": 172,
+      "prompt_tokens": 536827,
+      "completion_tokens": 566646,
+      "reasoning_tokens": 403202,
+      "total_tokens": 1103473,
+      "tokens_per_call": 6415.5,
+      "per_task": {
+        "brief::azure": {
+          "task": "brief",
+          "model_key": "azure",
+          "model": "gpt-5.5-2026-04-24",
+          "calls": 3,
+          "failed_calls": 0,
+          "items": 3,
+          "prompt_tokens": 2719,
+          "completion_tokens": 1449,
+          "reasoning_tokens": 599,
+          "cached_tokens": 0,
+          "total_tokens": 4168,
+          "latency_ms_total": 18524,
+          "avg_latency_ms": 6174.7,
+          "tokens_per_item": 1389.33
+        },
+        "brief::ark": {
+          "task": "brief",
+          "model_key": "ark",
+          "model": "doubao-seed-2-0-lite-260215",
+          "calls": 3,
+          "failed_calls": 0,
+          "items": 3,
+          "prompt_tokens": 2837,
+          "completion_tokens": 4945,
+          "reasoning_tokens": 4175,
+          "cached_tokens": 0,
+          "total_tokens": 7782,
+          "latency_ms_total": 96334,
+          "avg_latency_ms": 32111.3,
+          "tokens_per_item": 2594.0
+        },
+        "tag::ark": {
+          "task": "tag",
+          "model_key": "ark",
+          "model": "doubao-seed-2-0-lite-260215",
+          "calls": 50,
+          "failed_calls": 0,
+          "items": 600,
+          "prompt_tokens": 127980,
+          "completion_tokens": 181771,
+          "reasoning_tokens": 134436,
+          "cached_tokens": 0,
+          "total_tokens": 309751,
+          "latency_ms_total": 3141001,
+          "avg_latency_ms": 62820.0,
+          "tokens_per_item": 516.25
+        },
+        "tag::azure": {
+          "task": "tag",
+          "model_key": "azure",
+          "model": "gpt-5.5-2026-04-24",
+          "calls": 50,
+          "failed_calls": 1,
+          "items": 600,
+          "prompt_tokens": 106379,
+          "completion_tokens": 73253,
+          "reasoning_tokens": 28121,
+          "cached_tokens": 0,
+          "total_tokens": 179632,
+          "latency_ms_total": 737822,
+          "avg_latency_ms": 14756.4,
+          "tokens_per_item": 299.39
+        },
+        "fit::ark": {
+          "task": "fit",
+          "model_key": "ark",
+          "model": "doubao-seed-2-0-lite-260215",
+          "calls": 66,
+          "failed_calls": 0,
+          "items": 780,
+          "prompt_tokens": 296912,
+          "completion_tokens": 305228,
+          "reasoning_tokens": 235871,
+          "cached_tokens": 0,
+          "total_tokens": 602140,
+          "latency_ms_total": 4965704,
+          "avg_latency_ms": 75237.9,
+          "tokens_per_item": 771.97
+        }
+      },
+      "extrapolated": false
+    },
+    "scheme_token_extrapolation": {
+      "basis": "按实测单次调用 token 均值 × 各方案调用次数线性外推",
+      "extrapolated": true,
+      "tokens": {
+        "全 LLM": 5697000.0,
+        "KOXPilot 混合": 1443497.0,
+        "全规则": 0.0
+      }
+    }
+  },
+  "weak_spots": [
+    {
+      "dimension": "follower_bucket",
+      "cell": "mega",
+      "f1": 0.4667,
+      "precision": 0.3415,
+      "recall": 0.7368,
+      "positives": 19,
+      "n": 133,
+      "note": "follower_bucket=mega 的水号识别 F1 为 0.467（精确率 0.342 / 召回率 0.737，该格 133 人含 19 个真水号）"
+    },
+    {
+      "dimension": "country",
+      "cell": "SA",
+      "f1": 0.4762,
+      "precision": 0.8333,
+      "recall": 0.3333,
+      "positives": 15,
+      "n": 87,
+      "note": "country=SA 的水号识别 F1 为 0.476（精确率 0.833 / 召回率 0.333，该格 87 人含 15 个真水号）"
+    },
+    {
+      "dimension": "platform×bucket",
+      "cell": "youtube|macro",
+      "f1": 0.4762,
+      "precision": 0.625,
+      "recall": 0.3846,
+      "positives": 13,
+      "n": 84,
+      "note": "platform×bucket=youtube|macro 的水号识别 F1 为 0.476（精确率 0.625 / 召回率 0.385，该格 84 人含 13 个真水号）"
+    },
+    {
+      "dimension": "country",
+      "cell": "DE",
+      "f1": 0.5753,
+      "precision": 0.6,
+      "recall": 0.5526,
+      "positives": 38,
+      "n": 225,
+      "note": "country=DE 的水号识别 F1 为 0.575（精确率 0.600 / 召回率 0.553，该格 225 人含 38 个真水号）"
+    },
+    {
+      "dimension": "country",
+      "cell": "MX",
+      "f1": 0.5965,
+      "precision": 0.7391,
+      "recall": 0.5,
+      "positives": 34,
+      "n": 190,
+      "note": "country=MX 的水号识别 F1 为 0.597（精确率 0.739 / 召回率 0.500，该格 190 人含 34 个真水号）"
+    },
+    {
+      "dimension": "country",
+      "cell": "AE",
+      "f1": 0.6364,
+      "precision": 0.7,
+      "recall": 0.5833,
+      "positives": 12,
+      "n": 90,
+      "note": "country=AE 的水号识别 F1 为 0.636（精确率 0.700 / 召回率 0.583，该格 90 人含 12 个真水号）"
+    }
+  ],
+  "honesty_notes": [
+    "水号识别严口径 F1 = 0.7200（精确率 0.7714/召回率 0.6750），AUC = 0.8809；召回缺口主要来自刻意保留的 weak 偏移样本，不做美化。",
+    "SPEC 3.3 合成 gt.verdict 时未把「多源标签冲突」计入 review，而 SPEC 4.G2.2 要求口径冲突需人核 —— 两处口径不一致。因此这 1281 个假阳性里有 467 个是**纯口径性**的（唯一命中就是 G2.2），产品上它们确实该进人核队列。本实现选择保留 G2.2 判定，并在 variant_rule_disabled_G2_2 里给出对照矩阵。",
+    "三分类整体准确率 0.6590、macro F1 0.6731；屏蔽 G2.2 的口径对照版为 0.7504 / 0.7397。",
+    "factor 是判定阈值的整体缩放系数：对上尾规则放大=放松、对下尾规则放大=收紧，因此一次扫描同时覆盖两个方向。",
+    "delta 为「变体 − 全量」：负值 = 关掉后指标下降（该规则有正向贡献），正值 = 关掉后指标上升（该规则拖累该指标），|delta| < 0.001 视为无影响。严口径 F1 上：6/7 条为正向贡献（-G1.1, -G1.2, -G1.3, -G1.4, -G1.5, -G1.7）。如实记录 1 条**负贡献**规则：-G1.6（ΔF1 +0.0149）——关掉后严口径 F1 反而上升，因此不属于「对 F1 有正向贡献」的规则；保留理由（软信号、只推 review、宽口径召回来源）写在 docs/03-evaluation.md 表 4 一节，不靠这条 note 一句话带过。没有 |ΔF1| < 0.001 的死规则（dead_rules 为空）。"
+  ]
+}

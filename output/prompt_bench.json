@@ -1,0 +1,263 @@
+{
+  "generated_at": "2026-09-17T22:57:24+0800",
+  "elapsed_s": 967.3,
+  "task": "标签错配判定（G2.1）",
+  "n_samples": 600,
+  "n_positives": 42,
+  "positive_rate": 0.07,
+  "control_variables": "三版 Prompt 使用完全相同的样本、batch 切分与 user message 构造方式；唯一变量是 system prompt。三版措辞在跑评测前已写定，未按指标反复微调。",
+  "prompt_variants": [
+    {
+      "version": "v1",
+      "name": "朴素版：只描述任务",
+      "change": "基线。只说明三类标签来源和输出格式，不给任何判定标准。",
+      "hypothesis": "模型会把任何品类差异都当错配，precision 低、recall 偏高。",
+      "system_prompt_chars": "544"
+    },
+    {
+      "version": "v2",
+      "name": "加负例约束版",
+      "change": "补充四条「不算错配」的豁免规则（相邻品类 / 宽泛包含 / 单源离群 / 信息不足）。",
+      "hypothesis": "precision 明显上升；但因缺少业务锚点，severity 判定仍不稳。",
+      "system_prompt_chars": "831"
+    },
+    {
+      "version": "v3",
+      "name": "定义业务判据版（生产版）",
+      "change": "两处改动：(1) 把判据从「标签是否一致」改写为「投放方按 declared 选人会不会选错」，给 severity 明确定义、要求以浪费预算为锚点；(2) 把品类邻接关系从举例改为从 taxonomy 注入的完整确定性邻接表。⚠️ 本版含两处改动，v2→v3 的增益无法在二者之间做严格归因，如实记录。",
+      "hypothesis": "判定与业务后果对齐 + 邻接表消除相邻品类误报，F1 高于 v2 且 precision/recall 更均衡。",
+      "system_prompt_chars": "1607"
+    }
+  ],
+  "arms": [
+    {
+      "prompt_version": "rule",
+      "prompt_name": "规则对照组：declared/observed Jaccard < 0.34",
+      "model_key": "none",
+      "model": "n/a",
+      "n_samples": 600,
+      "n_covered": 600,
+      "coverage": 1.0,
+      "calls": 0,
+      "failed_calls": 0,
+      "avg_latency_ms": 0.0,
+      "total_tokens": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "reasoning_tokens": 0,
+      "cached_tokens": 0,
+      "precision": 0.4186,
+      "recall": 0.8571,
+      "f1": 0.5625,
+      "accuracy": 0.9067,
+      "confusion": {
+        "tp": 36,
+        "fp": 50,
+        "fn": 6,
+        "tn": 508
+      }
+    },
+    {
+      "prompt_version": "v1",
+      "prompt_name": "朴素版：只描述任务",
+      "model_key": "ark",
+      "model": "ep-20260308011145-z5d47",
+      "n_samples": 600,
+      "n_covered": 600,
+      "coverage": 1.0,
+      "calls": 50,
+      "failed_calls": 0,
+      "avg_latency_ms": 54248.7,
+      "avg_confidence": 0.9278,
+      "major_severity_on_true_mismatch": 26,
+      "precision": 0.3,
+      "recall": 0.7857,
+      "f1": 0.4342,
+      "accuracy": 0.8567,
+      "confusion": {
+        "tp": 33,
+        "fp": 77,
+        "fn": 9,
+        "tn": 481
+      },
+      "prompt_tokens": 100080,
+      "completion_tokens": 165979,
+      "reasoning_tokens": 117662,
+      "cached_tokens": 0,
+      "total_tokens": 266059
+    },
+    {
+      "prompt_version": "v1",
+      "prompt_name": "朴素版：只描述任务",
+      "model_key": "azure",
+      "model": "gpt-5.5-2026-04-24",
+      "n_samples": 600,
+      "n_covered": 600,
+      "coverage": 1.0,
+      "calls": 50,
+      "failed_calls": 0,
+      "avg_latency_ms": 20139.9,
+      "avg_confidence": 0.8845,
+      "major_severity_on_true_mismatch": 29,
+      "precision": 0.1735,
+      "recall": 0.9048,
+      "f1": 0.2912,
+      "accuracy": 0.6917,
+      "confusion": {
+        "tp": 38,
+        "fp": 181,
+        "fn": 4,
+        "tn": 377
+      },
+      "prompt_tokens": 79403,
+      "completion_tokens": 88556,
+      "reasoning_tokens": 44188,
+      "cached_tokens": 0,
+      "total_tokens": 167959
+    },
+    {
+      "prompt_version": "v2",
+      "prompt_name": "加负例约束版",
+      "model_key": "ark",
+      "model": "ep-20260308011145-z5d47",
+      "n_samples": 600,
+      "n_covered": 600,
+      "coverage": 1.0,
+      "calls": 50,
+      "failed_calls": 0,
+      "avg_latency_ms": 60295.4,
+      "avg_confidence": 0.9194,
+      "major_severity_on_true_mismatch": 28,
+      "precision": 0.3908,
+      "recall": 0.8095,
+      "f1": 0.5271,
+      "accuracy": 0.8983,
+      "confusion": {
+        "tp": 34,
+        "fp": 53,
+        "fn": 8,
+        "tn": 505
+      },
+      "prompt_tokens": 108580,
+      "completion_tokens": 180195,
+      "reasoning_tokens": 133697,
+      "cached_tokens": 0,
+      "total_tokens": 288775
+    },
+    {
+      "prompt_version": "v2",
+      "prompt_name": "加负例约束版",
+      "model_key": "azure",
+      "model": "gpt-5.5-2026-04-24",
+      "n_samples": 600,
+      "n_covered": 600,
+      "coverage": 1.0,
+      "calls": 50,
+      "failed_calls": 0,
+      "avg_latency_ms": 21827.9,
+      "avg_confidence": 0.9083,
+      "major_severity_on_true_mismatch": 28,
+      "precision": 0.32,
+      "recall": 0.7619,
+      "f1": 0.4507,
+      "accuracy": 0.87,
+      "confusion": {
+        "tp": 32,
+        "fp": 68,
+        "fn": 10,
+        "tn": 490
+      },
+      "prompt_tokens": 88203,
+      "completion_tokens": 90349,
+      "reasoning_tokens": 45418,
+      "cached_tokens": 0,
+      "total_tokens": 178552
+    },
+    {
+      "prompt_version": "v3",
+      "prompt_name": "定义业务判据版（生产版）",
+      "model_key": "ark",
+      "model": "ep-20260308011145-z5d47",
+      "n_samples": 600,
+      "n_covered": 600,
+      "coverage": 1.0,
+      "calls": 50,
+      "failed_calls": 0,
+      "avg_latency_ms": 57693.6,
+      "avg_confidence": 0.9501,
+      "major_severity_on_true_mismatch": 26,
+      "precision": 0.5397,
+      "recall": 0.8095,
+      "f1": 0.6476,
+      "accuracy": 0.9383,
+      "confusion": {
+        "tp": 34,
+        "fp": 29,
+        "fn": 8,
+        "tn": 529
+      },
+      "prompt_tokens": 129630,
+      "completion_tokens": 180617,
+      "reasoning_tokens": 132804,
+      "cached_tokens": 0,
+      "total_tokens": 310247
+    },
+    {
+      "prompt_version": "v3",
+      "prompt_name": "定义业务判据版（生产版）",
+      "model_key": "azure",
+      "model": "gpt-5.5-2026-04-24",
+      "n_samples": 600,
+      "n_covered": 600,
+      "coverage": 1.0,
+      "calls": 50,
+      "failed_calls": 0,
+      "avg_latency_ms": 14766.3,
+      "avg_confidence": 0.9363,
+      "major_severity_on_true_mismatch": 25,
+      "precision": 0.6875,
+      "recall": 0.7857,
+      "f1": 0.7333,
+      "accuracy": 0.96,
+      "confusion": {
+        "tp": 33,
+        "fp": 15,
+        "fn": 9,
+        "tn": 543
+      },
+      "prompt_tokens": 110553,
+      "completion_tokens": 71660,
+      "reasoning_tokens": 26338,
+      "cached_tokens": 0,
+      "total_tokens": 182213
+    }
+  ],
+  "version_average": {
+    "v1": {
+      "avg_f1": 0.3627,
+      "avg_precision": 0.2367,
+      "avg_recall": 0.8453,
+      "total_tokens": 434018
+    },
+    "v2": {
+      "avg_f1": 0.4889,
+      "avg_precision": 0.3554,
+      "avg_recall": 0.7857,
+      "total_tokens": 467327
+    },
+    "v3": {
+      "avg_f1": 0.6905,
+      "avg_precision": 0.6136,
+      "avg_recall": 0.7976,
+      "total_tokens": 492460
+    }
+  },
+  "best_arm": {
+    "prompt_version": "v3",
+    "model_key": "azure",
+    "f1": 0.7333,
+    "precision": 0.6875,
+    "recall": 0.7857
+  },
+  "rule_baseline_f1": 0.5625
+}

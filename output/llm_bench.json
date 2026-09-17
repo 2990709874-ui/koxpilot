@@ -1,0 +1,150 @@
+{
+  "generated_at": "2026-09-17T22:39:31+0800",
+  "elapsed_s": 939.4,
+  "models": {
+    "ark": "ep-20260308011145-z5d47",
+    "azure": "gpt-5.5-2026-04-24"
+  },
+  "primary_model_key": "ark",
+  "per_task": {
+    "brief::azure": {
+      "task": "brief",
+      "model_key": "azure",
+      "model": "gpt-5.5-2026-04-24",
+      "calls": 3,
+      "failed_calls": 0,
+      "items": 3,
+      "prompt_tokens": 2719,
+      "completion_tokens": 1449,
+      "reasoning_tokens": 599,
+      "cached_tokens": 0,
+      "total_tokens": 4168,
+      "latency_ms_total": 18524,
+      "avg_latency_ms": 6174.7,
+      "tokens_per_item": 1389.33
+    },
+    "brief::ark": {
+      "task": "brief",
+      "model_key": "ark",
+      "model": "doubao-seed-2-0-lite-260215",
+      "calls": 3,
+      "failed_calls": 0,
+      "items": 3,
+      "prompt_tokens": 2837,
+      "completion_tokens": 4945,
+      "reasoning_tokens": 4175,
+      "cached_tokens": 0,
+      "total_tokens": 7782,
+      "latency_ms_total": 96334,
+      "avg_latency_ms": 32111.3,
+      "tokens_per_item": 2594.0
+    },
+    "tag::ark": {
+      "task": "tag",
+      "model_key": "ark",
+      "model": "doubao-seed-2-0-lite-260215",
+      "calls": 50,
+      "failed_calls": 0,
+      "items": 600,
+      "prompt_tokens": 127980,
+      "completion_tokens": 181771,
+      "reasoning_tokens": 134436,
+      "cached_tokens": 0,
+      "total_tokens": 309751,
+      "latency_ms_total": 3141001,
+      "avg_latency_ms": 62820.0,
+      "tokens_per_item": 516.25
+    },
+    "tag::azure": {
+      "task": "tag",
+      "model_key": "azure",
+      "model": "gpt-5.5-2026-04-24",
+      "calls": 50,
+      "failed_calls": 1,
+      "items": 600,
+      "prompt_tokens": 106379,
+      "completion_tokens": 73253,
+      "reasoning_tokens": 28121,
+      "cached_tokens": 0,
+      "total_tokens": 179632,
+      "latency_ms_total": 737822,
+      "avg_latency_ms": 14756.4,
+      "tokens_per_item": 299.39
+    },
+    "fit::ark": {
+      "task": "fit",
+      "model_key": "ark",
+      "model": "doubao-seed-2-0-lite-260215",
+      "calls": 66,
+      "failed_calls": 0,
+      "items": 780,
+      "prompt_tokens": 296912,
+      "completion_tokens": 305228,
+      "reasoning_tokens": 235871,
+      "cached_tokens": 0,
+      "total_tokens": 602140,
+      "latency_ms_total": 4965704,
+      "avg_latency_ms": 75237.9,
+      "tokens_per_item": 771.97
+    }
+  },
+  "totals": {
+    "calls": 172,
+    "failed_calls": 1,
+    "prompt_tokens": 536827,
+    "completion_tokens": 566646,
+    "reasoning_tokens": 403202,
+    "total_tokens": 1103473
+  },
+  "tag_bench": {
+    "n_samples": 600,
+    "arms": {
+      "rule_jaccard": {
+        "kind": "rule",
+        "tokens": 0,
+        "coverage": 1.0,
+        "confusion": {
+          "tp": 36,
+          "fp": 50,
+          "fn": 6,
+          "tn": 508
+        },
+        "precision": 0.4186,
+        "recall": 0.8571,
+        "f1": 0.5625,
+        "accuracy": 0.9067
+      },
+      "ark": {
+        "kind": "llm",
+        "coverage": 1.0,
+        "n_judged": 600,
+        "confusion": {
+          "tp": 32,
+          "fp": 20,
+          "fn": 10,
+          "tn": 538
+        },
+        "precision": 0.6154,
+        "recall": 0.7619,
+        "f1": 0.6809,
+        "accuracy": 0.95
+      },
+      "azure": {
+        "kind": "llm",
+        "coverage": 0.98,
+        "n_judged": 588,
+        "confusion": {
+          "tp": 29,
+          "fp": 14,
+          "fn": 13,
+          "tn": 532
+        },
+        "precision": 0.6744,
+        "recall": 0.6905,
+        "f1": 0.6824,
+        "accuracy": 0.9541
+      }
+    }
+  },
+  "note": "token 数字取自各 API 返回的 usage 字段，非估算。本文件由构建期 runner 生成，线上 Demo 不再调用任何模型 endpoint。"
+}

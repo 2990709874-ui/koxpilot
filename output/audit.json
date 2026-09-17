@@ -1,0 +1,549 @@
+{
+  "meta": {
+    "eval_version": "1.0.0",
+    "thresholds_version": "1.1.0",
+    "dataset_version": "1.0.0",
+    "dataset_seed": 20270919,
+    "dataset_n": 5000,
+    "dataset_sha256": "29500afd5390f3fd93245c2247281ae1f311e92009c6f374a330ec08434338d1",
+    "no_timestamp_note": "本文件刻意不含生成时间：同一份代码 + 同一份数据必须产出逐字节相同的 metrics.json，这样任何指标变化都可归因到代码或数据的变化。"
+  },
+  "counterfactual_value_audit": {
+    "method": {
+      "baseline": "按粉丝量降序选人直到花完预算（不看门禁、不做结构约束），行业最朴素做法",
+      "shared": "两臂共用同一份定向筛选与同一份报价/估价口径，唯一差异是选人依据",
+      "judge": "浪费金额与有效曝光全部按 gt 计算，不使用引擎自身分数（防自证）",
+      "conservative_assumption": "主口径下水号曝光按 0 计入有效曝光",
+      "lenient_assumption": "对照口径下水号曝光按 50% 计",
+      "uplift_metrics": "effective_view_uplift 是以基线为分母的相对提升（无界，分母趋 0 会爆炸）；effective_view_uplift_bounded 提供有界替代（rate_gap_pp ∈[−100,100] pp、symmetric_uplift ∈[−1,1]、absolute_gain_views）。跨 campaign / 跨种子聚合一律用有界口径。"
+    },
+    "per_campaign": [
+      {
+        "campaign_id": "BRIEF-001",
+        "budget_usd": 80000.0,
+        "baseline": {
+          "strategy": "followers",
+          "n_selected": 8,
+          "spent_usd": 79998.19,
+          "utilization": 1.0,
+          "n_fraud_selected": 5,
+          "n_high_risk_selected": 0,
+          "fraud_spend_usd": 53581.31,
+          "fraud_spend_share": 0.6698,
+          "high_risk_spend_usd": 0.0,
+          "high_risk_spend_share": 0.0,
+          "wasted_spend_usd": 53581.31,
+          "wasted_spend_share": 0.6698,
+          "spend_on_gate_review_usd": 9071.37,
+          "spend_on_gate_reject_usd": 70758.35,
+          "nominal_views": 3542612.0,
+          "effective_views_gt": 957096.0,
+          "effective_views_gt_lenient": 2249854.0,
+          "effective_view_rate": 0.2702,
+          "effective_view_rate_lenient": 0.6351,
+          "effective_cpm_usd": 83.584,
+          "effective_views_per_1k_usd": 11964.0
+        },
+        "koxpilot": {
+          "strategy": "koxpilot",
+          "n_selected": 69,
+          "spent_usd": 79855.29,
+          "utilization": 0.9982,
+          "n_fraud_selected": 2,
+          "n_high_risk_selected": 0,
+          "fraud_spend_usd": 2174.72,
+          "fraud_spend_share": 0.0272,
+          "high_risk_spend_usd": 0.0,
+          "high_risk_spend_share": 0.0,
+          "wasted_spend_usd": 2174.72,
+          "wasted_spend_share": 0.0272,
+          "spend_on_gate_review_usd": 0.0,
+          "spend_on_gate_reject_usd": 0.0,
+          "nominal_views": 4693453.0,
+          "effective_views_gt": 4531721.0,
+          "effective_views_gt_lenient": 4612587.0,
+          "effective_view_rate": 0.9655,
+          "effective_view_rate_lenient": 0.9828,
+          "effective_cpm_usd": 17.621,
+          "effective_views_per_1k_usd": 56749.0
+        },
+        "saved_usd": 51406.59,
+        "saved_share_of_budget": 0.6426,
+        "effective_view_uplift": 3.7349,
+        "effective_view_uplift_lenient": 1.0502,
+        "effective_view_uplift_bounded": {
+          "definition": "rate_gap_pp = KOXPilot 有效曝光率 − 基线有效曝光率（百分点，∈[−100,100]）；symmetric_uplift = (kox − base)/(kox + base)（∈[−1,1]，符号同相对提升）；absolute_gain_views = kox − base（曝光数）。三者均不以基线为分母。",
+          "baseline_effective_view_rate": 0.2702,
+          "koxpilot_effective_view_rate": 0.9655,
+          "rate_gap_pp": 69.54,
+          "symmetric_uplift": 0.6513,
+          "absolute_gain_views": 3574625.0,
+          "ratio_denominator_views": 957096.0,
+          "ratio_denominator_fragile": false,
+          "fragile_threshold_baseline_rate": 0.05
+        },
+        "effective_view_uplift_bounded_lenient": {
+          "definition": "rate_gap_pp = KOXPilot 有效曝光率 − 基线有效曝光率（百分点，∈[−100,100]）；symmetric_uplift = (kox − base)/(kox + base)（∈[−1,1]，符号同相对提升）；absolute_gain_views = kox − base（曝光数）。三者均不以基线为分母。",
+          "baseline_effective_view_rate": 0.6351,
+          "koxpilot_effective_view_rate": 0.9828,
+          "rate_gap_pp": 34.77,
+          "symmetric_uplift": 0.3443,
+          "absolute_gain_views": 2362733.0,
+          "ratio_denominator_views": 2249854.0,
+          "ratio_denominator_fragile": false,
+          "fragile_threshold_baseline_rate": 0.05
+        },
+        "effective_view_uplift_caveat": "该比率的分母是基线有效曝光 957,096 次（占基线名义曝光 27.0%）。本样本分母充足，比率可读；但跨样本聚合仍应统一用有界口径，聚合请用 effective_view_uplift_bounded 里的 rate_gap_pp 或 symmetric_uplift。",
+        "effective_views_per_1k_usd": {
+          "baseline": 11964.0,
+          "koxpilot": 56749.0,
+          "uplift": 3.7433
+        },
+        "headline": "同样 $80,000 预算，少浪费 $51,407（占预算 64.3%），按 ground truth 计的有效曝光提升 +373.5%；有效曝光率 27.0% → 96.5%（+69.5pp）"
+      },
+      {
+        "campaign_id": "BRIEF-002",
+        "budget_usd": 45000.0,
+        "baseline": {
+          "strategy": "followers",
+          "n_selected": 4,
+          "spent_usd": 44999.6,
+          "utilization": 1.0,
+          "n_fraud_selected": 2,
+          "n_high_risk_selected": 0,
+          "fraud_spend_usd": 375.93,
+          "fraud_spend_share": 0.0084,
+          "high_risk_spend_usd": 0.0,
+          "high_risk_spend_share": 0.0,
+          "wasted_spend_usd": 375.93,
+          "wasted_spend_share": 0.0084,
+          "spend_on_gate_review_usd": 44623.67,
+          "spend_on_gate_reject_usd": 375.93,
+          "nominal_views": 2950830.0,
+          "effective_views_gt": 2918116.0,
+          "effective_views_gt_lenient": 2934473.0,
+          "effective_view_rate": 0.9889,
+          "effective_view_rate_lenient": 0.9945,
+          "effective_cpm_usd": 15.421,
+          "effective_views_per_1k_usd": 64848.0
+        },
+        "koxpilot": {
+          "strategy": "koxpilot",
+          "n_selected": 39,
+          "spent_usd": 44995.72,
+          "utilization": 0.9999,
+          "n_fraud_selected": 3,
+          "n_high_risk_selected": 0,
+          "fraud_spend_usd": 5493.63,
+          "fraud_spend_share": 0.1221,
+          "high_risk_spend_usd": 0.0,
+          "high_risk_spend_share": 0.0,
+          "wasted_spend_usd": 5493.63,
+          "wasted_spend_share": 0.1221,
+          "spend_on_gate_review_usd": 0.0,
+          "spend_on_gate_reject_usd": 0.0,
+          "nominal_views": 3272717.0,
+          "effective_views_gt": 2850866.0,
+          "effective_views_gt_lenient": 3061791.0,
+          "effective_view_rate": 0.8711,
+          "effective_view_rate_lenient": 0.9356,
+          "effective_cpm_usd": 15.783,
+          "effective_views_per_1k_usd": 63359.0
+        },
+        "saved_usd": -5117.7,
+        "saved_share_of_budget": -0.1137,
+        "effective_view_uplift": -0.023,
+        "effective_view_uplift_lenient": 0.0434,
+        "effective_view_uplift_bounded": {
+          "definition": "rate_gap_pp = KOXPilot 有效曝光率 − 基线有效曝光率（百分点，∈[−100,100]）；symmetric_uplift = (kox − base)/(kox + base)（∈[−1,1]，符号同相对提升）；absolute_gain_views = kox − base（曝光数）。三者均不以基线为分母。",
+          "baseline_effective_view_rate": 0.9889,
+          "koxpilot_effective_view_rate": 0.8711,
+          "rate_gap_pp": -11.78,
+          "symmetric_uplift": -0.0117,
+          "absolute_gain_views": -67250.0,
+          "ratio_denominator_views": 2918116.0,
+          "ratio_denominator_fragile": false,
+          "fragile_threshold_baseline_rate": 0.05
+        },
+        "effective_view_uplift_bounded_lenient": {
+          "definition": "rate_gap_pp = KOXPilot 有效曝光率 − 基线有效曝光率（百分点，∈[−100,100]）；symmetric_uplift = (kox − base)/(kox + base)（∈[−1,1]，符号同相对提升）；absolute_gain_views = kox − base（曝光数）。三者均不以基线为分母。",
+          "baseline_effective_view_rate": 0.9945,
+          "koxpilot_effective_view_rate": 0.9356,
+          "rate_gap_pp": -5.89,
+          "symmetric_uplift": 0.0212,
+          "absolute_gain_views": 127318.0,
+          "ratio_denominator_views": 2934473.0,
+          "ratio_denominator_fragile": false,
+          "fragile_threshold_baseline_rate": 0.05
+        },
+        "effective_view_uplift_caveat": "该比率的分母是基线有效曝光 2,918,116 次（占基线名义曝光 98.9%）。本样本分母充足，比率可读；但跨样本聚合仍应统一用有界口径，聚合请用 effective_view_uplift_bounded 里的 rate_gap_pp 或 symmetric_uplift。",
+        "effective_views_per_1k_usd": {
+          "baseline": 64848.0,
+          "koxpilot": 63359.0,
+          "uplift": -0.023
+        },
+        "headline": "同样 $45,000 预算，反而比基线多浪费 $5,118（占预算 11.4%），按 ground truth 计的有效曝光提升 -2.3%；有效曝光率 98.9% → 87.1%（-11.8pp）"
+      },
+      {
+        "campaign_id": "BRIEF-003",
+        "budget_usd": 120000.0,
+        "baseline": {
+          "strategy": "followers",
+          "n_selected": 6,
+          "spent_usd": 119997.49,
+          "utilization": 1.0,
+          "n_fraud_selected": 1,
+          "n_high_risk_selected": 0,
+          "fraud_spend_usd": 37062.57,
+          "fraud_spend_share": 0.3089,
+          "high_risk_spend_usd": 0.0,
+          "high_risk_spend_share": 0.0,
+          "wasted_spend_usd": 37062.57,
+          "wasted_spend_share": 0.3089,
+          "spend_on_gate_review_usd": 16885.56,
+          "spend_on_gate_reject_usd": 102935.13,
+          "nominal_views": 3584630.0,
+          "effective_views_gt": 2907546.0,
+          "effective_views_gt_lenient": 3246088.0,
+          "effective_view_rate": 0.8111,
+          "effective_view_rate_lenient": 0.9056,
+          "effective_cpm_usd": 41.271,
+          "effective_views_per_1k_usd": 24230.0
+        },
+        "koxpilot": {
+          "strategy": "koxpilot",
+          "n_selected": 73,
+          "spent_usd": 119966.67,
+          "utilization": 0.9997,
+          "n_fraud_selected": 2,
+          "n_high_risk_selected": 0,
+          "fraud_spend_usd": 3632.91,
+          "fraud_spend_share": 0.0303,
+          "high_risk_spend_usd": 0.0,
+          "high_risk_spend_share": 0.0,
+          "wasted_spend_usd": 3632.91,
+          "wasted_spend_share": 0.0303,
+          "spend_on_gate_review_usd": 0.0,
+          "spend_on_gate_reject_usd": 0.0,
+          "nominal_views": 6331362.0,
+          "effective_views_gt": 6090615.0,
+          "effective_views_gt_lenient": 6210989.0,
+          "effective_view_rate": 0.962,
+          "effective_view_rate_lenient": 0.981,
+          "effective_cpm_usd": 19.697,
+          "effective_views_per_1k_usd": 50769.0
+        },
+        "saved_usd": 33429.66,
+        "saved_share_of_budget": 0.2786,
+        "effective_view_uplift": 1.0948,
+        "effective_view_uplift_lenient": 0.9134,
+        "effective_view_uplift_bounded": {
+          "definition": "rate_gap_pp = KOXPilot 有效曝光率 − 基线有效曝光率（百分点，∈[−100,100]）；symmetric_uplift = (kox − base)/(kox + base)（∈[−1,1]，符号同相对提升）；absolute_gain_views = kox − base（曝光数）。三者均不以基线为分母。",
+          "baseline_effective_view_rate": 0.8111,
+          "koxpilot_effective_view_rate": 0.962,
+          "rate_gap_pp": 15.09,
+          "symmetric_uplift": 0.3537,
+          "absolute_gain_views": 3183069.0,
+          "ratio_denominator_views": 2907546.0,
+          "ratio_denominator_fragile": false,
+          "fragile_threshold_baseline_rate": 0.05
+        },
+        "effective_view_uplift_bounded_lenient": {
+          "definition": "rate_gap_pp = KOXPilot 有效曝光率 − 基线有效曝光率（百分点，∈[−100,100]）；symmetric_uplift = (kox − base)/(kox + base)（∈[−1,1]，符号同相对提升）；absolute_gain_views = kox − base（曝光数）。三者均不以基线为分母。",
+          "baseline_effective_view_rate": 0.9056,
+          "koxpilot_effective_view_rate": 0.981,
+          "rate_gap_pp": 7.54,
+          "symmetric_uplift": 0.3135,
+          "absolute_gain_views": 2964901.0,
+          "ratio_denominator_views": 3246088.0,
+          "ratio_denominator_fragile": false,
+          "fragile_threshold_baseline_rate": 0.05
+        },
+        "effective_view_uplift_caveat": "该比率的分母是基线有效曝光 2,907,546 次（占基线名义曝光 81.1%）。本样本分母充足，比率可读；但跨样本聚合仍应统一用有界口径，聚合请用 effective_view_uplift_bounded 里的 rate_gap_pp 或 symmetric_uplift。",
+        "effective_views_per_1k_usd": {
+          "baseline": 24230.0,
+          "koxpilot": 50769.0,
+          "uplift": 1.0953
+        },
+        "headline": "同样 $120,000 预算，少浪费 $33,430（占预算 27.9%），按 ground truth 计的有效曝光提升 +109.5%；有效曝光率 81.1% → 96.2%（+15.1pp）"
+      }
+    ],
+    "totals": {
+      "budget_usd": 245000.0,
+      "saved_usd": 79718.55,
+      "saved_share_of_budget": 0.3254,
+      "effective_views_baseline": 6782758.0,
+      "effective_views_koxpilot": 13473202.0,
+      "effective_view_uplift": 0.9864,
+      "effective_views_baseline_lenient": 8430415.0,
+      "effective_views_koxpilot_lenient": 13885367.0,
+      "effective_view_uplift_lenient": 0.6471,
+      "effective_view_uplift_bounded": {
+        "definition": "rate_gap_pp = KOXPilot 有效曝光率 − 基线有效曝光率（百分点，∈[−100,100]）；symmetric_uplift = (kox − base)/(kox + base)（∈[−1,1]，符号同相对提升）；absolute_gain_views = kox − base（曝光数）。三者均不以基线为分母。",
+        "baseline_effective_view_rate": 0.673,
+        "koxpilot_effective_view_rate": 0.9423,
+        "rate_gap_pp": 26.93,
+        "symmetric_uplift": 0.3303,
+        "absolute_gain_views": 6690444.0,
+        "ratio_denominator_views": 6782758.0,
+        "ratio_denominator_fragile": false,
+        "fragile_threshold_baseline_rate": 0.05
+      },
+      "lenient_assumption": "宽松口径 = 水号曝光按 50% 计入有效曝光（主口径按 0 计）。两个口径同向才说明结论不依赖该假设。"
+    },
+    "headline": "三个 campaign 合计 $245,000 预算，少浪费 $79,719（32.5%），有效曝光提升 +98.6%，宽松口径（水号曝光按 50% 计）+64.7%，有界口径：有效曝光率 67.3% → 94.2%（+26.9pp，symmetric_uplift +0.3303）"
+  },
+  "cost_audit": {
+    "candidate_pool_per_campaign": {
+      "BRIEF-001": 93,
+      "BRIEF-002": 50,
+      "BRIEF-003": 79
+    },
+    "schemes": [
+      {
+        "scheme": "全 LLM",
+        "desc": "每个达人的每层判定都问模型",
+        "calls_per_campaign": {
+          "BRIEF-001": 372,
+          "BRIEF-002": 200,
+          "BRIEF-003": 316
+        },
+        "calls_total": 888
+      },
+      {
+        "scheme": "KOXPilot 混合",
+        "desc": "G0/G1 纯规则，G2 部分规则，仅 brief 解析与语义适配用 LLM",
+        "calls_per_campaign": {
+          "BRIEF-001": 94,
+          "BRIEF-002": 51,
+          "BRIEF-003": 80
+        },
+        "calls_total": 225
+      },
+      {
+        "scheme": "全规则",
+        "desc": "不用 LLM，语义适配退化为关键词匹配",
+        "calls_per_campaign": {
+          "BRIEF-001": 0,
+          "BRIEF-002": 0,
+          "BRIEF-003": 0
+        },
+        "calls_total": 0
+      }
+    ],
+    "call_reduction_vs_full_llm": 3.95,
+    "accuracy_cost_of_all_rules": {
+      "metric": "标签错配 F1（同一抽样、同一 ground truth）",
+      "rule_arm": 0.5625,
+      "llm_arm": 0.6824,
+      "f1_drop_if_all_rules": 0.1199
+    },
+    "status": "ok",
+    "token_account": {
+      "source": "output/llm_bench.json（各 API 返回的 usage 字段，非估算）",
+      "models": {
+        "ark": "ep-20260308011145-z5d47",
+        "azure": "gpt-5.5-2026-04-24"
+      },
+      "measured_calls": 172,
+      "prompt_tokens": 536827,
+      "completion_tokens": 566646,
+      "reasoning_tokens": 403202,
+      "total_tokens": 1103473,
+      "tokens_per_call": 6415.5,
+      "per_task": {
+        "brief::azure": {
+          "task": "brief",
+          "model_key": "azure",
+          "model": "gpt-5.5-2026-04-24",
+          "calls": 3,
+          "failed_calls": 0,
+          "items": 3,
+          "prompt_tokens": 2719,
+          "completion_tokens": 1449,
+          "reasoning_tokens": 599,
+          "cached_tokens": 0,
+          "total_tokens": 4168,
+          "latency_ms_total": 18524,
+          "avg_latency_ms": 6174.7,
+          "tokens_per_item": 1389.33
+        },
+        "brief::ark": {
+          "task": "brief",
+          "model_key": "ark",
+          "model": "doubao-seed-2-0-lite-260215",
+          "calls": 3,
+          "failed_calls": 0,
+          "items": 3,
+          "prompt_tokens": 2837,
+          "completion_tokens": 4945,
+          "reasoning_tokens": 4175,
+          "cached_tokens": 0,
+          "total_tokens": 7782,
+          "latency_ms_total": 96334,
+          "avg_latency_ms": 32111.3,
+          "tokens_per_item": 2594.0
+        },
+        "tag::ark": {
+          "task": "tag",
+          "model_key": "ark",
+          "model": "doubao-seed-2-0-lite-260215",
+          "calls": 50,
+          "failed_calls": 0,
+          "items": 600,
+          "prompt_tokens": 127980,
+          "completion_tokens": 181771,
+          "reasoning_tokens": 134436,
+          "cached_tokens": 0,
+          "total_tokens": 309751,
+          "latency_ms_total": 3141001,
+          "avg_latency_ms": 62820.0,
+          "tokens_per_item": 516.25
+        },
+        "tag::azure": {
+          "task": "tag",
+          "model_key": "azure",
+          "model": "gpt-5.5-2026-04-24",
+          "calls": 50,
+          "failed_calls": 1,
+          "items": 600,
+          "prompt_tokens": 106379,
+          "completion_tokens": 73253,
+          "reasoning_tokens": 28121,
+          "cached_tokens": 0,
+          "total_tokens": 179632,
+          "latency_ms_total": 737822,
+          "avg_latency_ms": 14756.4,
+          "tokens_per_item": 299.39
+        },
+        "fit::ark": {
+          "task": "fit",
+          "model_key": "ark",
+          "model": "doubao-seed-2-0-lite-260215",
+          "calls": 66,
+          "failed_calls": 0,
+          "items": 780,
+          "prompt_tokens": 296912,
+          "completion_tokens": 305228,
+          "reasoning_tokens": 235871,
+          "cached_tokens": 0,
+          "total_tokens": 602140,
+          "latency_ms_total": 4965704,
+          "avg_latency_ms": 75237.9,
+          "tokens_per_item": 771.97
+        }
+      },
+      "extrapolated": false
+    },
+    "scheme_token_extrapolation": {
+      "basis": "按实测单次调用 token 均值 × 各方案调用次数线性外推",
+      "extrapolated": true,
+      "tokens": {
+        "全 LLM": 5697000.0,
+        "KOXPilot 混合": 1443497.0,
+        "全规则": 0.0
+      }
+    }
+  },
+  "budget": {
+    "constraint_policy": {
+      "single_kox_max_share": 0.2,
+      "head_max_share": 0.45,
+      "longtail_min_share": 0.25,
+      "country_max_share": 0.6,
+      "min_utilization_target": 0.9,
+      "max_posts_per_kox": 3,
+      "post_marginal_decay": 0.7
+    },
+    "per_campaign": [
+      {
+        "campaign_id": "BRIEF-001",
+        "name": "3C 小家电新品 · 北美 · 看转化",
+        "kpi": "conversion",
+        "budget_usd": 80000.0,
+        "candidate_pool": 93,
+        "n_selected": 69,
+        "spent_usd": 79855.29,
+        "utilization": 0.9982,
+        "est_cpm_usd": 17.014,
+        "est_cpe_usd": 0.2769,
+        "tier_mix": {
+          "mid": 0.3959,
+          "macro": 0.3019,
+          "micro": 0.2889,
+          "nano": 0.0133
+        },
+        "country_mix": {
+          "US": 0.6,
+          "CA": 0.4
+        },
+        "n_price_estimated": 0,
+        "constraints_ok": true,
+        "trace": [
+          "边际性价比贪心：候选 93 人 / 279 个内容名额，选入 69 人共 148 条，花费 $79,940（长尾 30.3%，头部 30.2%）",
+          "地域分散修正：退掉 US 的 3 条内容，单一国家占比降至 60.0%（上限 60%）",
+          "约束内补位：追加 3 条内容，预算利用率 99.8%"
+        ]
+      },
+      {
+        "campaign_id": "BRIEF-002",
+        "name": "国货彩妆 · 东南亚 · 看互动",
+        "kpi": "engagement",
+        "budget_usd": 45000.0,
+        "candidate_pool": 50,
+        "n_selected": 39,
+        "spent_usd": 44995.72,
+        "utilization": 0.9999,
+        "est_cpm_usd": 13.749,
+        "est_cpe_usd": 0.1938,
+        "tier_mix": {
+          "mid": 0.5512,
+          "micro": 0.2161,
+          "macro": 0.1981,
+          "nano": 0.0346
+        },
+        "country_mix": {
+          "ID": 0.5356,
+          "MY": 0.2706,
+          "VN": 0.1938
+        },
+        "n_price_estimated": 0,
+        "constraints_ok": true,
+        "trace": [
+          "边际性价比贪心：候选 50 人 / 150 个内容名额，选入 39 人共 95 条，花费 $44,996（长尾 25.1%，头部 19.8%）"
+        ]
+      },
+      {
+        "campaign_id": "BRIEF-003",
+        "name": "休闲手游全球上线 · 日韩+巴西 · 看曝光",
+        "kpi": "reach",
+        "budget_usd": 120000.0,
+        "candidate_pool": 79,
+        "n_selected": 73,
+        "spent_usd": 119966.67,
+        "utilization": 0.9997,
+        "est_cpm_usd": 18.948,
+        "est_cpe_usd": 0.3251,
+        "tier_mix": {
+          "mid": 0.597,
+          "micro": 0.229,
+          "macro": 0.146,
+          "nano": 0.0281
+        },
+        "country_mix": {
+          "BR": 0.4332,
+          "KR": 0.3261,
+          "JP": 0.2406
+        },
+        "n_price_estimated": 0,
+        "constraints_ok": true,
+        "trace": [
+          "边际性价比贪心：候选 79 人 / 237 个内容名额，选入 69 人共 176 条，花费 $119,992（长尾 21.6%，头部 14.6%）",
+          "分层修正：退掉非长尾达人 @smart_lab（mid）的 1 条内容（$5,486）以腾出长尾名额",
+          "分层修正：追加 18 条长尾内容，长尾金额占比抬到 25.4%（下限 25%）",
+          "约束内补位：追加 6 条内容，预算利用率 100.0%"
+        ]
+      }
+    ]
+  }
+}
