@@ -36,7 +36,7 @@ from typing import Any
 
 from .prompts import adjacency_block, category_block
 
-__all__ = ["PromptVariant", "TAG_VARIANTS", "build_messages"]
+__all__ = ["TAG_VARIANTS", "PromptVariant", "build_messages"]
 
 _CAT_LIST = category_block()
 _ADJ_LIST = adjacency_block()

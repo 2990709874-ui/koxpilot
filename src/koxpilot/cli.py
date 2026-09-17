@@ -34,13 +34,13 @@ from .io_utils import (
 from .types import CampaignSpec
 
 __all__ = [
-    "main",
-    "cmd_data",
-    "cmd_gate",
     "cmd_budget",
+    "cmd_data",
     "cmd_eval",
-    "cmd_multiseed",
     "cmd_explain",
+    "cmd_gate",
+    "cmd_multiseed",
+    "main",
 ]
 
 #: 落盘的门禁明细样本量（全量 5,000 条带证据链约 20MB，仓库里只留样本，前端用 TS 侧实时复算）
@@ -239,6 +239,10 @@ def cmd_eval(args: argparse.Namespace) -> int:
         print(f"[eval] 三臂价值归因：{attribution['headline']}")
         for caveat in attribution["caveats"]:
             print(f"[eval]   注意：{caveat}")
+    decay_scan = metrics.get("budget_decay_sensitivity") or {}
+    if decay_scan.get("status") == "ok":
+        print(f"[eval] decay 敏感性：{decay_scan['headline']}")
+        print(f"[eval]   判定：{decay_scan['verdict']}")
     fit_audit = metrics["table_6_llm_vs_rule"]["semantic_fit_llm_vs_rule"]
     if fit_audit.get("status") == "ok":
         print(f"[eval] A4 适配分口径：{fit_audit['headline']}")

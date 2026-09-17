@@ -24,16 +24,16 @@ from ..stats import prf1, roc_auc
 from ..types import GateResult, Verdict
 
 __all__ = [
-    "VERDICTS",
     "FRAUD_TYPES",
-    "fraud_pred_strict",
-    "fraud_pred_loose",
-    "gt_of",
+    "VERDICTS",
     "binary_scores",
     "confusion_matrix",
-    "verdict_report",
+    "fraud_pred_loose",
+    "fraud_pred_strict",
     "fraud_report",
+    "gt_of",
     "macro_f1",
+    "verdict_report",
 ]
 
 VERDICTS: tuple[Verdict, ...] = ("pass", "review", "reject")

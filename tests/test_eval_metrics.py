@@ -41,9 +41,17 @@ from koxpilot.eval.metrics import (
     macro_f1,
     verdict_report,
 )
-from koxpilot.eval.sensitivity import SCAN_FACTORS, STABILITY_TOLERANCE, sensitivity_report
+from koxpilot.eval.sensitivity import (
+    SCAN_FACTORS,
+    STABILITY_TOLERANCE,
+    sensitivity_report,
+)
 from koxpilot.eval.strata import MIN_SUPPORT_POSITIVE, WEAK_SPOT_TOP_N, strata_report
-from koxpilot.gates.policy import AUTHENTICITY_FLOOR_REJECT, G1_WEIGHTS, HARD_HITS_REJECT_MIN
+from koxpilot.gates.policy import (
+    AUTHENTICITY_FLOOR_REJECT,
+    G1_WEIGHTS,
+    HARD_HITS_REJECT_MIN,
+)
 from koxpilot.gates.thresholds import Thresholds, calibrate
 from koxpilot.stats import (
     jaccard,

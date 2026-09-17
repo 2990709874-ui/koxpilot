@@ -36,7 +36,7 @@ _SRC = Path(__file__).resolve().parents[1]
 if str(_SRC.parent) not in sys.path:  # pragma: no cover - 便于脚本直跑
     sys.path.insert(0, str(_SRC.parent))
 
-from koxpilot.taxonomy import (  # noqa: E402
+from koxpilot.taxonomy import (
     AGE_BUCKETS,
     CATEGORY_ADJACENCY,
     CATEGORY_ZH,
@@ -44,13 +44,13 @@ from koxpilot.taxonomy import (  # noqa: E402
 )
 
 __all__ = [
-    "KPI_VOCAB",
     "CAMPAIGN_SPEC_FIELDS",
-    "brief_parse_messages",
-    "tag_judge_messages",
-    "fit_score_messages",
-    "category_block",
+    "KPI_VOCAB",
     "adjacency_block",
+    "brief_parse_messages",
+    "category_block",
+    "fit_score_messages",
+    "tag_judge_messages",
 ]
 
 # KPI 取值域与数据集 / 预算分配器保持一致（reach 而非 awareness）

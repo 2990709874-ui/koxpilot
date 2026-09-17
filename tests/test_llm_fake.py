@@ -31,13 +31,14 @@ import re
 import socket
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import pytest
 
-from koxpilot.llm import prompts as prompts_mod
 from koxpilot.llm import promptbench as pb_mod
+from koxpilot.llm import prompts as prompts_mod
 from koxpilot.llm import runner as runner_mod
 from koxpilot.llm.prompt_variants import TAG_VARIANTS, build_messages
 from koxpilot.llm.prompts import (
@@ -54,10 +55,11 @@ from koxpilot.llm.provider import (
     LLMProvider,
     LLMResponse,
     Usage,
+    _clean,
+    _loads_loose,
     available_providers,
     build_provider,
 )
-from koxpilot.llm.provider import _clean, _loads_loose
 from koxpilot.llm.runner import (
     Cache,
     CallLog,
@@ -174,10 +176,10 @@ class FakeHTTPResponse:
     def read(self) -> bytes:
         return self._payload
 
-    def __enter__(self) -> "FakeHTTPResponse":
+    def __enter__(self) -> FakeHTTPResponse:
         return self
 
-    def __exit__(self, *exc: Any) -> bool:
+    def __exit__(self, *exc: object) -> bool:
         return False
 
 
@@ -888,7 +890,7 @@ class TestPromptVocabularyIsSingleSourced:
         system = brief_parse_messages("x")[0]["content"]
         line = next(ln for ln in system.splitlines() if '"target_gender"' in ln)
         enum_values = [t.strip() for t in line.split("<")[1].split(">")[0].split("|")]
-        profile_keys = set().union(*(set((r.get("audience_gender") or {})) for r in records[:200]))
+        profile_keys = set().union(*(set(r.get("audience_gender") or {}) for r in records[:200]))
         for value in enum_values:
             norm = CampaignSpec.from_dict({"target_gender": value}).target_gender
             assert norm is None or norm in profile_keys, f"{value} → {norm} 不在 audience_gender 的 key 里"

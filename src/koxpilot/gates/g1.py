@@ -22,11 +22,11 @@ from ..types import Reason
 from .humanize import group_label, num, pct, ratio, source_label
 from .policy import (
     FRAUD_SCORE_RAMP_LOWER,
-    GRADED_PENALTY_GAIN,
     FRAUD_SCORE_RAMP_UPPER,
     FRAUD_SCORE_Z_RAMP,
     G1_HARD_RULES,
     G1_WEIGHTS,
+    GRADED_PENALTY_GAIN,
     MIN_HISTORY_MONTHS,
     SPIKE_GROWTH_FLOOR_Q,
     SPIKE_ZSCORE_MIN,
@@ -105,7 +105,7 @@ def spike_evidence(kox: Mapping[str, Any]) -> dict[str, Any] | None:
     for i, z in enumerate(zs):
         month = i + 1  # rates[i] 是 history[i] -> history[i+1] 的增长，落在第 i+1 个月
         supported = any(
-            month - lag in viral for lag in range(0, VIRAL_SUPPORT_LAG_MONTHS + 1)
+            month - lag in viral for lag in range(VIRAL_SUPPORT_LAG_MONTHS + 1)
         ) or month in viral
         max_z = max(max_z, z if not supported else 0.0)
         if supported or z <= 0:

@@ -30,15 +30,15 @@ from ..gates.engine import evaluate_all
 from ..gates.thresholds import Thresholds
 from ..types import BudgetPlan, CampaignSpec, GateResult
 from .allocator import allocate
-from .policy import INCLUDE_REVIEW_BY_DEFAULT
+from .policy import INCLUDE_REVIEW_BY_DEFAULT, POST_MARGINAL_DECAY
 from .value import build_candidates
 
 __all__ = [
-    "gate_results_for",
-    "plan_campaign",
-    "plan_baseline",
-    "plan_diversified_no_gate",
     "ALL_VERDICTS",
+    "gate_results_for",
+    "plan_baseline",
+    "plan_campaign",
+    "plan_diversified_no_gate",
 ]
 
 ALL_VERDICTS: tuple[str, ...] = ("pass", "review", "reject")
@@ -62,12 +62,18 @@ def plan_campaign(
     results: Mapping[str, GateResult] | None = None,
     include_review: bool = INCLUDE_REVIEW_BY_DEFAULT,
     budget_usd: float | None = None,
+    decay: float = POST_MARGINAL_DECAY,
 ) -> tuple[BudgetPlan, dict[str, GateResult]]:
-    """KOXPilot 决策臂。返回 ``(方案, 门禁结果)``（门禁结果给基线臂与审计复用）。"""
+    """KOXPilot 决策臂。返回 ``(方案, 门禁结果)``（门禁结果给基线臂与审计复用）。
+
+    ``decay`` 是采购模型里"同一达人第 n 条内容的边际曝光衰减"假设（默认见
+    ``policy.POST_MARGINAL_DECAY``）。它之所以要能从这里传进来，是因为它是**假设而非观测**：
+    ``eval/decay_scan.py`` 需要在同一批门禁结果上换档重跑，才能证明结论不是靠这个数字撑起来的。
+    """
     res = dict(results) if results is not None else gate_results_for(records, spec, thresholds)
     verdicts = ("pass", "review") if include_review else ("pass",)
     candidates, skipped = build_candidates(records, res, spec, thresholds, verdicts)
-    plan = allocate(candidates, spec, "koxpilot", budget_usd, skipped)
+    plan = allocate(candidates, spec, "koxpilot", budget_usd, skipped, decay=decay)
     return plan, res
 
 
@@ -77,11 +83,12 @@ def plan_baseline(
     thresholds: Thresholds,
     results: Mapping[str, GateResult] | None = None,
     budget_usd: float | None = None,
+    decay: float = POST_MARGINAL_DECAY,
 ) -> BudgetPlan:
     """反事实基线臂：不看门禁，按粉丝量降序花完预算。"""
     res = dict(results) if results is not None else gate_results_for(records, spec, thresholds)
     candidates, skipped = build_candidates(records, res, spec, thresholds, ALL_VERDICTS)
-    return allocate(candidates, spec, "followers", budget_usd, skipped)
+    return allocate(candidates, spec, "followers", budget_usd, skipped, decay=decay)
 
 
 def plan_diversified_no_gate(
@@ -90,6 +97,7 @@ def plan_diversified_no_gate(
     thresholds: Thresholds,
     results: Mapping[str, GateResult] | None = None,
     budget_usd: float | None = None,
+    decay: float = POST_MARGINAL_DECAY,
 ) -> BudgetPlan:
     """第三臂：**只做结构分散化，不做质量门禁**。
 
@@ -105,4 +113,4 @@ def plan_diversified_no_gate(
     """
     res = dict(results) if results is not None else gate_results_for(records, spec, thresholds)
     candidates, skipped = build_candidates(records, res, spec, thresholds, ALL_VERDICTS)
-    return allocate(candidates, spec, "diversified_no_gate", budget_usd, skipped)
+    return allocate(candidates, spec, "diversified_no_gate", budget_usd, skipped, decay=decay)

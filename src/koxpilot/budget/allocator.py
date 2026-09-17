@@ -50,11 +50,11 @@ __all__ = [
     "BASIS_VALUE",
     "BASIS_VIEWS",
     "STRATEGIES",
-    "Slot",
     "Selection",
+    "Slot",
     "allocate",
-    "validate_plan",
     "build_slots",
+    "validate_plan",
 ]
 
 #: 排序依据："质量加权价值"（引擎自己的 value(k)，含真实性折扣/语义适配/KPI 权重）

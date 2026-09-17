@@ -44,10 +44,10 @@ from .policy import (
 
 __all__ = [
     "G2Outcome",
+    "audience_geo_share",
+    "audience_match_score",
     "evaluate_g2",
     "rule_fit_score",
-    "audience_match_score",
-    "audience_geo_share",
     "source_agreement",
 ]
 

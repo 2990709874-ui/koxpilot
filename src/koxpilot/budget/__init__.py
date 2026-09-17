@@ -11,9 +11,16 @@ from .planner import (
     plan_diversified_no_gate,
 )
 from .policy import constraint_snapshot
-from .value import Candidate, build_candidates, estimate_cost, kpi_weight_of, targeting_reason
+from .value import (
+    Candidate,
+    build_candidates,
+    estimate_cost,
+    kpi_weight_of,
+    targeting_reason,
+)
 
 __all__ = [
+    "ALL_VERDICTS",
     "Candidate",
     "Selection",
     "allocate",
@@ -27,5 +34,4 @@ __all__ = [
     "plan_diversified_no_gate",
     "targeting_reason",
     "validate_plan",
-    "ALL_VERDICTS",
 ]

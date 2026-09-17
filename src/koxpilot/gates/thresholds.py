@@ -42,10 +42,9 @@ from .signals import (
     OBSERVABLE_SIGNALS,
     extract_signals,
     kox_group_key,
-    monthly_growth_rates,
 )
 
-__all__ = ["Thresholds", "calibrate", "robust_quantile", "THRESHOLDS_VERSION"]
+__all__ = ["THRESHOLDS_VERSION", "Thresholds", "calibrate", "robust_quantile"]
 
 THRESHOLDS_VERSION = "1.1.0"
 
@@ -177,7 +176,7 @@ class Thresholds:
         return 1.0
 
     # -- 变换 ---------------------------------------------------------------
-    def scaled(self, factor: float, signals: Iterable[str] | None = None) -> "Thresholds":
+    def scaled(self, factor: float, signals: Iterable[str] | None = None) -> Thresholds:
         """把指定信号的**判定阈值**统一乘以 factor，返回新对象（敏感性扫描用）。
 
         注意方向性：对上尾规则（> P95）放大阈值 = 放松；对下尾规则（< P05）放大阈值 = 收紧。
@@ -216,7 +215,7 @@ class Thresholds:
         }
 
     @classmethod
-    def from_dict(cls, payload: Mapping[str, Any]) -> "Thresholds":
+    def from_dict(cls, payload: Mapping[str, Any]) -> Thresholds:
         return cls(
             groups=dict(payload.get("groups") or {}),
             platform=dict(payload.get("platform") or {}),

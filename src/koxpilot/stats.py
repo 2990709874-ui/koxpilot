@@ -17,16 +17,16 @@ from collections.abc import Iterable, Sequence
 from typing import Final
 
 __all__ = [
-    "quantile",
-    "quantiles",
+    "jaccard",
+    "mad",
     "mean",
     "median",
-    "mad",
-    "robust_zscores",
     "percentile_rank",
-    "jaccard",
-    "roc_auc",
     "prf1",
+    "quantile",
+    "quantiles",
+    "robust_zscores",
+    "roc_auc",
     "safe_div",
 ]
 

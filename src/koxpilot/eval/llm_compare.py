@@ -26,7 +26,7 @@ from ..stats import mean, quantiles
 from ..types import CampaignSpec, GateResult
 from .metrics import binary_scores, gt_of
 
-__all__ = ["llm_vs_rule_report", "rule_tag_mismatch_metrics", "rule_fit_distribution"]
+__all__ = ["llm_vs_rule_report", "rule_fit_distribution", "rule_tag_mismatch_metrics"]
 
 
 def rule_tag_mismatch_metrics(

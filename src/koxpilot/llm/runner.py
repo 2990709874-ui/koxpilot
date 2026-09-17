@@ -28,18 +28,18 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import random
 import sys
 import threading
 import time
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
-from .prompts import brief_parse_messages, fit_score_messages, tag_judge_messages
 from .identity import identity_from_ledger, model_display_map
+from .prompts import brief_parse_messages, fit_score_messages, tag_judge_messages
 from .provider import (
     LLMError,
     LLMProvider,

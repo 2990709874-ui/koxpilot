@@ -28,8 +28,9 @@
 from __future__ import annotations
 
 import ast
+import dataclasses
 import inspect
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -43,12 +44,10 @@ from koxpilot.gates.g2 import evaluate_g2
 from koxpilot.gates.g3 import evaluate_g3
 from koxpilot.gates.signals import extract_signals
 from koxpilot.gates.thresholds import calibrate
-from koxpilot.llm import prompts as prompts_mod
 from koxpilot.llm import prompt_variants
+from koxpilot.llm import prompts as prompts_mod
 from koxpilot.stats import jaccard
 from koxpilot.types import CampaignSpec
-
-import dataclasses
 
 SRC = Path(__file__).resolve().parents[1] / "src" / "koxpilot"
 
@@ -270,17 +269,17 @@ class LeakGuard(dict):
     键名把 gt 剔掉的，那是合法行为。这个边界正好把"枚举字段"与"读取裁判值"分开。
     """
 
-    def __getitem__(self, key: Any) -> Any:  # noqa: D105
+    def __getitem__(self, key: Any) -> Any:
         if key in JUDGE_KEYS:
             raise LeakAccess(f"生产代码读取了裁判字段 {key!r}")
         return super().__getitem__(key)
 
-    def get(self, key: Any, default: Any = None) -> Any:  # noqa: D102
+    def get(self, key: Any, default: Any = None) -> Any:
         if key in JUDGE_KEYS:
             raise LeakAccess(f"生产代码读取了裁判字段 {key!r}")
         return super().get(key, default)
 
-    def pop(self, key: Any, *args: Any) -> Any:  # noqa: D102
+    def pop(self, key: Any, *args: Any) -> Any:
         if key in JUDGE_KEYS:
             raise LeakAccess(f"生产代码读取了裁判字段 {key!r}")
         return super().pop(key, *args)

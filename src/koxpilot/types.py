@@ -79,7 +79,7 @@ class CampaignSpec:
             object.__setattr__(self, "target_gender", norm)
 
     @classmethod
-    def from_dict(cls, payload: dict[str, Any]) -> "CampaignSpec":
+    def from_dict(cls, payload: dict[str, Any]) -> CampaignSpec:
         """从 briefs.json 的 ``spec`` 块构造（容忍缺字段，多余字段忽略）。"""
 
         def tup(key: str) -> tuple[str, ...]:

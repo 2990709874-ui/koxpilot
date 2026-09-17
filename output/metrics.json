@@ -2910,6 +2910,306 @@
       }
     ]
   },
+  "budget_decay_sensitivity": {
+    "status": "ok",
+    "assumption": "post_marginal_decay",
+    "assumption_kind": "建模假设（受众重叠导致的重复触达折扣），不是从数据拟合的观测值",
+    "reference_decay": 0.7,
+    "scan": [
+      0.5,
+      0.7,
+      0.9
+    ],
+    "policy_constant": "budget.policy.POST_DECAY_SCAN",
+    "method": "每个 campaign 只跑一次门禁（门禁与 decay 无关），三档共用同一批 GateResult；每档重跑三臂预算分配，再用 gt 审计浪费金额与有效曝光。参照档的数字必须与 metrics.json 的正式预算/反事实结果一致（同一套代码路径）。",
+    "per_decay": [
+      {
+        "decay": 0.5,
+        "is_reference": false,
+        "n_selected_total": 191,
+        "n_posts_total": 428,
+        "wasted_spend_usd": {
+          "baseline": 91019.81,
+          "diversified_no_gate": 35874.46,
+          "koxpilot": 11526.88
+        },
+        "saved_usd_total": 79492.93,
+        "saved_share_of_budget": 0.3245,
+        "saved_usd_by_diversification": 55145.35,
+        "saved_usd_by_gating_and_quality_ranking": 24347.58,
+        "effective_view_rate": {
+          "baseline": 0.6577,
+          "diversified_no_gate": 0.8625,
+          "koxpilot": 0.945
+        },
+        "effective_view_rate_gap_pp_total": 28.73
+      },
+      {
+        "decay": 0.7,
+        "is_reference": true,
+        "n_selected_total": 181,
+        "n_posts_total": 442,
+        "wasted_spend_usd": {
+          "baseline": 91019.81,
+          "diversified_no_gate": 34797.17,
+          "koxpilot": 11301.26
+        },
+        "saved_usd_total": 79718.55,
+        "saved_share_of_budget": 0.3254,
+        "saved_usd_by_diversification": 56222.64,
+        "saved_usd_by_gating_and_quality_ranking": 23495.91,
+        "effective_view_rate": {
+          "baseline": 0.673,
+          "diversified_no_gate": 0.8648,
+          "koxpilot": 0.9423
+        },
+        "effective_view_rate_gap_pp_total": 26.93
+      },
+      {
+        "decay": 0.9,
+        "is_reference": false,
+        "n_selected_total": 163,
+        "n_posts_total": 448,
+        "wasted_spend_usd": {
+          "baseline": 91019.81,
+          "diversified_no_gate": 36235.8,
+          "koxpilot": 12381.87
+        },
+        "saved_usd_total": 78637.94,
+        "saved_share_of_budget": 0.321,
+        "saved_usd_by_diversification": 54784.01,
+        "saved_usd_by_gating_and_quality_ranking": 23853.93,
+        "effective_view_rate": {
+          "baseline": 0.6895,
+          "diversified_no_gate": 0.8591,
+          "koxpilot": 0.9362
+        },
+        "effective_view_rate_gap_pp_total": 24.67
+      }
+    ],
+    "per_campaign": [
+      {
+        "campaign_id": "BRIEF-001",
+        "budget_usd": 80000.0,
+        "by_decay": [
+          {
+            "decay": 0.5,
+            "n_selected": 70,
+            "n_posts": 125,
+            "spent_usd": 79203.23,
+            "utilization": 0.99,
+            "est_effective_posts_total": 93.25,
+            "est_cpm_usd": 20.104,
+            "wasted_spend_usd_koxpilot": 3255.33,
+            "wasted_spend_usd_baseline": 53581.31,
+            "wasted_spend_usd_diversified_no_gate": 13572.3,
+            "saved_usd_vs_baseline": 50325.98,
+            "effective_view_rate_koxpilot": 0.9578,
+            "constraints_ok": true,
+            "selection_jaccard_vs_reference": 0.9577,
+            "spend_overlap_share_vs_reference": 0.6513
+          },
+          {
+            "decay": 0.7,
+            "n_selected": 69,
+            "n_posts": 148,
+            "spent_usd": 79855.29,
+            "utilization": 0.9982,
+            "est_effective_posts_total": 118.42,
+            "est_cpm_usd": 17.014,
+            "wasted_spend_usd_koxpilot": 2174.72,
+            "wasted_spend_usd_baseline": 53581.31,
+            "wasted_spend_usd_diversified_no_gate": 14598.62,
+            "saved_usd_vs_baseline": 51406.59,
+            "effective_view_rate_koxpilot": 0.9655,
+            "constraints_ok": true,
+            "selection_jaccard_vs_reference": 1.0,
+            "spend_overlap_share_vs_reference": 1.0
+          },
+          {
+            "decay": 0.9,
+            "n_selected": 57,
+            "n_posts": 152,
+            "spent_usd": 79995.91,
+            "utilization": 0.9999,
+            "est_effective_posts_total": 138.63,
+            "est_cpm_usd": 14.911,
+            "wasted_spend_usd_koxpilot": 3255.33,
+            "wasted_spend_usd_baseline": 53581.31,
+            "wasted_spend_usd_diversified_no_gate": 13509.55,
+            "saved_usd_vs_baseline": 50325.98,
+            "effective_view_rate_koxpilot": 0.952,
+            "constraints_ok": true,
+            "selection_jaccard_vs_reference": 0.8261,
+            "spend_overlap_share_vs_reference": 0.9288
+          }
+        ],
+        "saved_usd_sign_by_decay": {
+          "0.5": 1,
+          "0.7": 1,
+          "0.9": 1
+        }
+      },
+      {
+        "campaign_id": "BRIEF-002",
+        "budget_usd": 45000.0,
+        "by_decay": [
+          {
+            "decay": 0.5,
+            "n_selected": 43,
+            "n_posts": 102,
+            "spent_usd": 44985.21,
+            "utilization": 0.9997,
+            "est_effective_posts_total": 66.25,
+            "est_cpm_usd": 15.17,
+            "wasted_spend_usd_koxpilot": 3695.89,
+            "wasted_spend_usd_baseline": 375.93,
+            "wasted_spend_usd_diversified_no_gate": 3611.99,
+            "saved_usd_vs_baseline": -3319.96,
+            "effective_view_rate_koxpilot": 0.9022,
+            "constraints_ok": true,
+            "selection_jaccard_vs_reference": 0.907,
+            "spend_overlap_share_vs_reference": 0.96
+          },
+          {
+            "decay": 0.7,
+            "n_selected": 39,
+            "n_posts": 95,
+            "spent_usd": 44995.72,
+            "utilization": 0.9999,
+            "est_effective_posts_total": 72.95,
+            "est_cpm_usd": 13.749,
+            "wasted_spend_usd_koxpilot": 5493.63,
+            "wasted_spend_usd_baseline": 375.93,
+            "wasted_spend_usd_diversified_no_gate": 3695.09,
+            "saved_usd_vs_baseline": -5117.7,
+            "effective_view_rate_koxpilot": 0.8711,
+            "constraints_ok": true,
+            "selection_jaccard_vs_reference": 1.0,
+            "spend_overlap_share_vs_reference": 1.0
+          },
+          {
+            "decay": 0.9,
+            "n_selected": 36,
+            "n_posts": 96,
+            "spent_usd": 44995.78,
+            "utilization": 0.9999,
+            "est_effective_posts_total": 87.39,
+            "est_cpm_usd": 12.355,
+            "wasted_spend_usd_koxpilot": 5493.63,
+            "wasted_spend_usd_baseline": 375.93,
+            "wasted_spend_usd_diversified_no_gate": 4770.88,
+            "saved_usd_vs_baseline": -5117.7,
+            "effective_view_rate_koxpilot": 0.8567,
+            "constraints_ok": true,
+            "selection_jaccard_vs_reference": 0.9231,
+            "spend_overlap_share_vs_reference": 0.94
+          }
+        ],
+        "saved_usd_sign_by_decay": {
+          "0.5": -1,
+          "0.7": -1,
+          "0.9": -1
+        }
+      },
+      {
+        "campaign_id": "BRIEF-003",
+        "budget_usd": 120000.0,
+        "by_decay": [
+          {
+            "decay": 0.5,
+            "n_selected": 78,
+            "n_posts": 201,
+            "spent_usd": 119952.81,
+            "utilization": 0.9996,
+            "est_effective_posts_total": 126.25,
+            "est_cpm_usd": 22.082,
+            "wasted_spend_usd_koxpilot": 4575.66,
+            "wasted_spend_usd_baseline": 37062.57,
+            "wasted_spend_usd_diversified_no_gate": 18690.17,
+            "saved_usd_vs_baseline": 32486.91,
+            "effective_view_rate_koxpilot": 0.9589,
+            "constraints_ok": true,
+            "selection_jaccard_vs_reference": 0.9359,
+            "spend_overlap_share_vs_reference": 0.9294
+          },
+          {
+            "decay": 0.7,
+            "n_selected": 73,
+            "n_posts": 199,
+            "spent_usd": 119966.67,
+            "utilization": 0.9997,
+            "est_effective_posts_total": 149.44,
+            "est_cpm_usd": 18.948,
+            "wasted_spend_usd_koxpilot": 3632.91,
+            "wasted_spend_usd_baseline": 37062.57,
+            "wasted_spend_usd_diversified_no_gate": 16503.46,
+            "saved_usd_vs_baseline": 33429.66,
+            "effective_view_rate_koxpilot": 0.962,
+            "constraints_ok": true,
+            "selection_jaccard_vs_reference": 1.0,
+            "spend_overlap_share_vs_reference": 1.0
+          },
+          {
+            "decay": 0.9,
+            "n_selected": 70,
+            "n_posts": 200,
+            "spent_usd": 119971.57,
+            "utilization": 0.9998,
+            "est_effective_posts_total": 181.24,
+            "est_cpm_usd": 15.706,
+            "wasted_spend_usd_koxpilot": 3632.91,
+            "wasted_spend_usd_baseline": 37062.57,
+            "wasted_spend_usd_diversified_no_gate": 17955.37,
+            "saved_usd_vs_baseline": 33429.66,
+            "effective_view_rate_koxpilot": 0.9631,
+            "constraints_ok": true,
+            "selection_jaccard_vs_reference": 0.9589,
+            "spend_overlap_share_vs_reference": 0.888
+          }
+        ],
+        "saved_usd_sign_by_decay": {
+          "0.5": 1,
+          "0.7": 1,
+          "0.9": 1
+        }
+      }
+    ],
+    "stability": {
+      "selection_jaccard_min_vs_reference": 0.8261,
+      "spend_overlap_share_min_vs_reference": 0.6513,
+      "threshold": 0.8,
+      "selection_stable": false,
+      "saved_usd_total_by_decay": {
+        "0.5": 79492.93,
+        "0.7": 79718.55,
+        "0.9": 78637.94
+      },
+      "saved_usd_by_diversification_by_decay": {
+        "0.5": 55145.35,
+        "0.7": 56222.64,
+        "0.9": 54784.01
+      },
+      "saved_usd_by_gating_and_quality_ranking_by_decay": {
+        "0.5": 24347.58,
+        "0.7": 23495.91,
+        "0.9": 23853.93
+      },
+      "sign_stable": {
+        "saved_usd_total": true,
+        "saved_usd_by_diversification": true,
+        "saved_usd_by_gating_and_quality_ranking": true
+      }
+    },
+    "what_moves_with_decay": [
+      "每人买几条 / 总条数：decay 越高，第 2、3 条的边际价值越接近第 1 条，贪心就更愿意在同一个人身上加买（本次实测总条数随档位变化）。",
+      "等效条数、估算曝光与 CPM：``effective_posts`` 本身就是 decay 的函数，这些数字**必然**随档位变，不属于'应当稳定'的范畴，照实报出。"
+    ],
+    "blockers": [],
+    "verdict": "value_conclusions_hold_but_selection_shifts",
+    "headline": "decay ∈ (0.5, 0.7, 0.9)（正式链路用 0.7）：合计少浪费 $78,638~$79,719（相对离差 1.4%），两段归因（分散化 / 门禁与质量排序）符号均未翻转；但选中名单 Jaccard 最低 0.826、金额加权重叠最低 0.651，说明选谁与买几条会随该假设变动。",
+    "note": "这条扫描回答的是'选谁与结论方向是否依赖该假设'，不回答'哪个 decay 更接近真实世界'——后者需要真实投放的重复触达数据，本项目没有。"
+  },
   "counterfactual_value_audit": {
     "method": {
       "baseline": "按粉丝量降序选人直到花完预算（不看门禁、不做结构约束），行业最朴素做法",
@@ -3708,6 +4008,7 @@
     "delta 为「变体 − 全量」：负值 = 关掉后指标下降（该规则有正向贡献），正值 = 关掉后指标上升（该规则拖累该指标），|delta| < 0.001 视为无影响。严口径 F1 上：6/7 条为正向贡献（-G1.1, -G1.2, -G1.3, -G1.4, -G1.5, -G1.7）。如实记录 1 条**负贡献**规则：-G1.6（ΔF1 +0.0149）——关掉后严口径 F1 反而上升，因此不属于「对 F1 有正向贡献」的规则；保留理由（软信号、只推 review、宽口径召回来源）写在 docs/03-evaluation.md 表 4 一节，不靠这条 note 一句话带过。没有 |ΔF1| < 0.001 的死规则（dead_rules 为空）。",
     "A4 语义适配分：正式链路用的是规则版，不是 LLM 版。LLM 适配分覆盖候选池 14.9%（33/222 人）；离线注入后门禁判定只翻转 1 条，三个 campaign 合计少浪费 $735（gt 口径）。结论：方案 B：正式链路继续用规则版 fit_score，LLM 版只作为离线对照量化。（三条不予升格的判据见 table_6_llm_vs_rule.semantic_fit_llm_vs_rule.blockers）",
     "模型标识口径：已提交的 output/llm_bench.json 生成于口径统一之前（其 models 字段存的是请求用的 id，per_task 里存的是服务端回报的型号）。本文件里 models 一律取服务端回报的型号，请求 id 保留在 model_identity。两者不同的模型：ark: 请求 id=ep-20260308011145-z5d47 / 服务端回报=['doubao-seed-2-0-lite-260215']。重跑 `make llm` 后产物自身即为统一口径（model_identity.schema=model_identity_v2）。",
-    "三臂价值归因（基线 → 只分散化不门禁 → KOXPilot）：相对基线共少浪费 $79,719，其中结构分散化少浪费 $56,223，门禁与质量排序少浪费 $23,496，有效曝光率 67.3% →（第三臂）86.5% →（KOXPilot）94.2%，分散化 +19.2pp、门禁与质量排序 +7.8pp；两段贡献按链式差分定义，可加，负值照实写。"
+    "三臂价值归因（基线 → 只分散化不门禁 → KOXPilot）：相对基线共少浪费 $79,719，其中结构分散化少浪费 $56,223，门禁与质量排序少浪费 $23,496，有效曝光率 67.3% →（第三臂）86.5% →（KOXPilot）94.2%，分散化 +19.2pp、门禁与质量排序 +7.8pp；两段贡献按链式差分定义，可加，负值照实写。",
+    "预算模型里的 decay=0.7 是**建模假设、不是观测值**。三档扫描（0.5/0.7/0.9）结果：decay ∈ (0.5, 0.7, 0.9)（正式链路用 0.7）：合计少浪费 $78,638~$79,719（相对离差 1.4%），两段归因（分散化 / 门禁与质量排序）符号均未翻转；但选中名单 Jaccard 最低 0.826、金额加权重叠最低 0.651，说明选谁与买几条会随该假设变动。 即价值结论的方向与量级不靠这个假设撑着，但**具体选谁会变**，所以名单应当被当作「给定假设下的方案」而非唯一解。详见 budget_decay_sensitivity。"
   ]
 }

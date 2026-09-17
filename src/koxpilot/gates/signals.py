@@ -22,8 +22,8 @@ __all__ = [
     "OBSERVABLE_SIGNALS",
     "extract_signals",
     "kox_group_key",
-    "risk_severity_score",
     "monthly_growth_rates",
+    "risk_severity_score",
 ]
 
 #: 参与分位数标定的信号名（与 policy.SIGNAL_QUANTILES 的 key 一致）

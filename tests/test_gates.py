@@ -37,7 +37,6 @@ from koxpilot.gates.g2 import (
 from koxpilot.gates.g3 import evaluate_g3, high_severity_flags
 from koxpilot.gates.policy import (
     AUDIENCE_GEO_MIN,
-    GRADED_PENALTY_GAIN,
     AUDIENCE_MATCH_MIN,
     AUTHENTICITY_FLOOR_REJECT,
     COMPETITOR_HARD_MONTHS,
@@ -50,6 +49,7 @@ from koxpilot.gates.policy import (
     G1_WEIGHTS,
     G2_WEIGHTS,
     G3_WEIGHTS,
+    GRADED_PENALTY_GAIN,
     HARD_HITS_REJECT_MIN,
     REGULATED_SEVERITY_MULTIPLIER,
     SOURCE_JACCARD_MIN,

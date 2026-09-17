@@ -30,7 +30,7 @@ from ..gates.thresholds import Thresholds
 from ..types import CampaignSpec, GateResult, Kox
 from .metrics import fraud_report, verdict_report
 
-__all__ = ["ablation_report", "GATE_ROLES", "CONTRIBUTION_EPS", "contribution_sign"]
+__all__ = ["CONTRIBUTION_EPS", "GATE_ROLES", "ablation_report", "contribution_sign"]
 
 #: 判定"这条规则对严口径 F1 有可测量影响"的最小 |delta|。
 #: 低于它的差异在 5,000 条样本上等价于几条样本的抖动，不该被叫作贡献。

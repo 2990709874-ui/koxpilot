@@ -30,6 +30,7 @@ from ..llm.identity import IDENTITY_SCHEMA_LEGACY, model_display_map
 from ..types import BudgetPlan, CampaignSpec, GateResult, Kox
 from .ablation import ablation_report
 from .audit import cost_audit_report, counterfactual_report
+from .decay_scan import decay_sensitivity_report
 from .llm_compare import llm_vs_rule_report
 from .llm_fit import llm_fit_audit
 from .metrics import fraud_report, gt_of, verdict_report
@@ -41,8 +42,8 @@ __all__ = [
     "EvalContext",
     "budget_section",
     "build_context",
-    "review_fp_attribution",
     "reject_fp_attribution",
+    "review_fp_attribution",
     "run_full_eval",
 ]
 
@@ -336,6 +337,11 @@ def run_full_eval(
 
     budget_rows, plans, baselines, diversified = budget_section(ctx)
     counterfactual = counterfactual_report(ctx.records, plans, baselines, diversified)
+    # decay 敏感性：`POST_DECAY_SCAN` 这个常量长期"定义了但没有产物"，
+    # 于是 decay=0.7 这个采购模型里的关键假设没有任何证据支撑。这里把三档真跑出来，
+    # 回答的是"换个假设，选谁和结论方向会不会变"，不回答"哪档更接近真实世界"
+    # （后者需要真实投放的重复触达数据，本项目没有）。
+    decay_scan = decay_sensitivity_report(ctx.records, ctx.specs, ctx.thresholds)
     rule_f1 = None
     llm_f1 = None
     if table6.get("status") == "ok":
@@ -396,6 +402,17 @@ def run_full_eval(
             + str(attribution["headline"])
             + "；两段贡献按链式差分定义，可加，负值照实写。"
         )
+    if decay_scan.get("status") == "ok":
+        # 这条必须把"结论稳"和"选人不稳"两半都说出来。只报前半句，
+        # 等于用"价值结论不受影响"掩盖"这份名单换个假设就换人"。
+        honesty.append(
+            "预算模型里的 decay=0.7 是**建模假设、不是观测值**。三档扫描（0.5/0.7/0.9）结果："
+            + str(decay_scan["headline"])
+            + " 即价值结论的方向与量级不靠这个假设撑着，但**具体选谁会变**，"
+            "所以名单应当被当作「给定假设下的方案」而非唯一解。详见 budget_decay_sensitivity。"
+        )
+    else:
+        honesty.append("decay 敏感性扫描未跑：" + str(decay_scan.get("note")))
 
     return {
         "meta": {
@@ -432,6 +449,7 @@ def run_full_eval(
         "table_5_sensitivity": table5,
         "table_6_llm_vs_rule": table6,
         "budget": budget_rows,
+        "budget_decay_sensitivity": decay_scan,
         "counterfactual_value_audit": counterfactual,
         "cost_audit": cost,
         "weak_spots": weak_spots,

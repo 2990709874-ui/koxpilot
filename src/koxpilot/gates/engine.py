@@ -22,7 +22,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Final
 
-from ..types import CampaignSpec, GateResult, Kox, NEUTRAL_SPEC, Reason, Verdict
+from ..types import NEUTRAL_SPEC, CampaignSpec, GateResult, Kox, Reason, Verdict
 from .g0 import evaluate_g0
 from .g1 import evaluate_g1
 from .g2 import evaluate_g2
@@ -38,11 +38,11 @@ from .signals import kox_group_key
 from .thresholds import Thresholds
 
 __all__ = [
+    "GROUND_TRUTH_FIELD",
     "evaluate",
     "evaluate_all",
     "observable_view",
     "synthesize_verdict",
-    "GROUND_TRUTH_FIELD",
 ]
 
 #: ground truth 字段名。本模块唯一使用它的地方是"把它排除掉"（见 observable_view）。

@@ -37,14 +37,14 @@ from ..taxonomy import (
     GEO_NEIGHBORS,
     HIGH_RISK_FLAG_TYPES,
     LOW_RISK_FLAG_TYPES,
-    PLATFORMS,
     PLATFORM_WEIGHTS,
+    PLATFORMS,
     follower_bucket,
 )
 from ..types import Kox
 from . import config as C
 
-__all__ = ["generate_dataset", "build_kox", "InjectionPlan", "plan_injections"]
+__all__ = ["InjectionPlan", "build_kox", "generate_dataset", "plan_injections"]
 
 # handle 生成词表（纯合成，无真实账号）
 _ADJ = (

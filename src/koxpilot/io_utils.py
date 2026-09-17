@@ -16,13 +16,13 @@ from pathlib import Path
 from typing import Any
 
 __all__ = [
-    "repo_root",
     "data_dir",
-    "output_dir",
-    "dump_json",
     "dump_dataset",
-    "load_json",
+    "dump_json",
     "file_sha256",
+    "load_json",
+    "output_dir",
+    "repo_root",
 ]
 
 _COMPACT = (",", ":")

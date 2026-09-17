@@ -24,13 +24,13 @@ from ..types import BudgetPlan
 from .metrics import gt_of
 
 __all__ = [
+    "ARM_LABELS",
     "FRAUD_RESIDUAL_VIEW_SHARE",
     "RATIO_FRAGILE_BASELINE_RATE",
-    "ARM_LABELS",
-    "plan_audit",
     "arm_attribution",
-    "counterfactual_report",
     "cost_audit_report",
+    "counterfactual_report",
+    "plan_audit",
 ]
 
 #: 三条对照臂的产物命名（与 budget/planner.py 的三个入口一一对应）

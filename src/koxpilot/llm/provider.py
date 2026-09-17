@@ -33,11 +33,11 @@ from typing import Any, Literal
 
 __all__ = [
     "LLMError",
-    "Usage",
-    "LLMResponse",
     "LLMProvider",
-    "build_provider",
+    "LLMResponse",
+    "Usage",
     "available_providers",
+    "build_provider",
 ]
 
 ProviderName = Literal["ark", "azure", "openai"]
@@ -69,7 +69,7 @@ class Usage:
     def total_tokens(self) -> int:
         return self.prompt_tokens + self.completion_tokens
 
-    def __add__(self, other: "Usage") -> "Usage":
+    def __add__(self, other: Usage) -> Usage:
         return Usage(
             prompt_tokens=self.prompt_tokens + other.prompt_tokens,
             completion_tokens=self.completion_tokens + other.completion_tokens,
@@ -78,7 +78,7 @@ class Usage:
         )
 
     @classmethod
-    def from_payload(cls, payload: dict[str, Any] | None) -> "Usage":
+    def from_payload(cls, payload: dict[str, Any] | None) -> Usage:
         if not payload:
             return cls()
         ctd = payload.get("completion_tokens_details") or {}
@@ -255,7 +255,7 @@ class LLMProvider:
                     payload = json.loads(resp.read().decode("utf-8"))
                 latency_ms = int((time.time() - started) * 1000)
                 return self._parse(payload, latency_ms)
-            except urllib.error.HTTPError as exc:  # noqa: PERF203
+            except urllib.error.HTTPError as exc:
                 detail = ""
                 try:
                     detail = exc.read().decode("utf-8")[:300]

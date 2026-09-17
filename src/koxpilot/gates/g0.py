@@ -21,7 +21,7 @@ from ..types import Reason
 from .humanize import pct
 from .policy import COMPLETENESS_REVIEW_MAX, CRITICAL_FIELDS
 
-__all__ = ["G0Outcome", "evaluate_g0", "completeness_of"]
+__all__ = ["G0Outcome", "completeness_of", "evaluate_g0"]
 
 _FIELD_ZH = {
     "followers": "粉丝数",
