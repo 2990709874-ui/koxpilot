@@ -341,16 +341,20 @@ export function NotesTab({
       <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
         <Cell
           label={`三档 decay（${((decay.scan ?? []) as number[]).join(' / ')}）下的合计少浪费`}
-          value={((decay.stability as Loose).saved_usd_total_by_decay as number[] | undefined)
-            ? (((decay.stability as Loose).saved_usd_total_by_decay as number[]).map((x) => usd0(x)).join(' · '))
-            : '—'}
+          value={Object.entries(((decay.stability as Loose).saved_usd_total_by_decay ?? {}) as Record<string, number>)
+            .map(([k, v]) => `${k}→${usd0(Number(v))}`)
+            .join(' · ')}
           path="budget_decay_sensitivity.stability.saved_usd_total_by_decay"
           tone="good"
         />
         <Cell
-          label="两段归因符号是否稳定"
-          value={String((decay.stability as Loose).sign_stable)}
-          path="…stability.sign_stable"
+          label="两段归因符号是否逐项稳定"
+          value={
+            Object.values(((decay.stability as Loose).sign_stable ?? {}) as Record<string, boolean>).length > 0
+              ? `${Object.values(((decay.stability as Loose).sign_stable ?? {}) as Record<string, boolean>).filter(Boolean).length}/${Object.values(((decay.stability as Loose).sign_stable ?? {}) as Record<string, boolean>).length} 项 true`
+              : '—'
+          }
+          path="…stability.sign_stable（逐项：total / 分散化 / 门禁与质量排序）"
           tone="good"
         />
         <Cell
