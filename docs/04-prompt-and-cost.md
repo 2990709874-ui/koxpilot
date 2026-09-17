@@ -269,7 +269,26 @@ llm:
 
 `key = 任务 + 模型/版本 + sha1(实际发给模型的完整 messages)`。为什么不能只 hash `kox_id`、以及这个 bug 怎么被抓到的，见 [03 §2.2](03-evaluation.md#22-第二道网缓存-key-只-hash-了-kox_id)。
 
-一处小的产物不一致，登记在这里：`metrics.json.table_6.models.ark` 记的是 endpoint id（`ep-20260308011145-z5d47`），而 `cost_audit.token_account.per_task` 里记的是模型名（`doubao-seed-2-0-lite-260215`）。同一个模型，两处口径不同——不影响数字，但对读者是噪声。<!-- TODO: 待统一 ark 的标识口径（endpoint id vs 模型名），涉及 llm/provider.py 与 eval 落盘字段 -->
+### 6.4 模型标识：请求 id 与服务端型号是两件事（已统一）
+
+这里曾经有一处真实的产物不一致：`metrics.json.table_6.models.ark` 记的是 **endpoint id**（`ep-20260308011145-z5d47`，ARK 用 endpoint 当 `model` 字段发请求），而 `cost_audit.token_account.per_task` 里记的是**服务端回报的型号**（`doubao-seed-2-0-lite-260215`）。两处都叫 "model"，含义不同。它不影响任何 token 数字，但照着 `models` 写材料的人会说出"我们用的模型是 ep-2026…"——那是资源 id 不是模型，现场会被问穿。
+
+现在的口径（`src/koxpilot/llm/identity.py`）：
+
+| 字段 | 含义 | 来源 |
+| --- | --- | --- |
+| `models[key]` | **对外展示名**：服务端回报的型号优先 | 归一结果 |
+| `model_identity.by_model_key[key].requested_model_id` | 我们发请求时填进 body 的 `model`（ARK 是 endpoint id） | provider 配置 / `ARK_MODEL` |
+| `...served_models` | 服务端在响应里回报的型号（可能多个：灰度/版本切换） | API 响应的 `model` 字段 |
+| `...display_source` | 展示名是**谁说的** | `served_by_api` / `requested_id_confirmed_by_api` / `requested_id_only` / `multiple_served_models` |
+
+三条纪律：
+
+1. **不做字符串模式匹配。** 不存在"以 `ep-` 开头就算 endpoint"这种判据——换供应商就会把对的说成错的，而且会让错误看起来像正确。唯一判据是"这个名字是谁说的"。
+2. **调用失败不得把请求 id 冒充成服务端回报。** 全部失败的槽位 `served_models = []`、`display_source = requested_id_only`，来源自证其弱。
+3. **服务端回报多个型号时不许静默挑一个**，`display` 如实写成 `multiple:a,b`。
+
+已提交的 `output/llm_bench.json` 仍是统一之前的产物（重跑 `make llm` 要真花 token，本次没跑）。读侧会把它归一成同一套口径，并在 `metrics.json.honesty_notes` 里直说"该产物生成于口径统一之前"，`model_identity.schema` 标为 `legacy_v1`；重跑后即为 `model_identity_v2`。守这件事的测试是 `tests/test_model_identity.py::TestShippedArtifacts::test_metrics_never_presents_an_endpoint_id_as_the_model`——它从产物里现取请求 id，断言它在 `metrics.json` 里**只**出现在 `requested_model_id` 上。
 
 ---
 

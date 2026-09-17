@@ -21,6 +21,7 @@ from typing import Any
 from ..gates.g2 import rule_fit_score
 from ..gates.policy import DECLARED_OBSERVED_JACCARD_MIN, FIT_SCORE_REVIEW_MAX
 from ..io_utils import load_json
+from ..llm.identity import identity_from_bench, model_display_map
 from ..stats import mean, quantiles
 from ..types import CampaignSpec, GateResult
 from .metrics import binary_scores, gt_of
@@ -139,10 +140,16 @@ def llm_vs_rule_report(
     delta = None
     if best is not None and rule_arm_in_bench is not None:
         delta = round(float(best[1]["f1"]) - float(rule_arm_in_bench["f1"]), 4)
+    # 模型标识统一：`models` 一律给**展示名**（服务端回报优先），
+    # 请求用的 endpoint id 放在 `model_identity` 里。旧产物里 `models` 写的是
+    # endpoint id、`per_task[*].model` 写的是型号，直接透传会让同一份 metrics
+    # 里出现两个名字，读者只能猜哪个是真的。
+    identity = identity_from_bench(bench)
     payload.update(
         {
             "status": "ok",
-            "models": bench.get("models"),
+            "models": model_display_map(identity) or bench.get("models"),
+            "model_identity": identity,
             "sample_n": (bench.get("tag_bench") or {}).get("n_samples"),
             "llm_arm": llm_arms,
             "rule_arm_same_sample": rule_arm_in_bench,
@@ -151,6 +158,8 @@ def llm_vs_rule_report(
             "explanation": (
                 "同一抽样、同一 ground truth 下比较；规则列在 rule_arm_same_sample，"
                 "全量规则指标在 rule_arm.tag_mismatch。"
+                "models 给的是对外展示名（服务端回报的型号优先），"
+                "我们发请求时用的 id（ARK 是 endpoint id）见 model_identity。"
             ),
         }
     )

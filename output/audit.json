@@ -605,8 +605,36 @@
     "token_account": {
       "source": "output/llm_bench.json（各 API 返回的 usage 字段，非估算）",
       "models": {
-        "ark": "ep-20260308011145-z5d47",
+        "ark": "doubao-seed-2-0-lite-260215",
         "azure": "gpt-5.5-2026-04-24"
+      },
+      "model_identity": {
+        "schema": "legacy_v1",
+        "by_model_key": {
+          "ark": {
+            "model_key": "ark",
+            "requested_model_id": "ep-20260308011145-z5d47",
+            "served_models": [
+              "doubao-seed-2-0-lite-260215"
+            ],
+            "display": "doubao-seed-2-0-lite-260215",
+            "display_source": "served_by_api::inferred_from_legacy_per_task",
+            "requested_id_equals_served": false,
+            "multiple_served_models": false
+          },
+          "azure": {
+            "model_key": "azure",
+            "requested_model_id": "gpt-5.5-2026-04-24",
+            "served_models": [
+              "gpt-5.5-2026-04-24"
+            ],
+            "display": "gpt-5.5-2026-04-24",
+            "display_source": "requested_id_confirmed_by_api::inferred_from_legacy_per_task",
+            "requested_id_equals_served": true,
+            "multiple_served_models": false
+          }
+        },
+        "note": "该 llm_bench.json 生成于「统一模型标识口径」之前：`models[key]` 是我们发请求时用的 id（ARK 用 endpoint id），`per_task[*].model` 是服务端回报的模型名。两者都保留，对外展示取服务端名。重跑 `make llm` 后产物会带 `model_identity`，此处即为 v2。"
       },
       "measured_calls": 172,
       "prompt_tokens": 536827,

@@ -246,6 +246,14 @@ def cmd_eval(args: argparse.Namespace) -> int:
             print(f"[eval]   不予升格的判据：{blocker}")
     else:
         print(f"[eval] A4 适配分口径：{fit_audit.get('note')}")
+    identity = metrics["table_6_llm_vs_rule"].get("model_identity") or {}
+    for key, entry in sorted((identity.get("by_model_key") or {}).items()):
+        # 只在"请求 id 与服务端回报的型号确实不同"时打印：这正是以前会被误引用的那一格。
+        if entry.get("requested_id_equals_served") is False:
+            print(
+                f"[eval] 模型标识 {key}：对外报 {entry['display']}"
+                f"（服务端回报），请求时用的 id 是 {entry['requested_model_id']}"
+            )
     print("[eval] 弱项（如实呈现）：")
     for spot in metrics["weak_spots"][:3]:
         print(f"[eval]   - {spot['note']}")

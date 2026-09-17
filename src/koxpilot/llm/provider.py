@@ -104,10 +104,17 @@ class Usage:
 class LLMResponse:
     text: str
     usage: Usage
+    #: 展示用模型名：服务端回报的优先，没有则退回我们请求时用的 id。
     model: str
     provider: str
     latency_ms: int
     raw: dict[str, Any] = field(default_factory=dict, repr=False)
+    #: **仅**服务端在响应里明确回报的模型名；响应没带 ``model`` 字段时为空串。
+    #: 与 ``model`` 分开存是因为二者含义不同：ARK 用 endpoint id 发请求
+    #: （``ep-...``），服务端回报的却是真实型号（``doubao-...``）。
+    #: 合成一个字段就会出现"models 里写 endpoint、per_task 里写型号"那种
+    #: 同名不同义的产物，读的人只能靠猜。
+    served_model: str = ""
 
     def json_payload(self) -> Any:
         """把模型输出解析成 JSON。
@@ -283,13 +290,15 @@ class LLMProvider:
             # "结构对了一半"的响应真实存在。漏掉它会让确定性的结构错误
             # 冒充成网络异常，被重试 4 次。
             raise LLMError(self.name, f"响应结构异常：{json.dumps(payload)[:300]}") from exc
+        served = str(payload.get("model") or "")
         return LLMResponse(
             text=text,
             usage=Usage.from_payload(payload.get("usage")),
-            model=str(payload.get("model") or self.model),
+            model=served or self.model,
             provider=self.name,
             latency_ms=latency_ms,
             raw=payload,
+            served_model=served,
         )
 
 

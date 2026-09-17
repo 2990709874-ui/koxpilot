@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from ..io_utils import load_json
+from ..llm.identity import identity_from_bench, model_display_map
 from ..types import BudgetPlan
 from .metrics import gt_of
 
@@ -680,12 +681,16 @@ def cost_audit_report(
     bench = load_json(path)
     totals = bench.get("totals") or {}
     calls = int(totals.get("calls") or 0)
+    # `models` 取展示名（服务端回报优先），请求 id 单独放 `model_identity`：
+    # 成本账里"这些 token 是谁花的"必须只有一个答案。
+    identity = identity_from_bench(bench)
     payload.update(
         {
             "status": "ok",
             "token_account": {
                 "source": "output/llm_bench.json（各 API 返回的 usage 字段，非估算）",
-                "models": bench.get("models"),
+                "models": model_display_map(identity) or bench.get("models"),
+                "model_identity": identity,
                 "measured_calls": calls,
                 "prompt_tokens": totals.get("prompt_tokens"),
                 "completion_tokens": totals.get("completion_tokens"),

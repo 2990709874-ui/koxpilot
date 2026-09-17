@@ -285,5 +285,6 @@ PYTHONPATH=src python -m koxpilot.cli multiseed --seeds 12
 - `output/multiseed.json`——完整数据，含每个种子的明细（`per_seed`，本轮起每种子多存三臂归因字段）与四组汇总（`A_value_robustness`（内含 `arm_attribution` 三臂归因）/ `B_variance_attribution` / `C_gate_metric_robustness` / `D_weak_spot_stability`）。
 - `src/koxpilot/eval/multiseed.py`——实验代码；t / F 检验与 t 分位数用正则化不完全 Beta 函数手写实现，与项目"零第三方运行依赖"约束一致。
 - `tests/test_llm_fit_audit.py`——A4 适配分口径审计的守卫（17 条）：结论必须由覆盖率/双算率/单向性三条判据算出（构造一份"覆盖率 100% + 双向 + 无重叠"的假缓存时必须自动翻成"可升格"）、正式链路的 `fit_source` 一条 `injected:` 都不许有、缓存缺失/brief 对不上/id 不在数据集里都必须如实报状态、且全表不许出现任何准确率类字段（语义适配没有 gt）。
+- `tests/test_model_identity.py`——模型标识口径的守卫（24 条）：请求 id 与服务端型号不许合并成一个字段、调用全失败时不许把请求 id 冒充成"服务端确认过"、服务端回报多个型号时不许静默挑一个、不许出现"以 `ep-` 开头就算 endpoint"这类模式匹配；最硬的一条是从产物里现取请求 id，断言它在 `metrics.json` 里**只**出现在 `requested_model_id` 上（即"这些 token 是谁跑的"只有一个答案）。
 - `tests/test_value_attribution.py`——三臂归因的守卫（26 条）：第三臂对"质量字段整体对调 / 伪造 verdict / 伪造真实性与适配分数"必须完全不变（并有反向对照断言 KOXPilot 臂会变）、两段贡献可加、负贡献不截断、缺第三臂时报告如实说"未跑"。
 - `tests/test_multiseed.py`——统计工具对着封闭解核对（`I_x(1,1) = x`、`t_{0.975,11} ≈ 2.201`、Cauchy 尾概率）、弱项分类逻辑用构造输入锁死、并有一条测试断言**跑多种子期间 `data/` 与 `output/` 的所有文件 mtime 不变**。

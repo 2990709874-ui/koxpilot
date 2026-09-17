@@ -39,7 +39,15 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from .prompts import brief_parse_messages, fit_score_messages, tag_judge_messages
-from .provider import LLMError, LLMProvider, Usage, available_providers, build_provider
+from .identity import identity_from_ledger, model_display_map
+from .provider import (
+    LLMError,
+    LLMProvider,
+    LLMResponse,
+    Usage,
+    available_providers,
+    build_provider,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DATA_DIR = REPO_ROOT / "data"
@@ -60,24 +68,68 @@ FIT_SAMPLE_N = 260  # 每个 brief 的候选适配打分量
 class CallLog:
     task: str
     model_key: str
+    #: 展示用模型名（服务端回报优先，失败时退回请求 id）——保留原字段名与位置，
+    #: 免得所有调用点都要改。
     model: str
     n_items: int
     usage: Usage
     latency_ms: int
     ok: bool
     error: str = ""
+    #: 我们发请求时填进 body 的 ``model``（ARK 是 endpoint id）。
+    requested_model: str = ""
+    #: 服务端明确回报的模型名；响应没带就留空。空 ≠ "和请求 id 相同"，
+    #: 所以这里绝不用请求 id 兜底填充。
+    served_model: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "task": self.task,
             "model_key": self.model_key,
             "model": self.model,
+            "requested_model": self.requested_model,
+            "served_model": self.served_model,
             "n_items": self.n_items,
             "latency_ms": self.latency_ms,
             "ok": self.ok,
             "error": self.error,
             **self.usage.to_dict(),
         }
+
+    @classmethod
+    def from_response(
+        cls, task: str, model_key: str, prov: LLMProvider, resp: LLMResponse, n_items: int
+    ) -> CallLog:
+        """成功调用的记账：请求 id 与服务端名各归各位。"""
+        return cls(
+            task,
+            model_key,
+            resp.model,
+            n_items,
+            resp.usage,
+            resp.latency_ms,
+            True,
+            requested_model=prov.model,
+            served_model=resp.served_model,
+        )
+
+    @classmethod
+    def from_failure(
+        cls, task: str, model_key: str, prov: LLMProvider, n_items: int, error: str
+    ) -> CallLog:
+        """失败调用的记账：只知道请求 id，服务端名留空——不能拿请求 id 冒充服务端回报。"""
+        return cls(
+            task,
+            model_key,
+            prov.model,
+            n_items,
+            Usage(),
+            0,
+            False,
+            error[:300],
+            requested_model=prov.model,
+            served_model="",
+        )
 
 
 @dataclass
@@ -91,6 +143,8 @@ class Ledger:
 
     def summarize(self) -> dict[str, Any]:
         by: dict[str, dict[str, Any]] = {}
+        served: dict[str, set[str]] = {}
+        requested: dict[str, str] = {}
         for c in self.calls:
             key = f"{c.task}::{c.model_key}"
             slot = by.setdefault(
@@ -110,6 +164,13 @@ class Ledger:
                     "latency_ms_total": 0,
                 },
             )
+            # 同一 (task, model_key) 下服务端可能回报多个名字（灰度/版本切换），
+            # 因此收集成集合而不是"最后一个覆盖前一个"——被覆盖掉的那个名字
+            # 恰恰是"这批 token 到底谁跑的"最关键的证据。
+            if c.served_model:
+                served.setdefault(key, set()).add(c.served_model)
+            if c.requested_model and key not in requested:
+                requested[key] = c.requested_model
             slot["calls"] += 1
             if not c.ok:
                 slot["failed_calls"] += 1
@@ -120,12 +181,14 @@ class Ledger:
             slot["cached_tokens"] += c.usage.cached_tokens
             slot["total_tokens"] += c.usage.total_tokens
             slot["latency_ms_total"] += c.latency_ms
-        for slot in by.values():
+        for key, slot in by.items():
             n = max(slot["calls"], 1)
             slot["avg_latency_ms"] = round(slot["latency_ms_total"] / n, 1)
             slot["tokens_per_item"] = (
                 round(slot["total_tokens"] / slot["items"], 2) if slot["items"] else None
             )
+            slot["requested_model_id"] = requested.get(key)
+            slot["served_models"] = sorted(served.get(key, set()))
         return by
 
 
@@ -252,7 +315,7 @@ def run_brief(
         try:
             resp = prov.chat(msgs)
             spec = resp.json_payload()
-            ledger.add(CallLog("brief", mk, resp.model, 1, resp.usage, resp.latency_ms, True))
+            ledger.add(CallLog.from_response("brief", mk, prov, resp, 1))
             cache.put(ck, spec, flush_every=1)
             print(
                 f"[brief] {bid} / {mk} ok tokens={resp.usage.total_tokens} "
@@ -261,7 +324,7 @@ def run_brief(
             )
             return bid, mk, spec
         except (LLMError, KeyError, ValueError) as exc:
-            ledger.add(CallLog("brief", mk, prov.model, 1, Usage(), 0, False, str(exc)[:300]))
+            ledger.add(CallLog.from_failure("brief", mk, prov, 1, str(exc)))
             print(f"[brief] {bid} / {mk} FAILED: {exc}", file=sys.stderr, flush=True)
             return bid, mk, None
 
@@ -296,11 +359,11 @@ def run_tag(
             try:
                 resp = prov.chat(msgs)
                 items = _parse_array(resp.json_payload(), mk)
-                ledger.add(CallLog("tag", mk, resp.model, len(batch), resp.usage, resp.latency_ms, True))
+                ledger.add(CallLog.from_response("tag", mk, prov, resp, len(batch)))
                 cache.put(ck, items)
                 return items
             except (LLMError, KeyError, ValueError) as exc:
-                ledger.add(CallLog("tag", mk, prov.model, len(batch), Usage(), 0, False, str(exc)[:300]))
+                ledger.add(CallLog.from_failure("tag", mk, prov, len(batch), str(exc)))
                 print(f"[tag] {mk} batch 失败: {str(exc)[:140]}", file=sys.stderr, flush=True)
                 return []
 
@@ -340,13 +403,11 @@ def run_fit(
             try:
                 resp = provider.chat(msgs)
                 items = _parse_array(resp.json_payload(), model_key)
-                ledger.add(CallLog("fit", model_key, resp.model, len(batch), resp.usage, resp.latency_ms, True))
+                ledger.add(CallLog.from_response("fit", model_key, provider, resp, len(batch)))
                 cache.put(ck, items)
                 return items
             except (LLMError, KeyError, ValueError) as exc:
-                ledger.add(
-                    CallLog("fit", model_key, provider.model, len(batch), Usage(), 0, False, str(exc)[:300])
-                )
+                ledger.add(CallLog.from_failure("fit", model_key, provider, len(batch), str(exc)))
                 print(f"[fit] {bid} batch 失败: {str(exc)[:140]}", file=sys.stderr, flush=True)
                 return []
 
@@ -496,7 +557,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[init] 跳过 {mk}：{exc}", file=sys.stderr)
     if not providers:
         return 2
-    print(f"[init] 可用模型：{ {k: v.model for k, v in providers.items()} }")
+    print(f"[init] 可用模型（请求时用的 id）：{ {k: v.model for k, v in providers.items()} }")
 
     kox_path = DATA_DIR / "kox_5000.json"
     briefs_path = DATA_DIR / "briefs.json"
@@ -572,10 +633,19 @@ def main(argv: list[str] | None = None) -> int:
 
     # --- 落盘 ---
     summary = ledger.summarize()
+    # 模型标识：把"我们请求的 id"和"服务端回报的型号"分成两个字段写清楚。
+    # 早期产物里 `models` 是请求 id（ARK 是 endpoint）、`per_task[*].model` 是服务端型号，
+    # 两处同名不同义；现在 `models` 与 `per_task[*].model` 统一取展示名，
+    # endpoint id 保留在 `model_identity` 里，谁想核对都能核对。
+    identity = identity_from_ledger({k: v.model for k, v in providers.items()}, summary)
+    display = model_display_map(identity)
+    for slot in summary.values():
+        slot["model"] = display.get(str(slot.get("model_key")), slot.get("model"))
     bench = {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "elapsed_s": round(time.time() - started, 1),
-        "models": {k: v.model for k, v in providers.items()},
+        "models": {k: display.get(k, v.model) for k, v in providers.items()},
+        "model_identity": identity,
         "primary_model_key": primary,
         "per_task": summary,
         "totals": {
@@ -599,6 +669,7 @@ def main(argv: list[str] | None = None) -> int:
     cache.data["_meta"] = {
         "generated_at": bench["generated_at"],
         "models": bench["models"],
+        "model_identity": identity,
         "primary_model_key": primary,
         "tag_sample_n": args.tag_n,
         "fit_sample_n": args.fit_n,

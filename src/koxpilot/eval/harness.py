@@ -26,6 +26,7 @@ from ..gates.engine import evaluate_all
 from ..gates.policy import ALL_GATES, policy_snapshot
 from ..gates.thresholds import THRESHOLDS_VERSION, Thresholds, calibrate
 from ..io_utils import data_dir, file_sha256, load_json, output_dir
+from ..llm.identity import IDENTITY_SCHEMA_LEGACY, model_display_map
 from ..types import BudgetPlan, CampaignSpec, GateResult, Kox
 from .ablation import ablation_report
 from .audit import cost_audit_report, counterfactual_report
@@ -324,8 +325,13 @@ def run_full_eval(
     # A4 落差的量化：LLM 适配分 vs 规则版 + "注入正式链路"的离线反事实。
     # 放在表 6 里是因为它就是"LLM vs 规则"的第二格；**它只读不写**，
     # 正式链路的 fit_score 仍然是规则版，metrics.json 的逐字节可复现性不受影响。
+    # model_display 从表 6 归一好的 model_identity 里取，保证整份 metrics 只有一套模型口径。
     table6["semantic_fit_llm_vs_rule"] = llm_fit_audit(
-        ctx.records, ctx.specs, ctx.thresholds, llm_cache
+        ctx.records,
+        ctx.specs,
+        ctx.thresholds,
+        llm_cache,
+        model_display=model_display_map(table6.get("model_identity") or {}),
     )
 
     budget_rows, plans, baselines, diversified = budget_section(ctx)
@@ -365,6 +371,23 @@ def run_full_eval(
     else:
         honesty.append(
             "A4 语义适配分对照未跑：" + str(fit_audit.get("note")) + " 正式链路走规则版。"
+        )
+    identity = table6.get("model_identity") or {}
+    if identity.get("schema") == IDENTITY_SCHEMA_LEGACY:
+        # 已提交的 llm_bench.json 是"统一模型标识"之前的产物（重跑要真调 LLM 花 token，
+        # 本次没跑）。读侧已把它归一成同一套口径，但产物本身仍是旧形状——
+        # 这件事必须写在诚实性清单里，而不是让读者以为产物天生就是统一的。
+        legacy = [
+            f"{k}: 请求 id={v.get('requested_model_id')} / 服务端回报={v.get('served_models')}"
+            for k, v in sorted((identity.get("by_model_key") or {}).items())
+            if v.get("requested_id_equals_served") is False
+        ]
+        honesty.append(
+            "模型标识口径：已提交的 output/llm_bench.json 生成于口径统一之前"
+            "（其 models 字段存的是请求用的 id，per_task 里存的是服务端回报的型号）。"
+            "本文件里 models 一律取服务端回报的型号，请求 id 保留在 model_identity。"
+            + ("两者不同的模型：" + "；".join(legacy) + "。" if legacy else "")
+            + "重跑 `make llm` 后产物自身即为统一口径（model_identity.schema=model_identity_v2）。"
         )
     attribution = counterfactual.get("value_attribution")
     if attribution:

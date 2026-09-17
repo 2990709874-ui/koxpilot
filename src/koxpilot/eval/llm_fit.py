@@ -41,6 +41,7 @@ from ..gates.g2 import audience_match_score, rule_fit_score
 from ..gates.policy import FIT_SCORE_REVIEW_MAX
 from ..gates.thresholds import Thresholds
 from ..io_utils import load_json, output_dir
+from ..llm.identity import model_display_map
 from ..stats import mean
 from ..types import CampaignSpec, GateResult, Kox
 from .audit import plan_audit
@@ -104,12 +105,42 @@ def load_llm_fit_scores(
     return out, meta
 
 
-def _llm_meta(meta: Mapping[str, Any]) -> dict[str, Any]:
+def _llm_meta(
+    meta: Mapping[str, Any],
+    model_display: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    """LLM 侧元信息。
+
+    ``model`` 报**展示名**（服务端回报的型号优先），``requested_model_id`` 报我们发请求
+    时用的 id。这两个字段必须分开：ARK 用 endpoint id 发请求，早期
+    ``llm_cache.json._meta.models`` 里存的就是 ``ep-...``，直接当模型名报出去
+    会说出"我们用的模型是 ep-2026…"这种站不住的话。
+
+    ``model_display`` 由调用方从 ``llm_bench.json`` 归一后传入（旧缓存自身没有
+    服务端型号信息）；拿不到就如实退回请求 id，并在 ``model_source`` 里说明。
+    """
     key = meta.get("primary_model_key")
     models = meta.get("models") if isinstance(meta.get("models"), Mapping) else {}
+    requested = models.get(key) if key is not None else None
+    own = meta.get("model_identity")
+    display = None
+    source = "unavailable"
+    if isinstance(own, Mapping):  # v2 缓存自带归一结果，优先用它
+        display = model_display_map(own).get(str(key))
+        if display:
+            source = "llm_cache._meta.model_identity"
+    if not display and model_display:
+        display = model_display.get(str(key))
+        if display:
+            source = "llm_bench.json/model_identity"
+    if not display:
+        display = requested
+        source = "llm_cache._meta.models（我们请求时用的 id，非服务端回报的型号）"
     return {
         "primary_model_key": key,
-        "model": models.get(key) if key is not None else None,
+        "model": display,
+        "requested_model_id": requested,
+        "model_source": source,
         "fit_sample_n": meta.get("fit_sample_n"),
         "sample_seed": meta.get("seed"),
         "generated_at": meta.get("generated_at"),
@@ -435,6 +466,7 @@ def llm_fit_audit(
     specs: Sequence[CampaignSpec],
     thresholds: Thresholds,
     cache_path: Path | str | None = None,
+    model_display: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     """A4 LLM 适配分与规则版的对照 + 注入正式链路的离线反事实。
 
@@ -443,6 +475,8 @@ def llm_fit_audit(
         specs: campaign spec 列表，``campaign_id`` 需与缓存里的 brief_id 对齐。
         thresholds: 与正式链路同一套阈值。
         cache_path: ``llm_cache.json`` 路径，默认 ``output/llm_cache.json``。
+        model_display: ``model_key -> 展示用模型名``，由调用方从 ``llm_bench.json``
+            归一后传入（见 ``llm.identity``）。缺省时元信息里如实报请求 id。
 
     Returns:
         ``status="ok"`` 时含 per_campaign / totals / decision；
@@ -492,14 +526,14 @@ def llm_fit_audit(
                 "这通常意味着 brief 重新生成过而 LLM 分没重跑。"
             ),
             "rerun": RERUN_HINT,
-            "llm": _llm_meta(meta),
+            "llm": _llm_meta(meta, model_display),
         }
 
     totals = _totals(scored_rows)
     decision = _decision(totals)
     return {
         "status": "ok",
-        "llm": _llm_meta(meta),
+        "llm": _llm_meta(meta, model_display),
         "review_threshold": FIT_SCORE_REVIEW_MAX,
         "formal_chain_fit_source": "rule:category_map+keyword",
         "headline": _headline(totals, decision),

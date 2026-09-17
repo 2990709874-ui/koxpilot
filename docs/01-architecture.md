@@ -270,7 +270,7 @@ koxpilot/
 │   ├── gates/              # ← A3：engine / g0..g3 / signals / thresholds / policy / humanize
 │   ├── budget/             # ← A2+A5：planner / allocator / value / policy
 │   ├── eval/               # ← A6：harness / metrics / audit / llm_compare / llm_fit / sensitivity
-│   └── llm/                # ← A1+A4：runner / promptbench / prompts / prompt_variants / provider
+│   └── llm/                # ← A1+A4：runner / promptbench / prompts / prompt_variants / provider / identity
 ├── data/                   # 合成数据集 + 3 个 brief（产物，可由 make data 重建）
 ├── output/                 # 全部指标与判定产物（可由 make all 重建，逐字节可复现）
 ├── tests/                  # 162 项，含反数据泄漏的 AST 静态扫描 + 运行期哨兵

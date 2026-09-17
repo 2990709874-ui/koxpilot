@@ -2264,8 +2264,36 @@
     "llm_bench_path": "llm_bench.json",
     "status": "ok",
     "models": {
-      "ark": "ep-20260308011145-z5d47",
+      "ark": "doubao-seed-2-0-lite-260215",
       "azure": "gpt-5.5-2026-04-24"
+    },
+    "model_identity": {
+      "schema": "legacy_v1",
+      "by_model_key": {
+        "ark": {
+          "model_key": "ark",
+          "requested_model_id": "ep-20260308011145-z5d47",
+          "served_models": [
+            "doubao-seed-2-0-lite-260215"
+          ],
+          "display": "doubao-seed-2-0-lite-260215",
+          "display_source": "served_by_api::inferred_from_legacy_per_task",
+          "requested_id_equals_served": false,
+          "multiple_served_models": false
+        },
+        "azure": {
+          "model_key": "azure",
+          "requested_model_id": "gpt-5.5-2026-04-24",
+          "served_models": [
+            "gpt-5.5-2026-04-24"
+          ],
+          "display": "gpt-5.5-2026-04-24",
+          "display_source": "requested_id_confirmed_by_api::inferred_from_legacy_per_task",
+          "requested_id_equals_served": true,
+          "multiple_served_models": false
+        }
+      },
+      "note": "该 llm_bench.json 生成于「统一模型标识口径」之前：`models[key]` 是我们发请求时用的 id（ARK 用 endpoint id），`per_task[*].model` 是服务端回报的模型名。两者都保留，对外展示取服务端名。重跑 `make llm` 后产物会带 `model_identity`，此处即为 v2。"
     },
     "sample_n": 600,
     "llm_arm": {
@@ -2317,12 +2345,14 @@
     },
     "best_llm_model": "azure",
     "f1_gain_llm_over_rule": 0.1199,
-    "explanation": "同一抽样、同一 ground truth 下比较；规则列在 rule_arm_same_sample，全量规则指标在 rule_arm.tag_mismatch。",
+    "explanation": "同一抽样、同一 ground truth 下比较；规则列在 rule_arm_same_sample，全量规则指标在 rule_arm.tag_mismatch。models 给的是对外展示名（服务端回报的型号优先），我们发请求时用的 id（ARK 是 endpoint id）见 model_identity。",
     "semantic_fit_llm_vs_rule": {
       "status": "ok",
       "llm": {
         "primary_model_key": "ark",
-        "model": "ep-20260308011145-z5d47",
+        "model": "doubao-seed-2-0-lite-260215",
+        "requested_model_id": "ep-20260308011145-z5d47",
+        "model_source": "llm_bench.json/model_identity",
         "fit_sample_n": 260,
         "sample_seed": 20270919,
         "generated_at": "2026-09-17T22:39:31+0800"
@@ -3477,8 +3507,36 @@
     "token_account": {
       "source": "output/llm_bench.json（各 API 返回的 usage 字段，非估算）",
       "models": {
-        "ark": "ep-20260308011145-z5d47",
+        "ark": "doubao-seed-2-0-lite-260215",
         "azure": "gpt-5.5-2026-04-24"
+      },
+      "model_identity": {
+        "schema": "legacy_v1",
+        "by_model_key": {
+          "ark": {
+            "model_key": "ark",
+            "requested_model_id": "ep-20260308011145-z5d47",
+            "served_models": [
+              "doubao-seed-2-0-lite-260215"
+            ],
+            "display": "doubao-seed-2-0-lite-260215",
+            "display_source": "served_by_api::inferred_from_legacy_per_task",
+            "requested_id_equals_served": false,
+            "multiple_served_models": false
+          },
+          "azure": {
+            "model_key": "azure",
+            "requested_model_id": "gpt-5.5-2026-04-24",
+            "served_models": [
+              "gpt-5.5-2026-04-24"
+            ],
+            "display": "gpt-5.5-2026-04-24",
+            "display_source": "requested_id_confirmed_by_api::inferred_from_legacy_per_task",
+            "requested_id_equals_served": true,
+            "multiple_served_models": false
+          }
+        },
+        "note": "该 llm_bench.json 生成于「统一模型标识口径」之前：`models[key]` 是我们发请求时用的 id（ARK 用 endpoint id），`per_task[*].model` 是服务端回报的模型名。两者都保留，对外展示取服务端名。重跑 `make llm` 后产物会带 `model_identity`，此处即为 v2。"
       },
       "measured_calls": 172,
       "prompt_tokens": 536827,
@@ -3649,6 +3707,7 @@
     "factor 是判定阈值的整体缩放系数：对上尾规则放大=放松、对下尾规则放大=收紧，因此一次扫描同时覆盖两个方向。",
     "delta 为「变体 − 全量」：负值 = 关掉后指标下降（该规则有正向贡献），正值 = 关掉后指标上升（该规则拖累该指标），|delta| < 0.001 视为无影响。严口径 F1 上：6/7 条为正向贡献（-G1.1, -G1.2, -G1.3, -G1.4, -G1.5, -G1.7）。如实记录 1 条**负贡献**规则：-G1.6（ΔF1 +0.0149）——关掉后严口径 F1 反而上升，因此不属于「对 F1 有正向贡献」的规则；保留理由（软信号、只推 review、宽口径召回来源）写在 docs/03-evaluation.md 表 4 一节，不靠这条 note 一句话带过。没有 |ΔF1| < 0.001 的死规则（dead_rules 为空）。",
     "A4 语义适配分：正式链路用的是规则版，不是 LLM 版。LLM 适配分覆盖候选池 14.9%（33/222 人）；离线注入后门禁判定只翻转 1 条，三个 campaign 合计少浪费 $735（gt 口径）。结论：方案 B：正式链路继续用规则版 fit_score，LLM 版只作为离线对照量化。（三条不予升格的判据见 table_6_llm_vs_rule.semantic_fit_llm_vs_rule.blockers）",
+    "模型标识口径：已提交的 output/llm_bench.json 生成于口径统一之前（其 models 字段存的是请求用的 id，per_task 里存的是服务端回报的型号）。本文件里 models 一律取服务端回报的型号，请求 id 保留在 model_identity。两者不同的模型：ark: 请求 id=ep-20260308011145-z5d47 / 服务端回报=['doubao-seed-2-0-lite-260215']。重跑 `make llm` 后产物自身即为统一口径（model_identity.schema=model_identity_v2）。",
     "三臂价值归因（基线 → 只分散化不门禁 → KOXPilot）：相对基线共少浪费 $79,719，其中结构分散化少浪费 $56,223，门禁与质量排序少浪费 $23,496，有效曝光率 67.3% →（第三臂）86.5% →（KOXPilot）94.2%，分散化 +19.2pp、门禁与质量排序 +7.8pp；两段贡献按链式差分定义，可加，负值照实写。"
   ]
 }

@@ -34,6 +34,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from .identity import resolve_display
 from .prompt_variants import TAG_VARIANTS, build_messages
 from .provider import LLMError, LLMProvider, Usage, available_providers, build_provider
 from .runner import Cache, _batched, _parse_array, _sha1, pmap, rule_tag_mismatch
@@ -82,7 +83,14 @@ def run_arm(
         try:
             resp = provider.chat(msgs)
             items = _parse_array(resp.json_payload(), model_key)
-            rec = {"items": items, "usage": resp.usage.to_dict(), "latency_ms": resp.latency_ms}
+            rec = {
+                "items": items,
+                "usage": resp.usage.to_dict(),
+                "latency_ms": resp.latency_ms,
+                # 服务端回报的型号（没回报就是空串）。存进缓存是为了让"这批 token 谁跑的"
+                # 在不重新花钱的前提下也能回答；旧缓存条目没有这个键，会如实退回请求 id。
+                "served_model": resp.served_model,
+            }
             cache.put(ck, rec)
             return rec
         except (LLMError, KeyError, ValueError) as exc:
@@ -101,10 +109,13 @@ def run_arm(
     calls = len(batches)
     failed = 0
     latency_total = 0
+    served: set[str] = set()
     for rec in results:
         if rec is None:
             failed += 1
             continue
+        if rec.get("served_model"):
+            served.add(str(rec["served_model"]))
         u = rec.get("usage") or {}
         usage_total = usage_total + Usage(
             prompt_tokens=int(u.get("prompt_tokens") or 0),
@@ -140,11 +151,17 @@ def run_arm(
         tn += (not gt) and (not pred)
 
     metrics = _prf(tp, fp, fn, tn, covered)
+    # 模型标识与 llm_bench 同一套口径：`model` 是展示名（服务端回报优先），
+    # 请求时用的 id（ARK 是 endpoint id）单列。同名不同义是产物里最容易被问穿的地方。
+    display, display_source, served_models = resolve_display(provider.model, served)
     return {
         "prompt_version": variant.version,
         "prompt_name": variant.name,
         "model_key": model_key,
-        "model": provider.model,
+        "model": display,
+        "requested_model_id": provider.model,
+        "served_models": served_models,
+        "model_display_source": display_source,
         "n_samples": len(records),
         "n_covered": covered,
         "coverage": round(covered / max(len(records), 1), 4),
@@ -189,7 +206,7 @@ def main(argv: list[str] | None = None) -> int:
     if not providers:
         print("没有可用 provider", file=sys.stderr)
         return 2
-    print(f"[init] 参评模型：{ {k: v.model for k, v in providers.items()} }")
+    print(f"[init] 参评模型（请求时用的 id）：{ {k: v.model for k, v in providers.items()} }")
 
     cache = Cache(CACHE_PATH)
     started = time.time()
@@ -210,6 +227,9 @@ def main(argv: list[str] | None = None) -> int:
             "prompt_name": "规则对照组：declared/observed Jaccard < 0.34",
             "model_key": "none",
             "model": "n/a",
+            "requested_model_id": None,
+            "served_models": [],
+            "model_display_source": "not_a_model_arm",
             "n_samples": len(sample),
             "n_covered": len(sample),
             "coverage": 1.0,
