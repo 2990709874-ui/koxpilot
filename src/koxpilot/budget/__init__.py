@@ -3,7 +3,13 @@
 from __future__ import annotations
 
 from .allocator import Selection, allocate, validate_plan
-from .planner import ALL_VERDICTS, gate_results_for, plan_baseline, plan_campaign
+from .planner import (
+    ALL_VERDICTS,
+    gate_results_for,
+    plan_baseline,
+    plan_campaign,
+    plan_diversified_no_gate,
+)
 from .policy import constraint_snapshot
 from .value import Candidate, build_candidates, estimate_cost, kpi_weight_of, targeting_reason
 
@@ -18,6 +24,7 @@ __all__ = [
     "kpi_weight_of",
     "plan_baseline",
     "plan_campaign",
+    "plan_diversified_no_gate",
     "targeting_reason",
     "validate_plan",
     "ALL_VERDICTS",

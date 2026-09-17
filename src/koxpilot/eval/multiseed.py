@@ -19,7 +19,7 @@
 - **纯确定性、零 LLM**：只调 datagen / gates / budget / eval 里的纯函数，不碰 ``llm`` 包。
 - **全程内存**：不落任何中间盘、不读写 ``data/``，唯一产物是 ``output/multiseed.json``。
   因此也**不存在**跨进程共享缓存被互相覆盖的风险（``Cache`` 类无跨进程锁）。
-- **复用而非重写**：门禁+阈值走 :func:`..eval.harness.build_context`，预算两臂走
+- **复用而非重写**：门禁+阈值走 :func:`..eval.harness.build_context`，预算三臂走
   :func:`..eval.harness.budget_section`（保留其"消融/敏感性用中性 spec、预算用真实
   ``ctx.specs``"的刻意区分），价值账走 :func:`..eval.audit.counterfactual_report`。
   多种子实验绝不自己拼一套平行逻辑，否则两套实现漂移后谁也说不清哪个数才对。
@@ -55,6 +55,7 @@ __all__ = [
     "seed_list",
     "summarize",
     "run_seed",
+    "arm_attribution_robustness",
     "run_multiseed",
     "format_summary",
 ]
@@ -310,7 +311,7 @@ def run_seed(seed: int, n: int = N_KOX) -> dict[str, Any]:
     """跑一个种子的完整链路，返回该种子的紧凑结果（**全程内存，不落盘、不调 LLM**）。
 
     链路：``generate_dataset`` → ``build_context``（标定分位数阈值 + 全库四层门禁）
-    → 表 1/2/3 → ``budget_section``（3 个 brief 的两臂预算）→ ``counterfactual_report``。
+    → 表 1/2/3 → ``budget_section``（3 个 brief 的三臂预算）→ ``counterfactual_report``。
     brief 由 ``build_briefs()`` 现造：它是**写死的常量**（不含随机性），
     所以跨种子唯一变的是达人库，campaign 定义保持同一份，价值差额才可归因到数据随机性。
     """
@@ -324,8 +325,9 @@ def run_seed(seed: int, n: int = N_KOX) -> dict[str, Any]:
     t2 = verdict_report(records, ctx.results)
     t3 = strata_report(records, ctx.results)
 
-    budget_rows, plans, baselines = budget_section(ctx)  # 复用 harness 的两臂编排（公开 API）
-    cf = counterfactual_report(records, plans, baselines)
+    # 复用 harness 的三臂编排（公开 API）：基线 / 只分散化不门禁 / KOXPilot
+    budget_rows, plans, baselines, diversified = budget_section(ctx)
+    cf = counterfactual_report(records, plans, baselines, diversified)
 
     pools = {str(r["campaign_id"]): int(r["candidate_pool"]) for r in budget_rows["per_campaign"]}
     constraints_ok = all(bool(r["constraints_ok"]) for r in budget_rows["per_campaign"])
@@ -333,6 +335,9 @@ def run_seed(seed: int, n: int = N_KOX) -> dict[str, Any]:
     per_campaign: list[dict[str, Any]] = []
     for row in cf["per_campaign"]:
         base, kox = row["baseline"], row["koxpilot"]
+        attr = row.get("value_attribution") or {}
+        money = attr.get("waste_reduction_usd") or {}
+        gaps = attr.get("effective_view_rate_pp") or {}
         per_campaign.append(
             {
                 "campaign_id": row["campaign_id"],
@@ -349,6 +354,18 @@ def run_seed(seed: int, n: int = N_KOX) -> dict[str, Any]:
                 "koxpilot_n_fraud": int(kox["n_fraud_selected"]),
                 "saved_usd": float(row["saved_usd"]),
                 "saved_share_of_budget": float(row["saved_share_of_budget"]),
+                # 三臂归因（链式差分，两段可加、可为负）；缺第三臂时为 None
+                "saved_usd_by_diversification": _opt_float(money.get("by_diversification")),
+                "saved_usd_by_gating": _opt_float(money.get("by_gating_and_quality_ranking")),
+                "rate_gap_pp_by_diversification": _opt_float(
+                    gaps.get("gap_by_diversification_pp")
+                ),
+                "rate_gap_pp_by_gating": _opt_float(
+                    gaps.get("gap_by_gating_and_quality_ranking_pp")
+                ),
+                "diversified_no_gate_wasted_usd": _opt_float(
+                    money.get("wasted_diversified_no_gate")
+                ),
                 # 相对提升可能为 None（基线有效曝光为 0 = 分母无定义），不能无脑 float()。
                 "effective_view_uplift": _opt_float(row["effective_view_uplift"]),
                 "effective_view_uplift_lenient": _opt_float(row["effective_view_uplift_lenient"]),
@@ -368,6 +385,11 @@ def run_seed(seed: int, n: int = N_KOX) -> dict[str, Any]:
         )
 
     totals = cf["totals"]
+    attr_totals = cf.get("value_attribution") or {}
+    attr_money = attr_totals.get("waste_reduction_usd") or {}
+    attr_gaps = attr_totals.get("effective_view_rate_pp") or {}
+    attr_views = attr_totals.get("effective_views_gt") or {}
+    attr_n = attr_totals.get("n_selected") or {}
     strata_cells: dict[str, dict[str, Any]] = {}
     for dim, key in _STRATA_DIMS:
         for cell, stats in (t3.get(key) or {}).items():
@@ -405,6 +427,27 @@ def run_seed(seed: int, n: int = N_KOX) -> dict[str, Any]:
             ),
             "koxpilot_loses_overall": float(totals["saved_usd"]) < 0.0,
             "all_constraints_satisfied": constraints_ok,
+            # 三臂价值归因（总口径）：把 saved_usd 与 rate_gap 拆成"分散化"与"门禁+质量排序"两段。
+            # 两段严格可加（链式差分），因此跨种子聚合时 mean(总) = mean(分散化) + mean(门禁)。
+            "saved_usd_by_diversification": _opt_float(attr_money.get("by_diversification")),
+            "saved_usd_by_gating": _opt_float(attr_money.get("by_gating_and_quality_ranking")),
+            "rate_gap_pp_by_diversification": _opt_float(
+                attr_gaps.get("gap_by_diversification_pp")
+            ),
+            "rate_gap_pp_by_gating": _opt_float(
+                attr_gaps.get("gap_by_gating_and_quality_ranking_pp")
+            ),
+            "diversified_no_gate_wasted_usd": _opt_float(
+                attr_money.get("wasted_diversified_no_gate")
+            ),
+            "diversified_no_gate_effective_view_rate": _opt_float(
+                attr_gaps.get("diversified_no_gate")
+            ),
+            "diversified_no_gate_effective_views": _opt_float(
+                attr_views.get("diversified_no_gate")
+            ),
+            "koxpilot_effective_views": _opt_float(attr_views.get("koxpilot")),
+            "diversified_no_gate_n_selected": attr_n.get("diversified_no_gate"),
         },
         "per_campaign": per_campaign,
         "gates": {
@@ -423,6 +466,84 @@ def run_seed(seed: int, n: int = N_KOX) -> dict[str, Any]:
             "cells": strata_cells,
             "top_weak": [f"{w['dimension']}::{w['cell']}" for w in t3["weak_spots"]],
         },
+    }
+
+
+def arm_attribution_robustness(per_seed: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """跨种子汇总三臂价值归因：分散化贡献 vs 门禁与质量排序贡献。
+
+    两段来自链式差分（``第三臂 − 基线`` 与 ``KOXPilot − 第三臂``），所以恒等式
+    ``mean(总) = mean(分散化) + mean(门禁)`` 一定成立——这里顺便把它算出来做自检，
+    对不上就说明某个种子缺了第三臂。
+
+    另有两条**反向证据**必须一起报，否则这张表会被读成"结论全是好消息"：
+    - ``n_seeds_gating_contribution_negative``：门禁贡献为负（关掉门禁反而更省钱）的种子数；
+    - ``n_seeds_third_arm_more_effective_views``：第三臂的绝对有效曝光超过 KOXPilot 的种子数。
+    """
+    div = _defined([s["value"].get("saved_usd_by_diversification") for s in per_seed])
+    gate = _defined([s["value"].get("saved_usd_by_gating") for s in per_seed])
+    if not div or not gate:
+        return {
+            "status": "third_arm_missing",
+            "explanation": "本次运行没有第三臂数据（旧产物或被裁剪的输入），故不给归因分解。",
+        }
+    total = [float(s["value"]["saved_usd"]) for s in per_seed]
+    gap_div = _defined([s["value"].get("rate_gap_pp_by_diversification") for s in per_seed])
+    gap_gate = _defined([s["value"].get("rate_gap_pp_by_gating") for s in per_seed])
+    div_neg = [int(s["seed"]) for s in per_seed
+               if _opt_float(s["value"].get("saved_usd_by_diversification")) is not None
+               and float(s["value"]["saved_usd_by_diversification"]) < 0.0]
+    gate_neg = [int(s["seed"]) for s in per_seed
+                if _opt_float(s["value"].get("saved_usd_by_gating")) is not None
+                and float(s["value"]["saved_usd_by_gating"]) < 0.0]
+    more_views = [
+        int(s["seed"]) for s in per_seed
+        if _opt_float(s["value"].get("diversified_no_gate_effective_views")) is not None
+        and _opt_float(s["value"].get("koxpilot_effective_views")) is not None
+        and float(s["value"]["diversified_no_gate_effective_views"])
+        > float(s["value"]["koxpilot_effective_views"])
+    ]
+    mean_total = _mean(total)
+    mean_parts = _mean(div) + _mean(gate)
+    return {
+        "definition": {
+            "arms": (
+                "基线（粉丝量降序、无结构约束、不看门禁）→ 第三臂 diversified_no_gate"
+                "（强制分层/地域/单人配额，按每美元名义曝光排序，仍不看门禁）→ KOXPilot"
+                "（门禁过滤 + 结构约束 + 质量加权价值排序）"
+            ),
+            "saved_usd_by_diversification": "第三臂比基线少浪费的钱（结构分散化的贡献）",
+            "saved_usd_by_gating": "KOXPilot 比第三臂少浪费的钱（门禁与质量排序的贡献）",
+            "rate_gap_pp_*": "同样的两段差分，但口径换成有界的有效曝光率差（百分点）",
+        },
+        "n_seeds": len(per_seed),
+        "saved_usd_total": summarize(total, 2),
+        "saved_usd_by_diversification": summarize(div, 2),
+        "saved_usd_by_gating": summarize(gate, 2),
+        "rate_gap_pp_by_diversification": summarize(gap_div, 2),
+        "rate_gap_pp_by_gating": summarize(gap_gate, 2),
+        "additivity_check": {
+            "mean_total": round(mean_total, 2),
+            "mean_diversification_plus_gating": round(mean_parts, 2),
+            "abs_error": round(abs(mean_total - mean_parts), 6),
+            "ok": abs(mean_total - mean_parts) < 1e-6,
+            "note": "链式差分必然可加；这里显式校验，防止某个种子缺臂后被静默平均掉。",
+        },
+        "n_seeds_diversification_contribution_negative": len(div_neg),
+        "seeds_diversification_contribution_negative": div_neg,
+        "n_seeds_gating_contribution_negative": len(gate_neg),
+        "seeds_gating_contribution_negative": gate_neg,
+        "n_seeds_third_arm_more_effective_views": len(more_views),
+        "seeds_third_arm_more_effective_views": more_views,
+        "third_arm_n_selected": summarize(
+            _defined([s["value"].get("diversified_no_gate_n_selected") for s in per_seed]), 1
+        ),
+        "caveat": (
+            "第三臂按'每美元名义曝光'排序会买走 CPM 最便宜的长尾，选人数量比基线高一个量级，"
+            "绝对有效曝光也常常超过 KOXPilot（见 n_seeds_third_arm_more_effective_views）。"
+            "它不是一个'更好的方案'，而是一条只做分散、不做质量判断的对照臂；"
+            "三臂可比的口径是浪费金额与有效曝光率，绝对曝光数不是 KOXPilot 的优化目标。"
+        ),
     }
 
 
@@ -481,6 +602,19 @@ def value_robustness(per_seed: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
             },
             "n_seeds_koxpilot_loses": len(losses),
             "seeds_koxpilot_loses": losses,
+            # 三臂归因（本 campaign 口径）：两段可加，允许为负
+            "saved_usd_by_diversification": summarize(
+                _defined([r.get("saved_usd_by_diversification") for r in rows]), 2
+            ),
+            "saved_usd_by_gating": summarize(
+                _defined([r.get("saved_usd_by_gating") for r in rows]), 2
+            ),
+            "rate_gap_pp_by_diversification": summarize(
+                _defined([r.get("rate_gap_pp_by_diversification") for r in rows]), 2
+            ),
+            "rate_gap_pp_by_gating": summarize(
+                _defined([r.get("rate_gap_pp_by_gating") for r in rows]), 2
+            ),
         }
 
     overall_losses = [int(s["seed"]) for s in per_seed if s["value"]["koxpilot_loses_overall"]]
@@ -505,6 +639,7 @@ def value_robustness(per_seed: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "effective_view_rate_gap_pp": summarize(gap_pp, 2),
         "effective_view_symmetric_uplift": summarize(sym),
         "significance_saved_share_vs_zero": sig,
+        "arm_attribution": arm_attribution_robustness(per_seed),
         "n_seeds": n,
         "n_seeds_koxpilot_loses_overall": len(overall_losses),
         "seeds_koxpilot_loses_overall": overall_losses,
@@ -925,7 +1060,8 @@ def run_multiseed(
             "reproduce": f"PYTHONPATH=src python -m koxpilot.cli multiseed --seeds {len(seed_values)}",
             "determinism_note": (
                 "全链路纯确定性、零 LLM 调用；每个种子重新生成数据集、重新标定阈值、"
-                "重新跑全库门禁与两臂预算。全程内存计算，不读写 data/，"
+                "重新跑全库门禁与三臂预算（基线 / diversified_no_gate / KOXPilot）。"
+                "全程内存计算，不读写 data/，"
                 "唯一落盘产物就是本文件（不含时间戳，便于逐字节回归对比）。"
             ),
             "scope_note": (
@@ -1026,6 +1162,23 @@ def format_summary(payload: Mapping[str, Any]) -> str:
             f"[A]     有效曝光率差 {_fmt_pm_safe(row['effective_view_rate_gap_pp'], digits=2)} pp（有界口径）"
             f"；无界比率仅参考：median {_fmt_opt_pct(ref.get('median'))}"
             f"（分母脆弱 {ref['n_seeds_denominator_fragile']}/{n} 个种子，故不引用其 mean）"
+        )
+
+    attr = a.get("arm_attribution") or {}
+    if attr.get("status") != "third_arm_missing" and attr:
+        add(
+            f"[A] 三臂归因：分散化少浪费 {_fmt_pm(attr['saved_usd_by_diversification'], digits=0)} USD"
+            f"；门禁与质量排序少浪费 {_fmt_pm(attr['saved_usd_by_gating'], digits=0)} USD"
+        )
+        add(
+            f"[A]   有效曝光率差拆分：分散化 {_fmt_pm(attr['rate_gap_pp_by_diversification'], digits=2)} pp"
+            f"；门禁与质量排序 {_fmt_pm(attr['rate_gap_pp_by_gating'], digits=2)} pp"
+            f"（可加性校验 ok={attr['additivity_check']['ok']}）"
+        )
+        add(
+            f"[A]   门禁贡献为负的种子 {attr['n_seeds_gating_contribution_negative']}/{n}；"
+            f"分散化贡献为负的种子 {attr['n_seeds_diversification_contribution_negative']}/{n}；"
+            f"第三臂绝对有效曝光超过 KOXPilot 的种子 {attr['n_seeds_third_arm_more_effective_views']}/{n}"
         )
 
     add("")

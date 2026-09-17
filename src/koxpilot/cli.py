@@ -16,7 +16,7 @@ import argparse
 import sys
 from typing import Any
 
-from .budget.planner import plan_baseline, plan_campaign
+from .budget.planner import plan_baseline, plan_campaign, plan_diversified_no_gate
 from .datagen.briefs import build_briefs
 from .datagen.config import N_KOX, SAMPLE_SIZE, SEED
 from .datagen.generator import generate_dataset
@@ -152,12 +152,21 @@ def cmd_budget(args: argparse.Namespace) -> int:
         spec = CampaignSpec.from_dict(brief["spec"])
         plan, results = plan_campaign(records, spec, thresholds)
         base = plan_baseline(records, spec, thresholds, results)
+        div = plan_diversified_no_gate(records, spec, thresholds, results)
+        # 第三臂只落"摘要"：它按每美元曝光排序会买进几百个便宜长尾，
+        # 全量 selected 会把 budget.json 撑到三倍大，而它的用途是价值归因对照，不是可执行方案。
+        div_summary = {k: v for k, v in div.to_dict().items() if k not in ("selected", "skipped_sample")}
+        div_summary["selected_note"] = (
+            "第三臂只保留摘要（不含逐人明细）：它是价值归因用的对照臂，"
+            "完整逐人结果可用 koxpilot.budget.planner.plan_diversified_no_gate 现算复现。"
+        )
         payload["plans"].append(
             {
                 "campaign_id": spec.campaign_id,
                 "name": spec.name,
                 "koxpilot": plan.to_dict(),
                 "baseline_followers": base.to_dict(),
+                "diversified_no_gate": div_summary,
             }
         )
         ok = plan.constraints.get("all_enforced_satisfied")
@@ -172,6 +181,10 @@ def cmd_budget(args: argparse.Namespace) -> int:
         )
         print(
             f"[budget]   基线（按粉丝量）选中 {len(base.selected)} 人，花费 ${base.spent_usd:,.0f}"
+        )
+        print(
+            f"[budget]   第三臂（只分散化、不门禁）选中 {len(div.selected)} 人，"
+            f"花费 ${div.spent_usd:,.0f}，约束全部满足={div.constraints.get('all_enforced_satisfied')}"
         )
     out = dump_json(output_dir() / "budget.json", payload)
     print(f"[budget] -> {_p(out)}")
@@ -221,6 +234,11 @@ def cmd_eval(args: argparse.Namespace) -> int:
         f"（稳健={metrics['table_5_sensitivity']['stable']}）"
     )
     print(f"[eval] 反事实价值：{metrics['counterfactual_value_audit']['headline']}")
+    attribution = metrics["counterfactual_value_audit"].get("value_attribution")
+    if attribution:
+        print(f"[eval] 三臂价值归因：{attribution['headline']}")
+        for caveat in attribution["caveats"]:
+            print(f"[eval]   注意：{caveat}")
     print("[eval] 弱项（如实呈现）：")
     for spot in metrics["weak_spots"][:3]:
         print(f"[eval]   - {spot['note']}")

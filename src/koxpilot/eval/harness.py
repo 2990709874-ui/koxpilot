@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from ..budget.planner import plan_baseline, plan_campaign
+from ..budget.planner import plan_baseline, plan_campaign, plan_diversified_no_gate
 from ..budget.policy import constraint_snapshot
 from ..datagen.config import DATASET_VERSION, SEED
 from ..gates.engine import evaluate_all
@@ -204,22 +204,29 @@ def _missed_fraud_profile(ctx: EvalContext) -> dict[str, Any]:
     }
 
 
-def budget_section(ctx: EvalContext) -> tuple[dict[str, Any], dict[str, BudgetPlan], dict[str, BudgetPlan]]:
-    """对每个 brief 跑 KOXPilot 臂与基线臂。
+def budget_section(
+    ctx: EvalContext,
+) -> tuple[dict[str, Any], dict[str, BudgetPlan], dict[str, BudgetPlan], dict[str, BudgetPlan]]:
+    """对每个 brief 跑三条臂：KOXPilot / 基线（粉丝量）/ 第三臂（只分散化、不门禁）。
 
-    这是"两臂预算 + 复用同一批 GateResult"的**唯一正确入口**：两臂共用 `plan_campaign`
-    产出的 `results`，所以两边看到的门禁判定完全一致，差异只来自选人策略。
+    这是"多臂预算 + 复用同一批 GateResult"的**唯一正确入口**：三臂共用 `plan_campaign`
+    产出的 `results`，所以三边看到的门禁判定完全一致，差异只来自候选池与选人依据。
     它曾经叫 `_budget_section`（私有），而 `eval/multiseed.py` 不得不 import 一个下划线符号；
     私有名字会推着下一个复用者自己重拼一遍编排——那才是口径漂移的真正来源，所以这里转公开。
+
+    返回 ``(表格行, koxpilot 方案, 基线方案, 第三臂方案)``。
     """
     plans: dict[str, BudgetPlan] = {}
     baselines: dict[str, BudgetPlan] = {}
+    diversified: dict[str, BudgetPlan] = {}
     rows: list[dict[str, Any]] = []
     for spec in ctx.specs:
         plan, results = plan_campaign(ctx.records, spec, ctx.thresholds)
         base = plan_baseline(ctx.records, spec, ctx.thresholds, results)
+        div = plan_diversified_no_gate(ctx.records, spec, ctx.thresholds, results)
         plans[spec.campaign_id] = plan
         baselines[spec.campaign_id] = base
+        diversified[spec.campaign_id] = div
         rows.append(
             {
                 "campaign_id": spec.campaign_id,
@@ -239,12 +246,26 @@ def budget_section(ctx: EvalContext) -> tuple[dict[str, Any], dict[str, BudgetPl
                 "n_price_estimated": plan.n_price_estimated,
                 "constraints_ok": plan.constraints.get("all_enforced_satisfied"),
                 "trace": plan.trace,
+                # 第三臂的落地情况（结构约束是否真的被执行到位），只放摘要不放全量 trace
+                "diversified_no_gate": {
+                    "candidate_pool": div.candidate_pool,
+                    "n_selected": len(div.selected),
+                    "spent_usd": round(div.spent_usd, 2),
+                    "utilization": round(div.spent_usd / div.budget_usd, 4)
+                    if div.budget_usd
+                    else 0.0,
+                    "tier_mix": {k: round(v, 4) for k, v in div.tier_mix.items()},
+                    "country_mix": {k: round(v, 4) for k, v in div.country_mix.items()},
+                    "constraints_ok": div.constraints.get("all_enforced_satisfied"),
+                    "violations": div.constraints.get("violations"),
+                },
             }
         )
     return (
         {"constraint_policy": constraint_snapshot(), "per_campaign": rows},
         plans,
         baselines,
+        diversified,
     )
 
 
@@ -294,8 +315,8 @@ def run_full_eval(ctx: EvalContext, bench_path: Path | str | None = None) -> dic
         ctx.records, ctx.results, CampaignSpec(), bench, campaign_specs=ctx.specs
     )
 
-    budget_rows, plans, baselines = budget_section(ctx)
-    counterfactual = counterfactual_report(ctx.records, plans, baselines)
+    budget_rows, plans, baselines, diversified = budget_section(ctx)
+    counterfactual = counterfactual_report(ctx.records, plans, baselines, diversified)
     rule_f1 = None
     llm_f1 = None
     if table6.get("status") == "ok":
@@ -321,6 +342,13 @@ def run_full_eval(ctx: EvalContext, bench_path: Path | str | None = None) -> dic
     ]
     if table6.get("status") != "ok":
         honesty.append(str(table6.get("explanation")))
+    attribution = counterfactual.get("value_attribution")
+    if attribution:
+        honesty.append(
+            "三臂价值归因（基线 → 只分散化不门禁 → KOXPilot）："
+            + str(attribution["headline"])
+            + "；两段贡献按链式差分定义，可加，负值照实写。"
+        )
 
     return {
         "meta": {

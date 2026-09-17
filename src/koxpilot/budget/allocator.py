@@ -46,16 +46,50 @@ from .policy import (
 )
 from .value import Candidate
 
-__all__ = ["Slot", "Selection", "allocate", "validate_plan", "build_slots"]
+__all__ = [
+    "BASIS_VALUE",
+    "BASIS_VIEWS",
+    "STRATEGIES",
+    "Slot",
+    "Selection",
+    "allocate",
+    "validate_plan",
+    "build_slots",
+]
+
+#: 排序依据："质量加权价值"（引擎自己的 value(k)，含真实性折扣/语义适配/KPI 权重）
+BASIS_VALUE = "value"
+#: 排序依据："名义曝光"（只用 avg_views，**不含任何门禁/质量信号**）。
+#: 第三臂 diversified_no_gate 用它，这样"分散化"这条对照臂不会偷用门禁的判断。
+BASIS_VIEWS = "views"
+
+#: 三条臂的采购规则：strategy -> (是否强制结构约束, 排序依据)
+#:
+#: - ``followers``：反事实基线，粉丝量降序、只受总预算约束（行业最朴素做法）；
+#: - ``diversified_no_gate``：**只加结构分散化**（分层/地域/单人配额），排序依据是
+#:   "每美元买到的名义曝光"，**不看门禁判定、不看真实性折扣**；
+#: - ``koxpilot``：结构约束 + 质量加权价值排序 + 门禁过滤（过滤在 planner 层完成）。
+STRATEGIES: dict[str, tuple[bool, str]] = {
+    "followers": (False, BASIS_VIEWS),
+    "diversified_no_gate": (True, BASIS_VIEWS),
+    "koxpilot": (True, BASIS_VALUE),
+}
 
 
 @dataclass(frozen=True, slots=True)
 class Slot:
-    """一个采购名额 = 在某达人身上买的第 ``index`` 条内容（index 从 1 开始）。"""
+    """一个采购名额 = 在某达人身上买的第 ``index`` 条内容（index 从 1 开始）。
+
+    ``basis`` 决定边际价值用哪把尺子量：``BASIS_VALUE`` 是引擎的质量加权价值，
+    ``BASIS_VIEWS`` 只用名义曝光。两把尺子共用同一套衰减与贪心结构，
+    所以"换尺子"这件事本身不会改变算法性质，只改变排序依据——
+    这正是第三臂要隔离的变量。
+    """
 
     candidate: Candidate
     index: int
     decay: float = POST_MARGINAL_DECAY
+    basis: str = BASIS_VALUE
 
     @property
     def kox_id(self) -> str:
@@ -66,8 +100,15 @@ class Slot:
         return self.candidate.cost_usd
 
     @property
+    def base_value(self) -> float:
+        """第 1 条内容的价值（未衰减），按 ``basis`` 取质量加权价值或名义曝光。"""
+        if self.basis == BASIS_VIEWS:
+            return self.candidate.avg_views
+        return self.candidate.value
+
+    @property
     def marginal_value(self) -> float:
-        return self.candidate.value * (self.decay ** (self.index - 1))
+        return self.base_value * (self.decay ** (self.index - 1))
 
     @property
     def marginal_efficiency(self) -> float:
@@ -78,11 +119,14 @@ def build_slots(
     pool: Iterable[Candidate],
     max_posts: int = MAX_POSTS_PER_KOX,
     decay: float = POST_MARGINAL_DECAY,
+    basis: str = BASIS_VALUE,
 ) -> list[Slot]:
     """把候选池展开成名额列表。"""
     if not 0.0 < decay <= 1.0:
         raise ValueError("POST_MARGINAL_DECAY 必须落在 (0,1]，否则贪心的凹性前提不成立")
-    return [Slot(c, i, decay) for c in pool for i in range(1, max(1, max_posts) + 1)]
+    if basis not in (BASIS_VALUE, BASIS_VIEWS):
+        raise ValueError(f"未知的排序依据 basis={basis!r}")
+    return [Slot(c, i, decay, basis) for c in pool for i in range(1, max(1, max_posts) + 1)]
 
 
 @dataclass(slots=True)
@@ -91,6 +135,7 @@ class Selection:
 
     budget: float
     decay: float = POST_MARGINAL_DECAY
+    basis: str = BASIS_VALUE
     posts: dict[str, int] = field(default_factory=dict)
     cand_by_id: dict[str, Candidate] = field(default_factory=dict)
     picked_by: dict[str, str] = field(default_factory=dict)
@@ -162,11 +207,15 @@ class Selection:
         return max((self.share(v) for v in self.country_usd.values()), default=0.0)
 
     def marginal_efficiency_of_last(self, kox_id: str) -> float:
-        """该达人当前最后一条内容的边际性价比（退让时优先退这个值最低的）。"""
+        """该达人当前最后一条内容的边际性价比（退让时优先退这个值最低的）。
+
+        用的是本臂自己的 ``basis``：第三臂不看质量加权价值，退让时也不许偷看，
+        否则"分散化贡献"里就混进了门禁的判断力。
+        """
         n = self.posts.get(kox_id, 0)
         if n <= 0:
             return 0.0
-        return Slot(self.cand_by_id[kox_id], n, self.decay).marginal_efficiency
+        return Slot(self.cand_by_id[kox_id], n, self.decay, self.basis).marginal_efficiency
 
     # -- 快照 / 回滚 ---------------------------------------------------------
     def snapshot(self) -> dict[str, Any]:
@@ -558,16 +607,21 @@ def allocate(
     """把候选池分配成预算方案。
 
     Args:
-        strategy: ``"koxpilot"`` = 边际性价比贪心 + 结构约束修正；
+        strategy: 见 ``STRATEGIES``——
+                  ``"koxpilot"`` = 质量加权价值的边际性价比贪心 + 结构约束修正；
+                  ``"diversified_no_gate"`` = 第三臂，同一套结构约束，但排序依据换成
+                  "每美元名义曝光"，且候选池不做门禁过滤（过滤由 planner 决定）；
                   ``"followers"`` = 反事实基线（粉丝量降序、只受总预算约束、不看门禁）。
         max_posts / decay: 采购模型参数（见 budget/policy.py 的推导与敏感性说明）。
     """
+    if strategy not in STRATEGIES:
+        raise ValueError(f"未知的分配策略 strategy={strategy!r}，可选：{sorted(STRATEGIES)}")
+    strict, basis = STRATEGIES[strategy]
     pool = list(candidates)
     budget = float(budget_usd if budget_usd is not None else spec.budget_usd)
-    sel = Selection(budget=budget, decay=decay)
+    sel = Selection(budget=budget, decay=decay, basis=basis)
     trace: list[str] = []
-    strict = strategy == "koxpilot"
-    slots = build_slots(pool, max_posts, decay)
+    slots = build_slots(pool, max_posts, decay, basis)
 
     if budget <= 0 or not pool:
         return BudgetPlan(
@@ -583,11 +637,16 @@ def allocate(
 
     if strict:
         ordered = sorted(slots, key=_slot_key_efficiency)
+        ruler = (
+            "质量加权价值/报价"
+            if basis == BASIS_VALUE
+            else "名义曝光/报价（不含门禁与真实性信号）"
+        )
         for slot in ordered:
             if _fits_caps_vs_budget(sel, slot) is None:
                 sel.take(slot, "greedy")
         trace.append(
-            f"边际性价比贪心：候选 {len(pool)} 人 / {len(slots)} 个内容名额，"
+            f"边际性价比贪心（排序依据：{ruler}）：候选 {len(pool)} 人 / {len(slots)} 个内容名额，"
             f"选入 {len(sel.chosen)} 人共 {sum(sel.posts.values())} 条，花费 ${sel.spent:,.0f}"
             f"（长尾 {sel.longtail_share:.1%}，头部 {sel.head_share:.1%}）"
         )

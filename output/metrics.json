@@ -2354,10 +2354,43 @@
         "n_price_estimated": 0,
         "constraints_ok": true,
         "trace": [
-          "边际性价比贪心：候选 93 人 / 279 个内容名额，选入 69 人共 148 条，花费 $79,940（长尾 30.3%，头部 30.2%）",
+          "边际性价比贪心（排序依据：质量加权价值/报价）：候选 93 人 / 279 个内容名额，选入 69 人共 148 条，花费 $79,940（长尾 30.3%，头部 30.2%）",
           "地域分散修正：退掉 US 的 3 条内容，单一国家占比降至 60.0%（上限 60%）",
           "约束内补位：追加 3 条内容，预算利用率 99.8%"
-        ]
+        ],
+        "diversified_no_gate": {
+          "candidate_pool": 704,
+          "n_selected": 228,
+          "spent_usd": 79999.55,
+          "utilization": 1.0,
+          "tier_mix": {
+            "micro": 0.3905,
+            "mid": 0.2942,
+            "macro": 0.2383,
+            "nano": 0.0771
+          },
+          "country_mix": {
+            "US": 0.2858,
+            "FR": 0.1769,
+            "JP": 0.1295,
+            "GB": 0.099,
+            "IL": 0.0877,
+            "AU": 0.0661,
+            "CA": 0.0543,
+            "PH": 0.0467,
+            "KR": 0.0289,
+            "MX": 0.0191,
+            "MY": 0.0023,
+            "NL": 0.0012,
+            "AR": 0.0008,
+            "PE": 0.0006,
+            "CO": 0.0005,
+            "TR": 0.0004,
+            "DE": 0.0002
+          },
+          "constraints_ok": true,
+          "violations": []
+        }
       },
       {
         "campaign_id": "BRIEF-002",
@@ -2384,8 +2417,46 @@
         "n_price_estimated": 0,
         "constraints_ok": true,
         "trace": [
-          "边际性价比贪心：候选 50 人 / 150 个内容名额，选入 39 人共 95 条，花费 $44,996（长尾 25.1%，头部 19.8%）"
-        ]
+          "边际性价比贪心（排序依据：质量加权价值/报价）：候选 50 人 / 150 个内容名额，选入 39 人共 95 条，花费 $44,996（长尾 25.1%，头部 19.8%）"
+        ],
+        "diversified_no_gate": {
+          "candidate_pool": 376,
+          "n_selected": 122,
+          "spent_usd": 44998.79,
+          "utilization": 1.0,
+          "tier_mix": {
+            "mid": 0.3594,
+            "nano": 0.2568,
+            "micro": 0.2216,
+            "macro": 0.1622
+          },
+          "country_mix": {
+            "SG": 0.226,
+            "PH": 0.2022,
+            "MY": 0.1621,
+            "VN": 0.1462,
+            "ID": 0.0935,
+            "TH": 0.0648,
+            "ZA": 0.034,
+            "JP": 0.0211,
+            "NL": 0.013,
+            "US": 0.0097,
+            "SA": 0.0096,
+            "BD": 0.0037,
+            "IT": 0.003,
+            "CA": 0.0026,
+            "KR": 0.0019,
+            "AR": 0.0014,
+            "GB": 0.0012,
+            "PE": 0.001,
+            "IN": 0.001,
+            "CO": 0.0009,
+            "IL": 0.0006,
+            "PL": 0.0006
+          },
+          "constraints_ok": true,
+          "violations": []
+        }
       },
       {
         "campaign_id": "BRIEF-003",
@@ -2412,18 +2483,58 @@
         "n_price_estimated": 0,
         "constraints_ok": true,
         "trace": [
-          "边际性价比贪心：候选 79 人 / 237 个内容名额，选入 69 人共 176 条，花费 $119,992（长尾 21.6%，头部 14.6%）",
+          "边际性价比贪心（排序依据：质量加权价值/报价）：候选 79 人 / 237 个内容名额，选入 69 人共 176 条，花费 $119,992（长尾 21.6%，头部 14.6%）",
           "分层修正：退掉非长尾达人 @smart_lab（mid）的 1 条内容（$5,486）以腾出长尾名额",
           "分层修正：追加 18 条长尾内容，长尾金额占比抬到 25.4%（下限 25%）",
           "约束内补位：追加 6 条内容，预算利用率 100.0%"
-        ]
+        ],
+        "diversified_no_gate": {
+          "candidate_pool": 325,
+          "n_selected": 166,
+          "spent_usd": 119999.7,
+          "utilization": 1.0,
+          "tier_mix": {
+            "mid": 0.5185,
+            "micro": 0.2439,
+            "macro": 0.1861,
+            "nano": 0.0514
+          },
+          "country_mix": {
+            "JP": 0.3497,
+            "BR": 0.3055,
+            "KR": 0.1564,
+            "AR": 0.0622,
+            "TW": 0.0615,
+            "GB": 0.0135,
+            "HK": 0.0134,
+            "ID": 0.0117,
+            "US": 0.009,
+            "CL": 0.0058,
+            "MY": 0.0031,
+            "CA": 0.0029,
+            "ES": 0.0013,
+            "NL": 0.0008,
+            "PE": 0.0007,
+            "CO": 0.0007,
+            "DE": 0.0006,
+            "RU": 0.0005,
+            "IL": 0.0002,
+            "TR": 0.0002,
+            "TH": 0.0002,
+            "SE": 0.0001,
+            "AU": 0.0001
+          },
+          "constraints_ok": true,
+          "violations": []
+        }
       }
     ]
   },
   "counterfactual_value_audit": {
     "method": {
       "baseline": "按粉丝量降序选人直到花完预算（不看门禁、不做结构约束），行业最朴素做法",
-      "shared": "两臂共用同一份定向筛选与同一份报价/估价口径，唯一差异是选人依据",
+      "third_arm": "diversified_no_gate：与基线同一个候选池（含 review/reject），但强制 KOXPilot 的分层/地域/单人配额，排序依据换成'每美元名义曝光'，全程不读门禁判定与真实性折扣——用来把两臂差额拆成分散化与门禁两段",
+      "shared": "三臂共用同一份定向筛选与同一份报价/估价口径，差异只在候选池与选人依据",
       "judge": "浪费金额与有效曝光全部按 gt 计算，不使用引擎自身分数（防自证）",
       "conservative_assumption": "主口径下水号曝光按 0 计入有效曝光",
       "lenient_assumption": "对照口径下水号曝光按 50% 计",
@@ -2511,7 +2622,78 @@
           "koxpilot": 56749.0,
           "uplift": 3.7433
         },
-        "headline": "同样 $80,000 预算，少浪费 $51,407（占预算 64.3%），按 ground truth 计的有效曝光提升 +373.5%；有效曝光率 27.0% → 96.5%（+69.5pp）"
+        "headline": "同样 $80,000 预算，少浪费 $51,407（占预算 64.3%），按 ground truth 计的有效曝光提升 +373.5%；有效曝光率 27.0% → 96.5%（+69.5pp）",
+        "diversified_no_gate": {
+          "strategy": "diversified_no_gate",
+          "n_selected": 228,
+          "spent_usd": 79999.55,
+          "utilization": 1.0,
+          "n_fraud_selected": 41,
+          "n_high_risk_selected": 4,
+          "fraud_spend_usd": 14017.31,
+          "fraud_spend_share": 0.1752,
+          "high_risk_spend_usd": 682.61,
+          "high_risk_spend_share": 0.0085,
+          "wasted_spend_usd": 14598.62,
+          "wasted_spend_share": 0.1825,
+          "spend_on_gate_review_usd": 60783.36,
+          "spend_on_gate_reject_usd": 12390.16,
+          "nominal_views": 8109579.0,
+          "effective_views_gt": 6693091.0,
+          "effective_views_gt_lenient": 7401335.0,
+          "effective_view_rate": 0.8253,
+          "effective_view_rate_lenient": 0.9127,
+          "effective_cpm_usd": 11.953,
+          "effective_views_per_1k_usd": 83664.0
+        },
+        "value_attribution": {
+          "definition": "链式差分：总差额 =（第三臂 − 基线）+（KOXPilot − 第三臂）= 分散化贡献 + 门禁与质量排序贡献。两段可加，且允许为负（负值照实写）。",
+          "arms": {
+            "baseline_followers": "基线：粉丝量降序、无结构约束、不看门禁",
+            "diversified_no_gate": "第三臂：强制分层/地域/单人配额，排序按每美元名义曝光，仍不看门禁",
+            "koxpilot": "KOXPilot：门禁过滤 + 结构约束 + 质量加权价值排序"
+          },
+          "waste_reduction_usd": {
+            "wasted_baseline": 53581.31,
+            "wasted_diversified_no_gate": 14598.62,
+            "wasted_koxpilot": 2174.72,
+            "total": 51406.59,
+            "by_diversification": 38982.69,
+            "by_gating_and_quality_ranking": 12423.9,
+            "share_of_total_by_diversification": 0.7583,
+            "share_of_total_by_gating": 0.2417,
+            "share_of_budget_by_diversification": 0.4873,
+            "share_of_budget_by_gating": 0.1553
+          },
+          "effective_view_rate_pp": {
+            "baseline": 0.2702,
+            "diversified_no_gate": 0.8253,
+            "koxpilot": 0.9655,
+            "gap_total_pp": 69.53,
+            "gap_by_diversification_pp": 55.51,
+            "gap_by_gating_and_quality_ranking_pp": 14.02
+          },
+          "n_selected": {
+            "baseline": 8,
+            "diversified_no_gate": 228,
+            "koxpilot": 69
+          },
+          "effective_views_gt": {
+            "baseline": 957096.0,
+            "diversified_no_gate": 6693091.0,
+            "koxpilot": 4531721.0
+          },
+          "n_fraud_selected": {
+            "baseline": 5,
+            "diversified_no_gate": 41,
+            "koxpilot": 2
+          },
+          "caveats": [
+            "三臂选中人数差一个量级（基线 8 人 / 第三臂 228 人 / KOXPilot 69 人）。'分散化贡献'里本身就包含'把同一笔钱摊到更多达人'的大数效应——那正是这条臂要度量的东西，但也意味着三臂在'人数'上不是同量级对照，不能拿人数本身论优劣。",
+            "第三臂的**绝对**有效曝光（6,693,091）高于 KOXPilot（4,531,721）。原因是第三臂按'每美元名义曝光'排序，会优先买走 CPM 最便宜的长尾，而 KOXPilot 最大化的是'质量加权价值/报价'（含语义适配、KPI 权重、真实性折扣），会主动放弃一部分便宜但不对味的曝光。所以三臂可比的口径是**有效曝光率**与**浪费金额**；绝对曝光数不是 KOXPilot 的优化目标，这条如实写出来，不用'我们曝光也最多'去掩盖。"
+          ],
+          "note": "share_of_total_* 在总差额 ≤ 0 时留空（None）：那种情况下'占总贡献的百分比'没有可读含义，用金额与百分点差本身来看即可。第三臂与 KOXPilot 的差额里同时包含'门禁过滤 review/reject'与'排序依据从每美元曝光换成质量加权价值'两件事——它们共用同一批真实性/适配分数，在实现上无法再拆得更细，所以这里合并命名为'门禁与质量排序'，不谎报成纯门禁效果。"
+        }
       },
       {
         "campaign_id": "BRIEF-002",
@@ -2594,7 +2776,78 @@
           "koxpilot": 63359.0,
           "uplift": -0.023
         },
-        "headline": "同样 $45,000 预算，反而比基线多浪费 $5,118（占预算 11.4%），按 ground truth 计的有效曝光提升 -2.3%；有效曝光率 98.9% → 87.1%（-11.8pp）"
+        "headline": "同样 $45,000 预算，反而比基线多浪费 $5,118（占预算 11.4%），按 ground truth 计的有效曝光提升 -2.3%；有效曝光率 98.9% → 87.1%（-11.8pp）",
+        "diversified_no_gate": {
+          "strategy": "diversified_no_gate",
+          "n_selected": 122,
+          "spent_usd": 44998.79,
+          "utilization": 1.0,
+          "n_fraud_selected": 20,
+          "n_high_risk_selected": 2,
+          "fraud_spend_usd": 3660.51,
+          "fraud_spend_share": 0.0813,
+          "high_risk_spend_usd": 34.58,
+          "high_risk_spend_share": 0.0008,
+          "wasted_spend_usd": 3695.09,
+          "wasted_spend_share": 0.0821,
+          "spend_on_gate_review_usd": 32612.39,
+          "spend_on_gate_reject_usd": 5179.63,
+          "nominal_views": 4593223.0,
+          "effective_views_gt": 4205315.0,
+          "effective_views_gt_lenient": 4399269.0,
+          "effective_view_rate": 0.9155,
+          "effective_view_rate_lenient": 0.9578,
+          "effective_cpm_usd": 10.7,
+          "effective_views_per_1k_usd": 93454.0
+        },
+        "value_attribution": {
+          "definition": "链式差分：总差额 =（第三臂 − 基线）+（KOXPilot − 第三臂）= 分散化贡献 + 门禁与质量排序贡献。两段可加，且允许为负（负值照实写）。",
+          "arms": {
+            "baseline_followers": "基线：粉丝量降序、无结构约束、不看门禁",
+            "diversified_no_gate": "第三臂：强制分层/地域/单人配额，排序按每美元名义曝光，仍不看门禁",
+            "koxpilot": "KOXPilot：门禁过滤 + 结构约束 + 质量加权价值排序"
+          },
+          "waste_reduction_usd": {
+            "wasted_baseline": 375.93,
+            "wasted_diversified_no_gate": 3695.09,
+            "wasted_koxpilot": 5493.63,
+            "total": -5117.7,
+            "by_diversification": -3319.16,
+            "by_gating_and_quality_ranking": -1798.54,
+            "share_of_total_by_diversification": null,
+            "share_of_total_by_gating": null,
+            "share_of_budget_by_diversification": -0.0738,
+            "share_of_budget_by_gating": -0.04
+          },
+          "effective_view_rate_pp": {
+            "baseline": 0.9889,
+            "diversified_no_gate": 0.9155,
+            "koxpilot": 0.8711,
+            "gap_total_pp": -11.78,
+            "gap_by_diversification_pp": -7.34,
+            "gap_by_gating_and_quality_ranking_pp": -4.44
+          },
+          "n_selected": {
+            "baseline": 4,
+            "diversified_no_gate": 122,
+            "koxpilot": 39
+          },
+          "effective_views_gt": {
+            "baseline": 2918116.0,
+            "diversified_no_gate": 4205315.0,
+            "koxpilot": 2850866.0
+          },
+          "n_fraud_selected": {
+            "baseline": 2,
+            "diversified_no_gate": 20,
+            "koxpilot": 3
+          },
+          "caveats": [
+            "三臂选中人数差一个量级（基线 4 人 / 第三臂 122 人 / KOXPilot 39 人）。'分散化贡献'里本身就包含'把同一笔钱摊到更多达人'的大数效应——那正是这条臂要度量的东西，但也意味着三臂在'人数'上不是同量级对照，不能拿人数本身论优劣。",
+            "第三臂的**绝对**有效曝光（4,205,315）高于 KOXPilot（2,850,866）。原因是第三臂按'每美元名义曝光'排序，会优先买走 CPM 最便宜的长尾，而 KOXPilot 最大化的是'质量加权价值/报价'（含语义适配、KPI 权重、真实性折扣），会主动放弃一部分便宜但不对味的曝光。所以三臂可比的口径是**有效曝光率**与**浪费金额**；绝对曝光数不是 KOXPilot 的优化目标，这条如实写出来，不用'我们曝光也最多'去掩盖。"
+          ],
+          "note": "share_of_total_* 在总差额 ≤ 0 时留空（None）：那种情况下'占总贡献的百分比'没有可读含义，用金额与百分点差本身来看即可。第三臂与 KOXPilot 的差额里同时包含'门禁过滤 review/reject'与'排序依据从每美元曝光换成质量加权价值'两件事——它们共用同一批真实性/适配分数，在实现上无法再拆得更细，所以这里合并命名为'门禁与质量排序'，不谎报成纯门禁效果。"
+        }
       },
       {
         "campaign_id": "BRIEF-003",
@@ -2677,7 +2930,78 @@
           "koxpilot": 50769.0,
           "uplift": 1.0953
         },
-        "headline": "同样 $120,000 预算，少浪费 $33,430（占预算 27.9%），按 ground truth 计的有效曝光提升 +109.5%；有效曝光率 81.1% → 96.2%（+15.1pp）"
+        "headline": "同样 $120,000 预算，少浪费 $33,430（占预算 27.9%），按 ground truth 计的有效曝光提升 +109.5%；有效曝光率 81.1% → 96.2%（+15.1pp）",
+        "diversified_no_gate": {
+          "strategy": "diversified_no_gate",
+          "n_selected": 166,
+          "spent_usd": 119999.7,
+          "utilization": 1.0,
+          "n_fraud_selected": 26,
+          "n_high_risk_selected": 4,
+          "fraud_spend_usd": 15217.25,
+          "fraud_spend_share": 0.1268,
+          "high_risk_spend_usd": 1286.21,
+          "high_risk_spend_share": 0.0107,
+          "wasted_spend_usd": 16503.46,
+          "wasted_spend_share": 0.1375,
+          "spend_on_gate_review_usd": 85257.96,
+          "spend_on_gate_reject_usd": 14563.79,
+          "nominal_views": 10045326.0,
+          "effective_views_gt": 8774923.0,
+          "effective_views_gt_lenient": 9410124.0,
+          "effective_view_rate": 0.8735,
+          "effective_view_rate_lenient": 0.9368,
+          "effective_cpm_usd": 13.675,
+          "effective_views_per_1k_usd": 73125.0
+        },
+        "value_attribution": {
+          "definition": "链式差分：总差额 =（第三臂 − 基线）+（KOXPilot − 第三臂）= 分散化贡献 + 门禁与质量排序贡献。两段可加，且允许为负（负值照实写）。",
+          "arms": {
+            "baseline_followers": "基线：粉丝量降序、无结构约束、不看门禁",
+            "diversified_no_gate": "第三臂：强制分层/地域/单人配额，排序按每美元名义曝光，仍不看门禁",
+            "koxpilot": "KOXPilot：门禁过滤 + 结构约束 + 质量加权价值排序"
+          },
+          "waste_reduction_usd": {
+            "wasted_baseline": 37062.57,
+            "wasted_diversified_no_gate": 16503.46,
+            "wasted_koxpilot": 3632.91,
+            "total": 33429.66,
+            "by_diversification": 20559.11,
+            "by_gating_and_quality_ranking": 12870.55,
+            "share_of_total_by_diversification": 0.615,
+            "share_of_total_by_gating": 0.385,
+            "share_of_budget_by_diversification": 0.1713,
+            "share_of_budget_by_gating": 0.1073
+          },
+          "effective_view_rate_pp": {
+            "baseline": 0.8111,
+            "diversified_no_gate": 0.8735,
+            "koxpilot": 0.962,
+            "gap_total_pp": 15.09,
+            "gap_by_diversification_pp": 6.24,
+            "gap_by_gating_and_quality_ranking_pp": 8.85
+          },
+          "n_selected": {
+            "baseline": 6,
+            "diversified_no_gate": 166,
+            "koxpilot": 73
+          },
+          "effective_views_gt": {
+            "baseline": 2907546.0,
+            "diversified_no_gate": 8774923.0,
+            "koxpilot": 6090615.0
+          },
+          "n_fraud_selected": {
+            "baseline": 1,
+            "diversified_no_gate": 26,
+            "koxpilot": 2
+          },
+          "caveats": [
+            "三臂选中人数差一个量级（基线 6 人 / 第三臂 166 人 / KOXPilot 73 人）。'分散化贡献'里本身就包含'把同一笔钱摊到更多达人'的大数效应——那正是这条臂要度量的东西，但也意味着三臂在'人数'上不是同量级对照，不能拿人数本身论优劣。",
+            "第三臂的**绝对**有效曝光（8,774,923）高于 KOXPilot（6,090,615）。原因是第三臂按'每美元名义曝光'排序，会优先买走 CPM 最便宜的长尾，而 KOXPilot 最大化的是'质量加权价值/报价'（含语义适配、KPI 权重、真实性折扣），会主动放弃一部分便宜但不对味的曝光。所以三臂可比的口径是**有效曝光率**与**浪费金额**；绝对曝光数不是 KOXPilot 的优化目标，这条如实写出来，不用'我们曝光也最多'去掩盖。"
+          ],
+          "note": "share_of_total_* 在总差额 ≤ 0 时留空（None）：那种情况下'占总贡献的百分比'没有可读含义，用金额与百分点差本身来看即可。第三臂与 KOXPilot 的差额里同时包含'门禁过滤 review/reject'与'排序依据从每美元曝光换成质量加权价值'两件事——它们共用同一批真实性/适配分数，在实现上无法再拆得更细，所以这里合并命名为'门禁与质量排序'，不谎报成纯门禁效果。"
+        }
       }
     ],
     "totals": {
@@ -2702,6 +3026,55 @@
         "fragile_threshold_baseline_rate": 0.05
       },
       "lenient_assumption": "宽松口径 = 水号曝光按 50% 计入有效曝光（主口径按 0 计）。两个口径同向才说明结论不依赖该假设。"
+    },
+    "value_attribution": {
+      "definition": "链式差分：总差额 =（第三臂 − 基线）+（KOXPilot − 第三臂）= 分散化贡献 + 门禁与质量排序贡献。两段可加，且允许为负（负值照实写）。",
+      "arms": {
+        "baseline_followers": "基线：粉丝量降序、无结构约束、不看门禁",
+        "diversified_no_gate": "第三臂：强制分层/地域/单人配额，排序按每美元名义曝光，仍不看门禁",
+        "koxpilot": "KOXPilot：门禁过滤 + 结构约束 + 质量加权价值排序"
+      },
+      "waste_reduction_usd": {
+        "wasted_baseline": 91019.81,
+        "wasted_diversified_no_gate": 34797.17,
+        "wasted_koxpilot": 11301.26,
+        "total": 79718.55,
+        "by_diversification": 56222.64,
+        "by_gating_and_quality_ranking": 23495.91,
+        "share_of_total_by_diversification": 0.7053,
+        "share_of_total_by_gating": 0.2947,
+        "share_of_budget_by_diversification": 0.2295,
+        "share_of_budget_by_gating": 0.0959
+      },
+      "effective_view_rate_pp": {
+        "baseline": 0.6730213874241026,
+        "diversified_no_gate": 0.8648328776767917,
+        "koxpilot": 0.9423445948573502,
+        "gap_total_pp": 26.93,
+        "gap_by_diversification_pp": 19.18,
+        "gap_by_gating_and_quality_ranking_pp": 7.75
+      },
+      "n_selected": {
+        "baseline": 18,
+        "diversified_no_gate": 516,
+        "koxpilot": 181
+      },
+      "effective_views_gt": {
+        "baseline": 6782758.0,
+        "diversified_no_gate": 19673329.0,
+        "koxpilot": 13473202.0
+      },
+      "n_fraud_selected": {
+        "baseline": 8,
+        "diversified_no_gate": 87,
+        "koxpilot": 7
+      },
+      "caveats": [
+        "三臂选中人数差一个量级（基线 18 人 / 第三臂 516 人 / KOXPilot 181 人）。'分散化贡献'里本身就包含'把同一笔钱摊到更多达人'的大数效应——那正是这条臂要度量的东西，但也意味着三臂在'人数'上不是同量级对照，不能拿人数本身论优劣。",
+        "第三臂的**绝对**有效曝光（19,673,329）高于 KOXPilot（13,473,202）。原因是第三臂按'每美元名义曝光'排序，会优先买走 CPM 最便宜的长尾，而 KOXPilot 最大化的是'质量加权价值/报价'（含语义适配、KPI 权重、真实性折扣），会主动放弃一部分便宜但不对味的曝光。所以三臂可比的口径是**有效曝光率**与**浪费金额**；绝对曝光数不是 KOXPilot 的优化目标，这条如实写出来，不用'我们曝光也最多'去掩盖。"
+      ],
+      "note": "share_of_total_* 在总差额 ≤ 0 时留空（None）：那种情况下'占总贡献的百分比'没有可读含义，用金额与百分点差本身来看即可。第三臂与 KOXPilot 的差额里同时包含'门禁过滤 review/reject'与'排序依据从每美元曝光换成质量加权价值'两件事——它们共用同一批真实性/适配分数，在实现上无法再拆得更细，所以这里合并命名为'门禁与质量排序'，不谎报成纯门禁效果。",
+      "headline": "相对基线共少浪费 $79,719，其中结构分散化少浪费 $56,223，门禁与质量排序少浪费 $23,496，有效曝光率 67.3% →（第三臂）86.5% →（KOXPilot）94.2%，分散化 +19.2pp、门禁与质量排序 +7.8pp"
     },
     "headline": "三个 campaign 合计 $245,000 预算，少浪费 $79,719（32.5%），有效曝光提升 +98.6%，宽松口径（水号曝光按 50% 计）+64.7%，有界口径：有效曝光率 67.3% → 94.2%（+26.9pp，symmetric_uplift +0.3303）"
   },
@@ -2924,6 +3297,7 @@
     "SPEC 3.3 合成 gt.verdict 时未把「多源标签冲突」计入 review，而 SPEC 4.G2.2 要求口径冲突需人核 —— 两处口径不一致。因此这 1281 个假阳性里有 467 个是**纯口径性**的（唯一命中就是 G2.2），产品上它们确实该进人核队列。本实现选择保留 G2.2 判定，并在 variant_rule_disabled_G2_2 里给出对照矩阵。",
     "三分类整体准确率 0.6590、macro F1 0.6731；屏蔽 G2.2 的口径对照版为 0.7504 / 0.7397。",
     "factor 是判定阈值的整体缩放系数：对上尾规则放大=放松、对下尾规则放大=收紧，因此一次扫描同时覆盖两个方向。",
-    "delta 为「变体 − 全量」：负值 = 关掉后指标下降（该规则有正向贡献），正值 = 关掉后指标上升（该规则拖累该指标），|delta| < 0.001 视为无影响。严口径 F1 上：6/7 条为正向贡献（-G1.1, -G1.2, -G1.3, -G1.4, -G1.5, -G1.7）。如实记录 1 条**负贡献**规则：-G1.6（ΔF1 +0.0149）——关掉后严口径 F1 反而上升，因此不属于「对 F1 有正向贡献」的规则；保留理由（软信号、只推 review、宽口径召回来源）写在 docs/03-evaluation.md 表 4 一节，不靠这条 note 一句话带过。没有 |ΔF1| < 0.001 的死规则（dead_rules 为空）。"
+    "delta 为「变体 − 全量」：负值 = 关掉后指标下降（该规则有正向贡献），正值 = 关掉后指标上升（该规则拖累该指标），|delta| < 0.001 视为无影响。严口径 F1 上：6/7 条为正向贡献（-G1.1, -G1.2, -G1.3, -G1.4, -G1.5, -G1.7）。如实记录 1 条**负贡献**规则：-G1.6（ΔF1 +0.0149）——关掉后严口径 F1 反而上升，因此不属于「对 F1 有正向贡献」的规则；保留理由（软信号、只推 review、宽口径召回来源）写在 docs/03-evaluation.md 表 4 一节，不靠这条 note 一句话带过。没有 |ΔF1| < 0.001 的死规则（dead_rules 为空）。",
+    "三臂价值归因（基线 → 只分散化不门禁 → KOXPilot）：相对基线共少浪费 $79,719，其中结构分散化少浪费 $56,223，门禁与质量排序少浪费 $23,496，有效曝光率 67.3% →（第三臂）86.5% →（KOXPilot）94.2%，分散化 +19.2pp、门禁与质量排序 +7.8pp；两段贡献按链式差分定义，可加，负值照实写。"
   ]
 }

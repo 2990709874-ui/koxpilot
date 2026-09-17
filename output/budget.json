@@ -98,7 +98,7 @@
           "utilization_ok": true
         },
         "trace": [
-          "边际性价比贪心：候选 93 人 / 279 个内容名额，选入 69 人共 148 条，花费 $79,940（长尾 30.3%，头部 30.2%）",
+          "边际性价比贪心（排序依据：质量加权价值/报价）：候选 93 人 / 279 个内容名额，选入 69 人共 148 条，花费 $79,940（长尾 30.3%，头部 30.2%）",
           "地域分散修正：退掉 US 的 3 条内容，单一国家占比降至 60.0%（上限 60%）",
           "约束内补位：追加 3 条内容，预算利用率 99.8%"
         ],
@@ -2061,6 +2061,116 @@
             "reason": "platform_off_target"
           }
         ]
+      },
+      "diversified_no_gate": {
+        "campaign_id": "BRIEF-001",
+        "strategy": "diversified_no_gate",
+        "budget_usd": 80000.0,
+        "spent_usd": 79999.55,
+        "utilization": 1.0,
+        "n_selected": 228,
+        "n_posts": 281,
+        "purchase_model": {
+          "max_posts_per_kox": 3,
+          "post_marginal_decay": 0.7
+        },
+        "candidate_pool": 704,
+        "n_price_estimated": 9,
+        "est_total_views": 8109579.0,
+        "est_effective_views": 6657549.0,
+        "est_total_engagements": 614440.0,
+        "est_cpm_usd": 9.865,
+        "est_cpe_usd": 0.1302,
+        "tier_mix": {
+          "micro": 0.3905,
+          "mid": 0.2942,
+          "macro": 0.2383,
+          "nano": 0.0771
+        },
+        "country_mix": {
+          "US": 0.2858,
+          "FR": 0.1769,
+          "JP": 0.1295,
+          "GB": 0.099,
+          "IL": 0.0877,
+          "AU": 0.0661,
+          "CA": 0.0543,
+          "PH": 0.0467,
+          "KR": 0.0289,
+          "MX": 0.0191,
+          "MY": 0.0023,
+          "NL": 0.0012,
+          "AR": 0.0008,
+          "PE": 0.0006,
+          "CO": 0.0005,
+          "TR": 0.0004,
+          "DE": 0.0002
+        },
+        "platform_mix": {
+          "tiktok": 0.9999,
+          "youtube": 0.0001
+        },
+        "constraints": {
+          "policy": {
+            "single_kox_max_share": 0.2,
+            "head_max_share": 0.45,
+            "longtail_min_share": 0.25,
+            "country_max_share": 0.6,
+            "min_utilization_target": 0.9,
+            "max_posts_per_kox": 3,
+            "post_marginal_decay": 0.7
+          },
+          "checks": [
+            {
+              "name": "total_budget",
+              "desc": "总额 ≤ 预算",
+              "actual": 79999.55,
+              "limit": 80000.0,
+              "satisfied": true,
+              "enforced": true
+            },
+            {
+              "name": "single_kox_max_share",
+              "desc": "单达人金额 ≤ 预算的 20%",
+              "actual": 0.1568,
+              "limit": 0.2,
+              "satisfied": true,
+              "enforced": true
+            },
+            {
+              "name": "head_max_share",
+              "desc": "macro+mega 金额占比 ≤ 45%",
+              "actual": 0.2383,
+              "limit": 0.45,
+              "satisfied": true,
+              "enforced": true
+            },
+            {
+              "name": "longtail_min_share",
+              "desc": "nano+micro 金额占比 ≥ 25%",
+              "actual": 0.4676,
+              "limit": 0.25,
+              "satisfied": true,
+              "enforced": true
+            },
+            {
+              "name": "country_max_share",
+              "desc": "单一国家金额占比 ≤ 60%",
+              "actual": 0.2858,
+              "limit": 0.6,
+              "satisfied": true,
+              "enforced": true
+            }
+          ],
+          "all_enforced_satisfied": true,
+          "violations": [],
+          "utilization": 1.0,
+          "utilization_ok": true
+        },
+        "trace": [
+          "边际性价比贪心（排序依据：名义曝光/报价（不含门禁与真实性信号））：候选 704 人 / 2112 个内容名额，选入 228 人共 281 条，花费 $80,000（长尾 46.8%，头部 23.8%）"
+        ],
+        "selected_note": "第三臂只保留摘要（不含逐人明细）：它是价值归因用的对照臂，完整逐人结果可用 koxpilot.budget.planner.plan_diversified_no_gate 现算复现。"
       }
     },
     {
@@ -2158,7 +2268,7 @@
           "utilization_ok": true
         },
         "trace": [
-          "边际性价比贪心：候选 50 人 / 150 个内容名额，选入 39 人共 95 条，花费 $44,996（长尾 25.1%，头部 19.8%）"
+          "边际性价比贪心（排序依据：质量加权价值/报价）：候选 50 人 / 150 个内容名额，选入 39 人共 95 条，花费 $44,996（长尾 25.1%，头部 19.8%）"
         ],
         "selected": [
           {
@@ -3369,6 +3479,121 @@
             "reason": "platform_off_target"
           }
         ]
+      },
+      "diversified_no_gate": {
+        "campaign_id": "BRIEF-002",
+        "strategy": "diversified_no_gate",
+        "budget_usd": 45000.0,
+        "spent_usd": 44998.79,
+        "utilization": 1.0,
+        "n_selected": 122,
+        "n_posts": 141,
+        "purchase_model": {
+          "max_posts_per_kox": 3,
+          "post_marginal_decay": 0.7
+        },
+        "candidate_pool": 376,
+        "n_price_estimated": 9,
+        "est_total_views": 4593223.0,
+        "est_effective_views": 4228797.0,
+        "est_total_engagements": 293298.0,
+        "est_cpm_usd": 9.797,
+        "est_cpe_usd": 0.1534,
+        "tier_mix": {
+          "mid": 0.3594,
+          "nano": 0.2568,
+          "micro": 0.2216,
+          "macro": 0.1622
+        },
+        "country_mix": {
+          "SG": 0.226,
+          "PH": 0.2022,
+          "MY": 0.1621,
+          "VN": 0.1462,
+          "ID": 0.0935,
+          "TH": 0.0648,
+          "ZA": 0.034,
+          "JP": 0.0211,
+          "NL": 0.013,
+          "US": 0.0097,
+          "SA": 0.0096,
+          "BD": 0.0037,
+          "IT": 0.003,
+          "CA": 0.0026,
+          "KR": 0.0019,
+          "AR": 0.0014,
+          "GB": 0.0012,
+          "PE": 0.001,
+          "IN": 0.001,
+          "CO": 0.0009,
+          "IL": 0.0006,
+          "PL": 0.0006
+        },
+        "platform_mix": {
+          "tiktok": 0.9757,
+          "instagram": 0.0243
+        },
+        "constraints": {
+          "policy": {
+            "single_kox_max_share": 0.2,
+            "head_max_share": 0.45,
+            "longtail_min_share": 0.25,
+            "country_max_share": 0.6,
+            "min_utilization_target": 0.9,
+            "max_posts_per_kox": 3,
+            "post_marginal_decay": 0.7
+          },
+          "checks": [
+            {
+              "name": "total_budget",
+              "desc": "总额 ≤ 预算",
+              "actual": 44998.79,
+              "limit": 45000.0,
+              "satisfied": true,
+              "enforced": true
+            },
+            {
+              "name": "single_kox_max_share",
+              "desc": "单达人金额 ≤ 预算的 20%",
+              "actual": 0.1622,
+              "limit": 0.2,
+              "satisfied": true,
+              "enforced": true
+            },
+            {
+              "name": "head_max_share",
+              "desc": "macro+mega 金额占比 ≤ 45%",
+              "actual": 0.1622,
+              "limit": 0.45,
+              "satisfied": true,
+              "enforced": true
+            },
+            {
+              "name": "longtail_min_share",
+              "desc": "nano+micro 金额占比 ≥ 25%",
+              "actual": 0.4784,
+              "limit": 0.25,
+              "satisfied": true,
+              "enforced": true
+            },
+            {
+              "name": "country_max_share",
+              "desc": "单一国家金额占比 ≤ 60%",
+              "actual": 0.226,
+              "limit": 0.6,
+              "satisfied": true,
+              "enforced": true
+            }
+          ],
+          "all_enforced_satisfied": true,
+          "violations": [],
+          "utilization": 1.0,
+          "utilization_ok": true
+        },
+        "trace": [
+          "边际性价比贪心（排序依据：名义曝光/报价（不含门禁与真实性信号））：候选 376 人 / 1128 个内容名额，选入 122 人共 141 条，花费 $44,999（长尾 47.8%，头部 16.2%）"
+        ],
+        "selected_note": "第三臂只保留摘要（不含逐人明细）：它是价值归因用的对照臂，完整逐人结果可用 koxpilot.budget.planner.plan_diversified_no_gate 现算复现。"
       }
     },
     {
@@ -3466,7 +3691,7 @@
           "utilization_ok": true
         },
         "trace": [
-          "边际性价比贪心：候选 79 人 / 237 个内容名额，选入 69 人共 176 条，花费 $119,992（长尾 21.6%，头部 14.6%）",
+          "边际性价比贪心（排序依据：质量加权价值/报价）：候选 79 人 / 237 个内容名额，选入 69 人共 176 条，花费 $119,992（长尾 21.6%，头部 14.6%）",
           "分层修正：退掉非长尾达人 @smart_lab（mid）的 1 条内容（$5,486）以腾出长尾名额",
           "分层修正：追加 18 条长尾内容，长尾金额占比抬到 25.4%（下限 25%）",
           "约束内补位：追加 6 条内容，预算利用率 100.0%"
@@ -5474,6 +5699,122 @@
             "reason": "platform_off_target"
           }
         ]
+      },
+      "diversified_no_gate": {
+        "campaign_id": "BRIEF-003",
+        "strategy": "diversified_no_gate",
+        "budget_usd": 120000.0,
+        "spent_usd": 119999.7,
+        "utilization": 1.0,
+        "n_selected": 166,
+        "n_posts": 236,
+        "purchase_model": {
+          "max_posts_per_kox": 3,
+          "post_marginal_decay": 0.7
+        },
+        "candidate_pool": 325,
+        "n_price_estimated": 10,
+        "est_total_views": 10045326.0,
+        "est_effective_views": 8950250.0,
+        "est_total_engagements": 575402.0,
+        "est_cpm_usd": 11.946,
+        "est_cpe_usd": 0.2085,
+        "tier_mix": {
+          "mid": 0.5185,
+          "micro": 0.2439,
+          "macro": 0.1861,
+          "nano": 0.0514
+        },
+        "country_mix": {
+          "JP": 0.3497,
+          "BR": 0.3055,
+          "KR": 0.1564,
+          "AR": 0.0622,
+          "TW": 0.0615,
+          "GB": 0.0135,
+          "HK": 0.0134,
+          "ID": 0.0117,
+          "US": 0.009,
+          "CL": 0.0058,
+          "MY": 0.0031,
+          "CA": 0.0029,
+          "ES": 0.0013,
+          "NL": 0.0008,
+          "PE": 0.0007,
+          "CO": 0.0007,
+          "DE": 0.0006,
+          "RU": 0.0005,
+          "IL": 0.0002,
+          "TR": 0.0002,
+          "TH": 0.0002,
+          "SE": 0.0001,
+          "AU": 0.0001
+        },
+        "platform_mix": {
+          "tiktok": 0.9952,
+          "youtube": 0.0048
+        },
+        "constraints": {
+          "policy": {
+            "single_kox_max_share": 0.2,
+            "head_max_share": 0.45,
+            "longtail_min_share": 0.25,
+            "country_max_share": 0.6,
+            "min_utilization_target": 0.9,
+            "max_posts_per_kox": 3,
+            "post_marginal_decay": 0.7
+          },
+          "checks": [
+            {
+              "name": "total_budget",
+              "desc": "总额 ≤ 预算",
+              "actual": 119999.7,
+              "limit": 120000.0,
+              "satisfied": true,
+              "enforced": true
+            },
+            {
+              "name": "single_kox_max_share",
+              "desc": "单达人金额 ≤ 预算的 20%",
+              "actual": 0.1129,
+              "limit": 0.2,
+              "satisfied": true,
+              "enforced": true
+            },
+            {
+              "name": "head_max_share",
+              "desc": "macro+mega 金额占比 ≤ 45%",
+              "actual": 0.1861,
+              "limit": 0.45,
+              "satisfied": true,
+              "enforced": true
+            },
+            {
+              "name": "longtail_min_share",
+              "desc": "nano+micro 金额占比 ≥ 25%",
+              "actual": 0.2953,
+              "limit": 0.25,
+              "satisfied": true,
+              "enforced": true
+            },
+            {
+              "name": "country_max_share",
+              "desc": "单一国家金额占比 ≤ 60%",
+              "actual": 0.3497,
+              "limit": 0.6,
+              "satisfied": true,
+              "enforced": true
+            }
+          ],
+          "all_enforced_satisfied": true,
+          "violations": [],
+          "utilization": 1.0,
+          "utilization_ok": true
+        },
+        "trace": [
+          "边际性价比贪心（排序依据：名义曝光/报价（不含门禁与真实性信号））：候选 325 人 / 975 个内容名额，选入 166 人共 236 条，花费 $120,000（长尾 29.5%，头部 18.6%）"
+        ],
+        "selected_note": "第三臂只保留摘要（不含逐人明细）：它是价值归因用的对照臂，完整逐人结果可用 koxpilot.budget.planner.plan_diversified_no_gate 现算复现。"
       }
     }
   ]
