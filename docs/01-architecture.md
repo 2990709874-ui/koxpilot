@@ -273,9 +273,9 @@ koxpilot/
 │   └── llm/                # ← A1+A4：runner / promptbench / prompts / prompt_variants / provider / identity
 ├── data/                   # 合成数据集 + 3 个 brief（产物，可由 make data 重建）
 ├── output/                 # 全部指标与判定产物（可由 make all 重建，逐字节可复现）
-├── tests/                  # 162 项，含反数据泄漏的 AST 静态扫描 + 运行期哨兵
+├── tests/                  # 745 项，含反数据泄漏的 AST 静态扫描 + 运行期哨兵 + 文档数字防漂移
 ├── web/                    # TS 独立实现 + 一致性比对脚本
-└── docs/                   # 你正在读的这 5 份
+└── docs/                   # 你正在读的这 6 份
 ```
 
 一个刻意的设计：**CLI 只做"读文件、调库、写文件"**，所有业务逻辑在库里。这样 pytest 完全绕开 CLI 直接测函数，而 CLI 自身几乎不需要测试。同时每个子命令都打印**可核对的关键数字**而不是 "done"——构建期日志本身就是交付物的一部分，可以拿终端输出直接对照 `metrics.json`。

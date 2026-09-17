@@ -110,6 +110,34 @@
 
 四条都不是"看数字"能发现的，全部是**结构性异常**。所以我的结论是：评测的可信度不来自指标本身，来自**有多少条会失败的守卫在盯着指标**。
 
+### 2.5 补一条代码级保证：文档数字防漂移测试
+
+这一条不属于上面三道网——它防的不是"自证出漂亮指标"，而是**"产物变了，文档不会跟着变"**。
+
+起因是我发现 README 里原来写着一句站不住的话：「没有一个数字是手写进文档的」。数字当然是手打进 markdown 的，它们只是**来源**于产物；真正的风险恰恰是产物重跑后数值变了，而文档里的字停在旧值上。这个项目已经在同一类毛病上栽过两次——`budget/policy.py` 的 `POST_DECAY_SCAN` 注释替一段**不存在的输出**背书，`eval/decay_scan.py` 的 `caveats` 算完**没进产物**（两次都见 [05 §7](05-boundaries.md#7-边界六预算分配是启发式不是最优解)）。所以这次不改口气，改机制。
+
+`tests/test_doc_numbers.py`（**13 条**）把 README 里的招牌数字逐条钉到 `output/*.json` 的具体字段上：
+
+| 钉住的内容 | 对到的产物字段 |
+| --- | --- |
+| 水号识别 P / R / F1 / AUC，三档判定准确率与 macro F1、reject 档、pass 档 precision | `metrics.json → table_1_fraud_detection` / `table_2_verdict_confusion` |
+| 标签错配横评四个 F1 与 v1/v2/v3 token | `prompt_bench.json` 各 arm |
+| 单种子少浪费金额与占比、有效曝光提升 | `metrics.json → counterfactual_value_audit` |
+| 12 种子均值 ± std、95% CI、跑输种子数 | `multiseed.json → A_value_robustness` |
+| 两段归因（分散化 / 门禁与质量排序） | `multiseed.json → A_value_robustness.arm_attribution` |
+| 方差故事：std 与倍数、极端频次 9/36 与 0/36、条件胜率 | `multiseed.json → B_variance_attribution` |
+| **pooled p 值不许被当招牌数字用**（伪重复口径） | `multiseed.json → B_variance_attribution.independence_unit` |
+| decay 分层交付的人数、金额、占比与稳定性判据 | `metrics.json → budget_decay_sensitivity.delivery_policy` / `.stability` |
+| LLM 调用次数、总 token、reasoning token、缩减倍数 | `llm_bench.json` / `metrics.json → cost_audit` |
+| **README 声称的测试总数必须等于实际收集到的 node 数** | pytest 收集结果本身 |
+
+两个刻意的设计选择：
+
+1. **断言的是"人眼在 README 上看到的那串字符"，不是反向格式化产物值。** 比如 README 写 `$79,719`、`32.5%`、`0.7714`、`1,103,473`，测试就要求这些**带千分位、带百分号、按该位有效数字**的字符串出现在文档里，而不是先把产物值格式化成一种"约定写法"再比。理由是后者会自己定义正确答案——只要格式化函数和文档用的是同一套写法，`$79,718.55` 写成 `$79.7k` 也能过；而读者被误导的恰恰是**看到的那串字符**。反过来说，这条断言的代价是"改了写法也会红"，这个代价我认，因为改写法本身就该被人复核一次。
+2. **测试总数自检**：README 写"全套 N 个测试"，测试就去数实际收集到的 node 数并要求相等。这句话原来是最容易悄悄过期的一句（每加一个测试文件就变），现在它也变成会失败的断言。当前值 **745**。
+
+局限也说清：这条测试保证的是"README 与产物一致"，**不保证 README 的解读正确**。数字对得上，句子仍然可能把 caveat 说漏——那部分只能靠人写、靠人核。
+
 ---
 
 ## 3. 物理隔离：让"读到答案"这件事在代码层面不可能
@@ -520,8 +548,9 @@ print(json.dumps(t,ensure_ascii=False,indent=1)[:1800])"
 PYTHONPATH=src python -c "
 import json; [print('-',n) for n in json.load(open('output/metrics.json'))['honesty_notes']]"
 
-# ⑧ 反自证的三张网（35 项）+ 全量（162 项）
+# ⑧ 反自证的三张网（35 项）+ 文档数字防漂移（13 项）+ 全量（745 项）
 PYTHONPATH=src python -m pytest tests/test_no_leakage.py -q
+PYTHONPATH=src python -m pytest tests/test_doc_numbers.py -q
 make test
 ```
 
