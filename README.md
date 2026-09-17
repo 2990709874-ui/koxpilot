@@ -2,18 +2,18 @@
 
 **出海达人营销投前决策智能体**
 
-> 把一句话投放 brief，变成一份可执行、可追责、带预算分配和风险证据链的达人投放清单，并明确告出这份清单比"凭粉丝量选人"多省回了多少钱。
+> 把一句话投放 brief，变成一份可执行、可追责、带预算分配和风险证据链的达人投放清单，并用可复现的实验说清这份清单比"凭粉丝量选人"少浪费多少钱——以及这个结论有多稳。
 
-### 🔗 [在线 Demo](https://225d2fbf8f20.aime-site.bytedance.net) &nbsp;·&nbsp; 六个页签支持直达
+### 🔗 [在线 Demo](https://185ab87138d0.aime-site.bytedance.net) &nbsp;·&nbsp; 六个页签支持直达
 
-[决策台](https://225d2fbf8f20.aime-site.bytedance.net/#console) ·
-[决策与预算](https://225d2fbf8f20.aime-site.bytedance.net/#decision) ·
-[评测](https://225d2fbf8f20.aime-site.bytedance.net/#eval) ·
-[成本与价值](https://225d2fbf8f20.aime-site.bytedance.net/#cost) ·
-[架构](https://225d2fbf8f20.aime-site.bytedance.net/#arch) ·
-[工程日志](https://225d2fbf8f20.aime-site.bytedance.net/#notes)
+[决策台](https://185ab87138d0.aime-site.bytedance.net/#console) ·
+[决策与预算](https://185ab87138d0.aime-site.bytedance.net/#decision) ·
+[评测](https://185ab87138d0.aime-site.bytedance.net/#eval) ·
+[成本与价值](https://185ab87138d0.aime-site.bytedance.net/#cost) ·
+[架构](https://185ab87138d0.aime-site.bytedance.net/#arch) ·
+[工程日志](https://185ab87138d0.aime-site.bytedance.net/#notes)
 
-Demo 不是播放预录结果：**四层门禁在浏览器里用 TypeScript 重算一遍**，与 Python 实现读同一份阈值表、逐条比对 0 差异（[实时校验产物](https://225d2fbf8f20.aime-site.bytedance.net/data/consistency.json)）。
+Demo 不是播放预录结果：**四层门禁在浏览器里用 TypeScript 重算一遍**，与 Python 实现读同一份阈值表、逐条比对 0 差异（[实时校验产物](https://185ab87138d0.aime-site.bytedance.net/data/consistency.json)）。
 
 
 ---
@@ -210,7 +210,7 @@ total 5000 · matched 5000 · diff_count 0 · match_rate 1.0
 
 ## 我自己抓到并修掉的问题
 
-一个只展示漂亮指标的作品是可疑的。这套东西开发过程中我自己发现并修掉了下表这 9 个缺陷（原先这句话写的是"四个"，而表里已经列到 6 条——那本身就是一处没对齐的声称，一并改掉；此处的数字每次加行都会跟着改，"表里几行就写几个"是唯一允许的写法），其中两个是**评测自证**——ground truth 和特征其实是同一个东西的两面，于是朴素方法就能拿到近乎完美的指标。这类问题不会报错，只会给你一个漂亮得不真实的数字。
+一个只展示漂亮指标的作品是可疑的。下表这 10 个缺陷是我自己在开发过程中发现并修掉的，其中两个是**评测自证**——ground truth 和特征其实是同一个东西的两面，于是朴素方法就能拿到近乎完美的指标。这类问题不会报错，只会给你一个漂亮得不真实的数字。
 
 | # | 问题 | 表现 | 修完的代价 |
 | --- | --- | --- | --- |
@@ -223,6 +223,7 @@ total 5000 · matched 5000 · diff_count 0 · match_rate 1.0
 | 7 | 反事实只有两臂，"少浪费"无法归因 | "32.5% 是门禁省下来的"这句话在两臂产物上**没有证据**，差额里混着结构分散化 | 补第三臂 `diversified_no_gate` 后拆开：门禁与质量排序 **$40.0k ± $12.6k**（12/12 为正），结构分散化 $12.6k ± $39.0k（**4/12 为负**、CI 跨 0）——原来的猜测被推翻 |
 | 8 | "我们用 LLM 做语义适配"这句话在正式链路里站不住 | `llm_cache.json` 有 260×3 条真实 LLM 适配分，而 `make eval` 每个数字都来自 `rule_fit_score`；文档只"承认"落差、没有任何数字，既无法验证也无法被推翻 | 补 `eval/llm_fit.py` 做量化对照：覆盖率 **14.9%**、双算率 **97.1%**、覆盖子集上 LLM 分只降不升 → 结论"继续用规则版"由判据算出（三项全过会自动翻成可升格），并真跑了注入反事实（判定只翻 1 条、合计少浪费 $735，不作为招牌数字） |
 | 9 | 产物里"这些 token 是哪个模型跑的"有两个答案 | `llm_bench.models.ark` 写的是 endpoint id（`ep-2026…`），`per_task[*].model` 写的是服务端型号（`doubao-…`）；两处都叫 `model`，照着前者写材料就会说出"我们用的模型是 ep-2026…"——那是资源 id 不是模型 | 补 `llm/identity.py` 把两个概念拆成 `requested_model_id` / `served_models`，对外只报服务端型号；判据只看"名字是谁说的"，不做 `ep-` 前缀之类的模式匹配；调用全失败时如实标 `requested_id_only`。回归测试从产物现取请求 id，断言它在 `metrics.json` 里只出现在 `requested_model_id` 上 |
+| 10 | 预算模型里的关键假设 `decay=0.7` 长期**没有任何证据** | `budget/policy.py` 里 `POST_DECAY_SCAN = (0.5, 0.7, 0.9)` 这个常量定义了很久、注释也承诺给三档结果，但产物里从来没有它——也就是"同一达人第 n 条内容的边际曝光衰减"这个**建模假设**（不是观测值）一直无人验证，而所有预算与反事实数字都建在它上面 | 补 `eval/decay_scan.py` 真跑三档（共用同一批 GateResult，逐档重跑三臂 + gt 审计）。结论必须两半一起说：**价值结论不依赖它**（合计少浪费离差仅 **1.4%**、两段归因符号逐档不翻转），**但选谁会变**（选中名单 Jaccard 最低 0.826、金额加权重叠最低 **0.651**，低于自设 0.8 判据）→ 判定 `value_conclusions_hold_but_selection_shifts`。且这条扫描**回答不了**"哪一档更接近真实世界"，产物里专门有字段和测试堵住这个过度解读 |
 
 修复的代价是数字全面变差，我照实采用：
 
@@ -257,6 +258,7 @@ total 5000 · matched 5000 · diff_count 0 · match_rate 1.0
 | 标签错配存在**召回天花板** | — | 部分正例的观测被 bio 完全带偏，只看 declared + observed 无法检出。要突破必须引入第三方信号（实际带货商品类目、评论语义） |
 | 反事实价值的**幅度不稳** | 单次 32.5% | 12 种子 21.5% ± 13.7%，24 种子 19.1% ± 18.6%，1/12 种子跑输基线 |
 | 结构分散化的贡献**不显著** | 单次看起来占 70% | 12 种子 $12.6k ± $39.0k、4/12 为负、CI 跨 0；稳定的那一段是门禁与质量排序（$40.0k ± $12.6k） |
+| 投放**名单不唯一** | — | `decay` 是建模假设。三档扫描下价值结论稳（离差 1.4%），但选中名单金额加权重叠最低 **0.651**——换个假设就换一批人。名单应读作"给定假设下的方案"，不是最优解 |
 
 反向扫描 45 个合格分层，只有 1 个系统性短板 + 1 个"轻微但一致"（`country = BR`）。**换句话说，我单种子那份弱项清单里大部分是运气差，不是真短板**——这正是 winner's curse。
 
