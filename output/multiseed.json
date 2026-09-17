@@ -1158,7 +1158,16 @@
       "max_baseline_waste_share_among_koxpilot_losses": 0.056,
       "mean_koxpilot_waste_share_when_losing": 0.0686
     },
-    "caveat": "F 检验假设两组近似正态，而浪费率是 [0,1] 有界比例（KOXPilot 一侧还紧贴下界），尾部不正态会让 p 值偏乐观。因此结论以「std 量级差异 + 极端频次计数」为主，F 检验 p 值只作参考。"
+    "caveat": "F 检验假设两组近似正态，而浪费率是 [0,1] 有界比例（KOXPilot 一侧还紧贴下界），尾部不正态会让 p 值偏乐观。因此结论以「std 量级差异 + 极端频次计数」为主，F 检验 p 值只作参考。",
+    "independence_caveat": "pooled 的 n_obs=36 是 12 个种子 × 3 个 campaign 的**观测数**，不是 36 次独立试验：同一种子下的 3 个 campaign 共享同一个达人库，存在伪重复（pseudo-replication）。因此 pooled 的 F 检验自由度被高估、p 值被进一步压小，量级不可当真。独立单位是种子，故真正可比的证据是 per_campaign 里各自 n=12 的检验，以及不依赖分布假设的极端频次计数与条件胜率。",
+    "independence_unit": {
+      "n_seeds": 12,
+      "n_campaigns": 3,
+      "n_obs_pooled": 36,
+      "independent_unit": "seed",
+      "pooled_p_value_usable": false,
+      "note": "报数请写「36 个 (seed, campaign) 观测」，不要写「36 个独立样本」。"
+    }
   },
   "C_gate_metric_robustness": {
     "note": "每个种子都重新标定分位数阈值、重新跑全库四层门禁；指标口径与 metrics.json 表 1/表 2 完全一致（复用同一批函数）。",

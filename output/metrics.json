@@ -3048,6 +3048,790 @@
           "0.5": 1,
           "0.7": 1,
           "0.9": 1
+        },
+        "delivery_tiers": {
+          "n_selected_reference": 69,
+          "n_union_across_decays": 71,
+          "stable_core": {
+            "n": 56,
+            "n_in_reference_plan": 56,
+            "amount_usd_in_reference_plan": 62533.0,
+            "share_of_reference_spend": 0.7831,
+            "kox": [
+              {
+                "kox_id": "KOX-000026",
+                "amount_usd_reference": 23.01,
+                "amount_usd_min": 23.01,
+                "amount_usd_max": 23.01,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000060",
+                "amount_usd_reference": 89.0,
+                "amount_usd_min": 89.0,
+                "amount_usd_max": 178.0,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000160",
+                "amount_usd_reference": 43.68,
+                "amount_usd_min": 21.84,
+                "amount_usd_max": 43.68,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000178",
+                "amount_usd_reference": 48.35,
+                "amount_usd_min": 48.35,
+                "amount_usd_max": 96.7,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000441",
+                "amount_usd_reference": 13.5,
+                "amount_usd_min": 13.5,
+                "amount_usd_max": 13.5,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000605",
+                "amount_usd_reference": 2816.14,
+                "amount_usd_min": 1408.07,
+                "amount_usd_max": 4224.21,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000710",
+                "amount_usd_reference": 73.83,
+                "amount_usd_min": 49.22,
+                "amount_usd_max": 73.83,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000753",
+                "amount_usd_reference": 1106.86,
+                "amount_usd_min": 553.43,
+                "amount_usd_max": 1660.29,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001052",
+                "amount_usd_reference": 914.46,
+                "amount_usd_min": 609.64,
+                "amount_usd_max": 914.46,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001569",
+                "amount_usd_reference": 1179.44,
+                "amount_usd_min": 1179.44,
+                "amount_usd_max": 1769.16,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001616",
+                "amount_usd_reference": 608.79,
+                "amount_usd_min": 608.79,
+                "amount_usd_max": 608.79,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001620",
+                "amount_usd_reference": 713.28,
+                "amount_usd_min": 475.52,
+                "amount_usd_max": 713.28,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001721",
+                "amount_usd_reference": 2046.9,
+                "amount_usd_min": 1364.6,
+                "amount_usd_max": 2046.9,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001853",
+                "amount_usd_reference": 1370.52,
+                "amount_usd_min": 685.26,
+                "amount_usd_max": 1370.52,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001874",
+                "amount_usd_reference": 109.65,
+                "amount_usd_min": 109.65,
+                "amount_usd_max": 219.3,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001894",
+                "amount_usd_reference": 24.36,
+                "amount_usd_min": 16.24,
+                "amount_usd_max": 24.36,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001909",
+                "amount_usd_reference": 390.33,
+                "amount_usd_min": 390.33,
+                "amount_usd_max": 390.33,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001983",
+                "amount_usd_reference": 5529.24,
+                "amount_usd_min": 5529.24,
+                "amount_usd_max": 11058.48,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001992",
+                "amount_usd_reference": 73.44,
+                "amount_usd_min": 24.48,
+                "amount_usd_max": 73.44,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002034",
+                "amount_usd_reference": 1898.3,
+                "amount_usd_min": 1898.3,
+                "amount_usd_max": 2847.45,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002072",
+                "amount_usd_reference": 6907.8,
+                "amount_usd_min": 4605.2,
+                "amount_usd_max": 6907.8,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002175",
+                "amount_usd_reference": 999.45,
+                "amount_usd_min": 666.3,
+                "amount_usd_max": 999.45,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002239",
+                "amount_usd_reference": 65.25,
+                "amount_usd_min": 43.5,
+                "amount_usd_max": 65.25,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002302",
+                "amount_usd_reference": 32.3,
+                "amount_usd_min": 16.15,
+                "amount_usd_max": 48.45,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002446",
+                "amount_usd_reference": 1007.24,
+                "amount_usd_min": 1007.24,
+                "amount_usd_max": 1510.86,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002670",
+                "amount_usd_reference": 336.94,
+                "amount_usd_min": 168.47,
+                "amount_usd_max": 505.41,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002753",
+                "amount_usd_reference": 29.74,
+                "amount_usd_min": 14.87,
+                "amount_usd_max": 44.61,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002855",
+                "amount_usd_reference": 292.95,
+                "amount_usd_min": 195.3,
+                "amount_usd_max": 292.95,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002939",
+                "amount_usd_reference": 2282.42,
+                "amount_usd_min": 1141.21,
+                "amount_usd_max": 2282.42,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003037",
+                "amount_usd_reference": 270.6,
+                "amount_usd_min": 270.6,
+                "amount_usd_max": 270.6,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003057",
+                "amount_usd_reference": 5590.2,
+                "amount_usd_min": 5590.2,
+                "amount_usd_max": 5590.2,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003118",
+                "amount_usd_reference": 34.11,
+                "amount_usd_min": 22.74,
+                "amount_usd_max": 34.11,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003120",
+                "amount_usd_reference": 183.09,
+                "amount_usd_min": 122.06,
+                "amount_usd_max": 183.09,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003335",
+                "amount_usd_reference": 13.76,
+                "amount_usd_min": 6.88,
+                "amount_usd_max": 20.64,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003405",
+                "amount_usd_reference": 25.54,
+                "amount_usd_min": 12.77,
+                "amount_usd_max": 38.31,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003685",
+                "amount_usd_reference": 844.88,
+                "amount_usd_min": 422.44,
+                "amount_usd_max": 1267.32,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003923",
+                "amount_usd_reference": 2173.05,
+                "amount_usd_min": 2173.05,
+                "amount_usd_max": 2173.05,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003936",
+                "amount_usd_reference": 167.37,
+                "amount_usd_min": 111.58,
+                "amount_usd_max": 167.37,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003977",
+                "amount_usd_reference": 21.28,
+                "amount_usd_min": 21.28,
+                "amount_usd_max": 31.92,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003997",
+                "amount_usd_reference": 472.98,
+                "amount_usd_min": 236.49,
+                "amount_usd_max": 709.47,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004169",
+                "amount_usd_reference": 164.46,
+                "amount_usd_min": 109.64,
+                "amount_usd_max": 164.46,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004175",
+                "amount_usd_reference": 2161.22,
+                "amount_usd_min": 2161.22,
+                "amount_usd_max": 3241.83,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004178",
+                "amount_usd_reference": 510.6,
+                "amount_usd_min": 510.6,
+                "amount_usd_max": 510.6,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004210",
+                "amount_usd_reference": 68.1,
+                "amount_usd_min": 45.4,
+                "amount_usd_max": 68.1,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004379",
+                "amount_usd_reference": 605.46,
+                "amount_usd_min": 302.73,
+                "amount_usd_max": 908.19,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004395",
+                "amount_usd_reference": 944.34,
+                "amount_usd_min": 629.56,
+                "amount_usd_max": 944.34,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004439",
+                "amount_usd_reference": 19.12,
+                "amount_usd_min": 9.56,
+                "amount_usd_max": 28.68,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004478",
+                "amount_usd_reference": 1491.98,
+                "amount_usd_min": 745.99,
+                "amount_usd_max": 1491.98,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004583",
+                "amount_usd_reference": 81.42,
+                "amount_usd_min": 54.28,
+                "amount_usd_max": 81.42,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004634",
+                "amount_usd_reference": 17.56,
+                "amount_usd_min": 8.78,
+                "amount_usd_max": 26.34,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004645",
+                "amount_usd_reference": 36.12,
+                "amount_usd_min": 24.08,
+                "amount_usd_max": 36.12,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004678",
+                "amount_usd_reference": 2558.43,
+                "amount_usd_min": 1705.62,
+                "amount_usd_max": 2558.43,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004731",
+                "amount_usd_reference": 340.14,
+                "amount_usd_min": 340.14,
+                "amount_usd_max": 510.21,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004761",
+                "amount_usd_reference": 184.3,
+                "amount_usd_min": 92.15,
+                "amount_usd_max": 276.45,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004799",
+                "amount_usd_reference": 83.64,
+                "amount_usd_min": 83.64,
+                "amount_usd_max": 167.28,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004897",
+                "amount_usd_reference": 12442.08,
+                "amount_usd_min": 8294.72,
+                "amount_usd_max": 12442.08,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              }
+            ]
+          },
+          "assumption_sensitive": {
+            "n": 15,
+            "n_in_reference_plan": 13,
+            "amount_usd_in_reference_plan": 17322.29,
+            "share_of_reference_spend": 0.2169,
+            "kox": [
+              {
+                "kox_id": "KOX-000981",
+                "amount_usd_reference": 696.32,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 696.32,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-001501",
+                "amount_usd_reference": 364.0,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 1092.0,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-001682",
+                "amount_usd_reference": 327.55,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 327.55,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-001732",
+                "amount_usd_reference": 304.41,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 304.41,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-001761",
+                "amount_usd_reference": 314.77,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 314.77,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-001986",
+                "amount_usd_reference": 136.95,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 136.95,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-003020",
+                "amount_usd_reference": 516.04,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 516.04,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-003246",
+                "amount_usd_reference": 49.14,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 49.14,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-003828",
+                "amount_usd_reference": 63.8,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 63.8,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-003913",
+                "amount_usd_reference": 12987.93,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 12987.93,
+                "selected_at_decays": [
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004209",
+                "amount_usd_reference": 18.48,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 18.48,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-004289",
+                "amount_usd_reference": 16.9,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 16.9,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-004529",
+                "amount_usd_reference": 0.0,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 13552.83,
+                "selected_at_decays": [
+                  0.5
+                ]
+              },
+              {
+                "kox_id": "KOX-004771",
+                "amount_usd_reference": 1526.0,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 4578.0,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-004798",
+                "amount_usd_reference": 0.0,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 656.7,
+                "selected_at_decays": [
+                  0.5
+                ]
+              }
+            ]
+          }
         }
       },
       {
@@ -3110,6 +3894,488 @@
           "0.5": -1,
           "0.7": -1,
           "0.9": -1
+        },
+        "delivery_tiers": {
+          "n_selected_reference": 39,
+          "n_union_across_decays": 43,
+          "stable_core": {
+            "n": 36,
+            "n_in_reference_plan": 36,
+            "amount_usd_in_reference_plan": 42309.17,
+            "share_of_reference_spend": 0.9403,
+            "kox": [
+              {
+                "kox_id": "KOX-000044",
+                "amount_usd_reference": 282.3,
+                "amount_usd_min": 282.3,
+                "amount_usd_max": 282.3,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000340",
+                "amount_usd_reference": 555.18,
+                "amount_usd_min": 555.18,
+                "amount_usd_max": 555.18,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000359",
+                "amount_usd_reference": 511.93,
+                "amount_usd_min": 511.93,
+                "amount_usd_max": 1535.79,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000389",
+                "amount_usd_reference": 3069.87,
+                "amount_usd_min": 3069.87,
+                "amount_usd_max": 3069.87,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000447",
+                "amount_usd_reference": 668.82,
+                "amount_usd_min": 668.82,
+                "amount_usd_max": 1003.23,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000858",
+                "amount_usd_reference": 193.08,
+                "amount_usd_min": 193.08,
+                "amount_usd_max": 193.08,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001269",
+                "amount_usd_reference": 276.42,
+                "amount_usd_min": 276.42,
+                "amount_usd_max": 276.42,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001297",
+                "amount_usd_reference": 185.28,
+                "amount_usd_min": 185.28,
+                "amount_usd_max": 185.28,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001626",
+                "amount_usd_reference": 5393.22,
+                "amount_usd_min": 3595.48,
+                "amount_usd_max": 5393.22,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001865",
+                "amount_usd_reference": 203.96,
+                "amount_usd_min": 203.96,
+                "amount_usd_max": 203.96,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001976",
+                "amount_usd_reference": 412.32,
+                "amount_usd_min": 412.32,
+                "amount_usd_max": 412.32,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002025",
+                "amount_usd_reference": 578.06,
+                "amount_usd_min": 578.06,
+                "amount_usd_max": 867.09,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002165",
+                "amount_usd_reference": 45.72,
+                "amount_usd_min": 45.72,
+                "amount_usd_max": 45.72,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002186",
+                "amount_usd_reference": 4027.79,
+                "amount_usd_min": 4027.79,
+                "amount_usd_max": 4027.79,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002235",
+                "amount_usd_reference": 2080.62,
+                "amount_usd_min": 2080.62,
+                "amount_usd_max": 3120.93,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002317",
+                "amount_usd_reference": 1775.04,
+                "amount_usd_min": 1775.04,
+                "amount_usd_max": 1775.04,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002550",
+                "amount_usd_reference": 129.06,
+                "amount_usd_min": 129.06,
+                "amount_usd_max": 129.06,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002615",
+                "amount_usd_reference": 876.6,
+                "amount_usd_min": 876.6,
+                "amount_usd_max": 876.6,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002851",
+                "amount_usd_reference": 17.13,
+                "amount_usd_min": 17.13,
+                "amount_usd_max": 17.13,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002902",
+                "amount_usd_reference": 110.91,
+                "amount_usd_min": 110.91,
+                "amount_usd_max": 110.91,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003044",
+                "amount_usd_reference": 162.83,
+                "amount_usd_min": 162.83,
+                "amount_usd_max": 325.66,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003327",
+                "amount_usd_reference": 496.23,
+                "amount_usd_min": 496.23,
+                "amount_usd_max": 496.23,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003430",
+                "amount_usd_reference": 7671.2,
+                "amount_usd_min": 7671.2,
+                "amount_usd_max": 7671.2,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003546",
+                "amount_usd_reference": 30.84,
+                "amount_usd_min": 30.84,
+                "amount_usd_max": 30.84,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003572",
+                "amount_usd_reference": 54.99,
+                "amount_usd_min": 54.99,
+                "amount_usd_max": 54.99,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003635",
+                "amount_usd_reference": 117.21,
+                "amount_usd_min": 117.21,
+                "amount_usd_max": 117.21,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003823",
+                "amount_usd_reference": 23.32,
+                "amount_usd_min": 23.32,
+                "amount_usd_max": 34.98,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003916",
+                "amount_usd_reference": 68.88,
+                "amount_usd_min": 68.88,
+                "amount_usd_max": 68.88,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003983",
+                "amount_usd_reference": 54.69,
+                "amount_usd_min": 54.69,
+                "amount_usd_max": 54.69,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004163",
+                "amount_usd_reference": 161.28,
+                "amount_usd_min": 161.28,
+                "amount_usd_max": 161.28,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004376",
+                "amount_usd_reference": 18.99,
+                "amount_usd_min": 6.33,
+                "amount_usd_max": 18.99,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004508",
+                "amount_usd_reference": 351.12,
+                "amount_usd_min": 351.12,
+                "amount_usd_max": 351.12,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004646",
+                "amount_usd_reference": 233.81,
+                "amount_usd_min": 233.81,
+                "amount_usd_max": 467.62,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004648",
+                "amount_usd_reference": 8912.85,
+                "amount_usd_min": 8912.85,
+                "amount_usd_max": 8912.85,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004656",
+                "amount_usd_reference": 2495.37,
+                "amount_usd_min": 2495.37,
+                "amount_usd_max": 2495.37,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004947",
+                "amount_usd_reference": 62.25,
+                "amount_usd_min": 62.25,
+                "amount_usd_max": 62.25,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              }
+            ]
+          },
+          "assumption_sensitive": {
+            "n": 7,
+            "n_in_reference_plan": 3,
+            "amount_usd_in_reference_plan": 2686.55,
+            "share_of_reference_spend": 0.0597,
+            "kox": [
+              {
+                "kox_id": "KOX-002181",
+                "amount_usd_reference": 1743.63,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 1743.63,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-002976",
+                "amount_usd_reference": 125.47,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 125.47,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-003172",
+                "amount_usd_reference": 0.0,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 127.27,
+                "selected_at_decays": [
+                  0.5
+                ]
+              },
+              {
+                "kox_id": "KOX-003785",
+                "amount_usd_reference": 817.45,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 817.45,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-004029",
+                "amount_usd_reference": 0.0,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 62.66,
+                "selected_at_decays": [
+                  0.5
+                ]
+              },
+              {
+                "kox_id": "KOX-004220",
+                "amount_usd_reference": 0.0,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 577.46,
+                "selected_at_decays": [
+                  0.5
+                ]
+              },
+              {
+                "kox_id": "KOX-004944",
+                "amount_usd_reference": 0.0,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 99.61,
+                "selected_at_decays": [
+                  0.5
+                ]
+              }
+            ]
+          }
         }
       },
       {
@@ -3172,6 +4438,871 @@
           "0.5": 1,
           "0.7": 1,
           "0.9": 1
+        },
+        "delivery_tiers": {
+          "n_selected_reference": 73,
+          "n_union_across_decays": 78,
+          "stable_core": {
+            "n": 70,
+            "n_in_reference_plan": 70,
+            "amount_usd_in_reference_plan": 116013.26,
+            "share_of_reference_spend": 0.967,
+            "kox": [
+              {
+                "kox_id": "KOX-000087",
+                "amount_usd_reference": 137.7,
+                "amount_usd_min": 137.7,
+                "amount_usd_max": 137.7,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000156",
+                "amount_usd_reference": 10972.94,
+                "amount_usd_min": 10972.94,
+                "amount_usd_max": 16459.41,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000157",
+                "amount_usd_reference": 694.34,
+                "amount_usd_min": 694.34,
+                "amount_usd_max": 1041.51,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000226",
+                "amount_usd_reference": 350.07,
+                "amount_usd_min": 350.07,
+                "amount_usd_max": 350.07,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000286",
+                "amount_usd_reference": 5100.75,
+                "amount_usd_min": 5100.75,
+                "amount_usd_max": 5100.75,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000348",
+                "amount_usd_reference": 575.67,
+                "amount_usd_min": 575.67,
+                "amount_usd_max": 575.67,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000448",
+                "amount_usd_reference": 1403.28,
+                "amount_usd_min": 1403.28,
+                "amount_usd_max": 2104.92,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000462",
+                "amount_usd_reference": 2150.62,
+                "amount_usd_min": 1075.31,
+                "amount_usd_max": 2150.62,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000521",
+                "amount_usd_reference": 971.56,
+                "amount_usd_min": 971.56,
+                "amount_usd_max": 1457.34,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000574",
+                "amount_usd_reference": 278.19,
+                "amount_usd_min": 278.19,
+                "amount_usd_max": 278.19,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000627",
+                "amount_usd_reference": 130.95,
+                "amount_usd_min": 130.95,
+                "amount_usd_max": 130.95,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000728",
+                "amount_usd_reference": 5644.96,
+                "amount_usd_min": 5644.96,
+                "amount_usd_max": 8467.44,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000775",
+                "amount_usd_reference": 969.03,
+                "amount_usd_min": 969.03,
+                "amount_usd_max": 969.03,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000891",
+                "amount_usd_reference": 2362.32,
+                "amount_usd_min": 2362.32,
+                "amount_usd_max": 2362.32,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-000963",
+                "amount_usd_reference": 13645.29,
+                "amount_usd_min": 9096.86,
+                "amount_usd_max": 13645.29,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001058",
+                "amount_usd_reference": 191.85,
+                "amount_usd_min": 191.85,
+                "amount_usd_max": 191.85,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001065",
+                "amount_usd_reference": 83.46,
+                "amount_usd_min": 83.46,
+                "amount_usd_max": 83.46,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001114",
+                "amount_usd_reference": 112.8,
+                "amount_usd_min": 37.6,
+                "amount_usd_max": 112.8,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001139",
+                "amount_usd_reference": 5743.47,
+                "amount_usd_min": 3828.98,
+                "amount_usd_max": 5743.47,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001144",
+                "amount_usd_reference": 238.32,
+                "amount_usd_min": 238.32,
+                "amount_usd_max": 238.32,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001153",
+                "amount_usd_reference": 58.71,
+                "amount_usd_min": 58.71,
+                "amount_usd_max": 58.71,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001176",
+                "amount_usd_reference": 18.6,
+                "amount_usd_min": 18.6,
+                "amount_usd_max": 18.6,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001242",
+                "amount_usd_reference": 130.71,
+                "amount_usd_min": 130.71,
+                "amount_usd_max": 130.71,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001323",
+                "amount_usd_reference": 110.37,
+                "amount_usd_min": 110.37,
+                "amount_usd_max": 110.37,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001363",
+                "amount_usd_reference": 210.0,
+                "amount_usd_min": 210.0,
+                "amount_usd_max": 210.0,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001607",
+                "amount_usd_reference": 134.16,
+                "amount_usd_min": 134.16,
+                "amount_usd_max": 134.16,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001695",
+                "amount_usd_reference": 1457.79,
+                "amount_usd_min": 1457.79,
+                "amount_usd_max": 1457.79,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001697",
+                "amount_usd_reference": 4072.89,
+                "amount_usd_min": 4072.89,
+                "amount_usd_max": 4072.89,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001735",
+                "amount_usd_reference": 4890.66,
+                "amount_usd_min": 4890.66,
+                "amount_usd_max": 4890.66,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001965",
+                "amount_usd_reference": 3795.16,
+                "amount_usd_min": 3795.16,
+                "amount_usd_max": 3795.16,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-001980",
+                "amount_usd_reference": 1747.41,
+                "amount_usd_min": 1747.41,
+                "amount_usd_max": 1747.41,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002056",
+                "amount_usd_reference": 186.21,
+                "amount_usd_min": 186.21,
+                "amount_usd_max": 186.21,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002080",
+                "amount_usd_reference": 273.57,
+                "amount_usd_min": 273.57,
+                "amount_usd_max": 273.57,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002102",
+                "amount_usd_reference": 1450.08,
+                "amount_usd_min": 966.72,
+                "amount_usd_max": 1450.08,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002125",
+                "amount_usd_reference": 1952.34,
+                "amount_usd_min": 976.17,
+                "amount_usd_max": 1952.34,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002232",
+                "amount_usd_reference": 1304.52,
+                "amount_usd_min": 869.68,
+                "amount_usd_max": 1304.52,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002242",
+                "amount_usd_reference": 117.15,
+                "amount_usd_min": 117.15,
+                "amount_usd_max": 117.15,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002289",
+                "amount_usd_reference": 14704.92,
+                "amount_usd_min": 7352.46,
+                "amount_usd_max": 14704.92,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002332",
+                "amount_usd_reference": 25.92,
+                "amount_usd_min": 25.92,
+                "amount_usd_max": 25.92,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002448",
+                "amount_usd_reference": 134.19,
+                "amount_usd_min": 134.19,
+                "amount_usd_max": 134.19,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002658",
+                "amount_usd_reference": 1885.5,
+                "amount_usd_min": 1885.5,
+                "amount_usd_max": 2828.25,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-002965",
+                "amount_usd_reference": 37.77,
+                "amount_usd_min": 37.77,
+                "amount_usd_max": 37.77,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003000",
+                "amount_usd_reference": 1530.09,
+                "amount_usd_min": 1530.09,
+                "amount_usd_max": 1530.09,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003047",
+                "amount_usd_reference": 33.54,
+                "amount_usd_min": 33.54,
+                "amount_usd_max": 33.54,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003108",
+                "amount_usd_reference": 3259.92,
+                "amount_usd_min": 2173.28,
+                "amount_usd_max": 3259.92,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003119",
+                "amount_usd_reference": 227.76,
+                "amount_usd_min": 227.76,
+                "amount_usd_max": 227.76,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003161",
+                "amount_usd_reference": 5858.48,
+                "amount_usd_min": 5858.48,
+                "amount_usd_max": 8787.72,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003302",
+                "amount_usd_reference": 614.61,
+                "amount_usd_min": 614.61,
+                "amount_usd_max": 614.61,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003412",
+                "amount_usd_reference": 56.25,
+                "amount_usd_min": 56.25,
+                "amount_usd_max": 56.25,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003435",
+                "amount_usd_reference": 79.71,
+                "amount_usd_min": 79.71,
+                "amount_usd_max": 79.71,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003532",
+                "amount_usd_reference": 1422.9,
+                "amount_usd_min": 1422.9,
+                "amount_usd_max": 1422.9,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003565",
+                "amount_usd_reference": 27.66,
+                "amount_usd_min": 27.66,
+                "amount_usd_max": 27.66,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003641",
+                "amount_usd_reference": 700.77,
+                "amount_usd_min": 700.77,
+                "amount_usd_max": 700.77,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003677",
+                "amount_usd_reference": 180.66,
+                "amount_usd_min": 180.66,
+                "amount_usd_max": 270.99,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003739",
+                "amount_usd_reference": 1000.44,
+                "amount_usd_min": 1000.44,
+                "amount_usd_max": 1000.44,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003752",
+                "amount_usd_reference": 353.6,
+                "amount_usd_min": 353.6,
+                "amount_usd_max": 530.4,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003903",
+                "amount_usd_reference": 5259.51,
+                "amount_usd_min": 5259.51,
+                "amount_usd_max": 5259.51,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-003919",
+                "amount_usd_reference": 110.22,
+                "amount_usd_min": 110.22,
+                "amount_usd_max": 110.22,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004069",
+                "amount_usd_reference": 50.82,
+                "amount_usd_min": 50.82,
+                "amount_usd_max": 50.82,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004077",
+                "amount_usd_reference": 54.09,
+                "amount_usd_min": 54.09,
+                "amount_usd_max": 54.09,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004080",
+                "amount_usd_reference": 400.62,
+                "amount_usd_min": 400.62,
+                "amount_usd_max": 400.62,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004164",
+                "amount_usd_reference": 598.83,
+                "amount_usd_min": 598.83,
+                "amount_usd_max": 598.83,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004187",
+                "amount_usd_reference": 362.49,
+                "amount_usd_min": 362.49,
+                "amount_usd_max": 362.49,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004367",
+                "amount_usd_reference": 31.17,
+                "amount_usd_min": 31.17,
+                "amount_usd_max": 31.17,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004422",
+                "amount_usd_reference": 712.74,
+                "amount_usd_min": 712.74,
+                "amount_usd_max": 712.74,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004548",
+                "amount_usd_reference": 795.08,
+                "amount_usd_min": 795.08,
+                "amount_usd_max": 1192.62,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004592",
+                "amount_usd_reference": 59.31,
+                "amount_usd_min": 59.31,
+                "amount_usd_max": 59.31,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004748",
+                "amount_usd_reference": 22.32,
+                "amount_usd_min": 22.32,
+                "amount_usd_max": 22.32,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004853",
+                "amount_usd_reference": 1572.96,
+                "amount_usd_min": 1572.96,
+                "amount_usd_max": 1572.96,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              },
+              {
+                "kox_id": "KOX-004864",
+                "amount_usd_reference": 180.51,
+                "amount_usd_min": 180.51,
+                "amount_usd_max": 180.51,
+                "selected_at_decays": [
+                  0.5,
+                  0.7,
+                  0.9
+                ]
+              }
+            ]
+          },
+          "assumption_sensitive": {
+            "n": 8,
+            "n_in_reference_plan": 3,
+            "amount_usd_in_reference_plan": 3953.41,
+            "share_of_reference_spend": 0.033,
+            "kox": [
+              {
+                "kox_id": "KOX-000256",
+                "amount_usd_reference": 0.0,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 1797.0,
+                "selected_at_decays": [
+                  0.5
+                ]
+              },
+              {
+                "kox_id": "KOX-001264",
+                "amount_usd_reference": 2810.83,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 2810.83,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-001855",
+                "amount_usd_reference": 0.0,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 230.96,
+                "selected_at_decays": [
+                  0.5
+                ]
+              },
+              {
+                "kox_id": "KOX-002007",
+                "amount_usd_reference": 0.0,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 1558.62,
+                "selected_at_decays": [
+                  0.5
+                ]
+              },
+              {
+                "kox_id": "KOX-003899",
+                "amount_usd_reference": 0.0,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 3628.46,
+                "selected_at_decays": [
+                  0.5
+                ]
+              },
+              {
+                "kox_id": "KOX-004217",
+                "amount_usd_reference": 0.0,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 205.78,
+                "selected_at_decays": [
+                  0.5
+                ]
+              },
+              {
+                "kox_id": "KOX-004665",
+                "amount_usd_reference": 405.76,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 405.76,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              },
+              {
+                "kox_id": "KOX-004983",
+                "amount_usd_reference": 736.82,
+                "amount_usd_min": 0.0,
+                "amount_usd_max": 736.82,
+                "selected_at_decays": [
+                  0.5,
+                  0.7
+                ]
+              }
+            ]
+          }
         }
       }
     ],
@@ -3206,6 +5337,26 @@
       "等效条数、估算曝光与 CPM：``effective_posts`` 本身就是 decay 的函数，这些数字**必然**随档位变，不属于'应当稳定'的范畴，照实报出。"
     ],
     "blockers": [],
+    "caveats": [
+      "金额加权重叠最低 0.651，低于 0.80——名单大体还是那批人，但钱在人与内容条数之间挪了位置。所以本扫描支持的说法是'价值结论不依赖 decay'，**不是**'具体买谁、每人买几条不依赖 decay'。"
+    ],
+    "delivery_policy": {
+      "trigger": "selection_stable == false",
+      "rule": "名单按'在几档 decay 上都被选中'分两层交付：三档全选中的进核心层，只在部分档位出现的进假设敏感层，带标记走人工确认，不与核心层混在一份清单里发出。",
+      "stable_core": {
+        "n_kox": 162,
+        "amount_usd": 220855.43,
+        "share_of_spend": 0.9021,
+        "action": "可直接下单：入选不依赖 decay 取值。"
+      },
+      "assumption_sensitive": {
+        "n_kox": 19,
+        "amount_usd": 23962.25,
+        "share_of_spend": 0.0979,
+        "action": "标记'重复触达折扣假设敏感'，交人工确认或改按单条采购，不自动执行。"
+      },
+      "why_not_just_a_caveat": "判据不达标时若只写一句'名单不唯一'，投手拿到的仍是一份不知道哪里靠不住的清单。分层把不确定性定位到具体的人和金额上，让'假设不确定'产生一个分流动作，而不是笼统地打折整份名单的可信度。"
+    },
     "verdict": "value_conclusions_hold_but_selection_shifts",
     "headline": "decay ∈ (0.5, 0.7, 0.9)（正式链路用 0.7）：合计少浪费 $78,638~$79,719（相对离差 1.4%），两段归因（分散化 / 门禁与质量排序）符号均未翻转；但选中名单 Jaccard 最低 0.826、金额加权重叠最低 0.651，说明选谁与买几条会随该假设变动。",
     "note": "这条扫描回答的是'选谁与结论方向是否依赖该假设'，不回答'哪个 decay 更接近真实世界'——后者需要真实投放的重复触达数据，本项目没有。"

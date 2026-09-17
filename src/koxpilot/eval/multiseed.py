@@ -751,6 +751,22 @@ def variance_attribution(per_seed: Sequence[Mapping[str, Any]]) -> dict[str, Any
             "尾部不正态会让 p 值偏乐观。因此结论以「std 量级差异 + 极端频次计数」为主，"
             "F 检验 p 值只作参考。"
         ),
+        "independence_caveat": (
+            f"pooled 的 n_obs={len(all_base_share)} 是 {len(per_seed)} 个种子 × "
+            f"{len(campaign_ids)} 个 campaign 的**观测数**，不是 {len(all_base_share)} 次独立试验："
+            "同一种子下的 3 个 campaign 共享同一个达人库，存在伪重复（pseudo-replication）。"
+            "因此 pooled 的 F 检验自由度被高估、p 值被进一步压小，量级不可当真。"
+            "独立单位是种子，故真正可比的证据是 per_campaign 里各自 n="
+            f"{len(per_seed)} 的检验，以及不依赖分布假设的极端频次计数与条件胜率。"
+        ),
+        "independence_unit": {
+            "n_seeds": len(per_seed),
+            "n_campaigns": len(campaign_ids),
+            "n_obs_pooled": len(all_base_share),
+            "independent_unit": "seed",
+            "pooled_p_value_usable": False,
+            "note": "报数请写「36 个 (seed, campaign) 观测」，不要写「36 个独立样本」。",
+        },
     }
 
 

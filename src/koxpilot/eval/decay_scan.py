@@ -110,6 +110,64 @@ def _spread_share(values: Sequence[float]) -> float | None:
     return round((max(values) - min(values)) / scale, 4)
 
 
+def _delivery_tiers(
+    amounts_by_level: Mapping[float, Mapping[str, float]],
+    levels: Sequence[float],
+    ref: float,
+) -> dict[str, Any]:
+    """把"名单会随假设变动"从一句认输的 caveat 变成可交付的分层名单。
+
+    敏感性扫描判定 ``selection_stable=False`` 之后，只写"名单不唯一"是没有产品动作的：
+    投手拿到的仍是一份不知道哪里靠不住的清单。这里按"在几档上被选中"把名单切两层：
+
+    - **核心层**：三档全选中。这批人的入选不依赖 decay 取值，可以直接下单。
+    - **假设敏感层**：只在部分档位被选中。金额照给参照档的值，但必须带着
+      "换个重复触达折扣假设就可能换人"的标记走到人工确认环节。
+
+    这样"假设不确定"就从一个免责声明变成了**分流规则**：不确定性被定位到具体的人和
+    具体的金额上，而不是笼统地打折整份名单的可信度。
+    """
+    ref_amounts = dict(amounts_by_level[ref])
+    selected_sets = {lvl: set(amounts_by_level[lvl]) for lvl in levels}
+    core_ids = set.intersection(*selected_sets.values()) if selected_sets else set()
+    union_ids = set.union(*selected_sets.values()) if selected_sets else set()
+    sensitive_ids = union_ids - core_ids
+
+    def _amount_range(kox_id: str) -> dict[str, Any]:
+        vals = [float(amounts_by_level[lvl].get(kox_id, 0.0)) for lvl in levels]
+        return {
+            "kox_id": kox_id,
+            "amount_usd_reference": round(float(ref_amounts.get(kox_id, 0.0)), 2),
+            "amount_usd_min": round(min(vals), 2),
+            "amount_usd_max": round(max(vals), 2),
+            "selected_at_decays": [lvl for lvl in levels if kox_id in selected_sets[lvl]],
+        }
+
+    ref_total = sum(ref_amounts.values())
+    core_in_ref = sorted(core_ids & set(ref_amounts))
+    sens_in_ref = sorted(sensitive_ids & set(ref_amounts))
+    core_amount = sum(ref_amounts[k] for k in core_in_ref)
+    sens_amount = sum(ref_amounts[k] for k in sens_in_ref)
+    return {
+        "n_selected_reference": len(ref_amounts),
+        "n_union_across_decays": len(union_ids),
+        "stable_core": {
+            "n": len(core_ids),
+            "n_in_reference_plan": len(core_in_ref),
+            "amount_usd_in_reference_plan": round(core_amount, 2),
+            "share_of_reference_spend": round(core_amount / ref_total, 4) if ref_total else None,
+            "kox": [_amount_range(k) for k in core_in_ref],
+        },
+        "assumption_sensitive": {
+            "n": len(sensitive_ids),
+            "n_in_reference_plan": len(sens_in_ref),
+            "amount_usd_in_reference_plan": round(sens_amount, 2),
+            "share_of_reference_spend": round(sens_amount / ref_total, 4) if ref_total else None,
+            "kox": [_amount_range(k) for k in sorted(sensitive_ids)],
+        },
+    }
+
+
 def decay_sensitivity_report(
     records: Sequence[Kox],
     specs: Sequence[CampaignSpec],
@@ -259,6 +317,7 @@ def decay_sensitivity_report(
                 if ovl is not None:
                     overlaps.append(ovl)
             block_rows.append(row)
+        tiers = _delivery_tiers(amounts[spec.campaign_id], levels, ref)
         campaign_blocks.append(
             {
                 "campaign_id": spec.campaign_id,
@@ -267,6 +326,7 @@ def decay_sensitivity_report(
                 "saved_usd_sign_by_decay": {
                     str(r["decay"]): _sign(float(r["saved_usd_vs_baseline"])) for r in block_rows
                 },
+                "delivery_tiers": tiers,
             }
         )
 
@@ -340,6 +400,42 @@ def decay_sensitivity_report(
         )
 
     saved_values = [float(v) for v in saved_by_decay.values()]
+    core_n = sum(b["delivery_tiers"]["stable_core"]["n_in_reference_plan"] for b in campaign_blocks)
+    sens_n = sum(
+        b["delivery_tiers"]["assumption_sensitive"]["n_in_reference_plan"] for b in campaign_blocks
+    )
+    core_amt = sum(
+        b["delivery_tiers"]["stable_core"]["amount_usd_in_reference_plan"] for b in campaign_blocks
+    )
+    sens_amt = sum(
+        b["delivery_tiers"]["assumption_sensitive"]["amount_usd_in_reference_plan"]
+        for b in campaign_blocks
+    )
+    tier_total = core_amt + sens_amt
+    delivery_policy = {
+        "trigger": "selection_stable == false",
+        "rule": (
+            "名单按'在几档 decay 上都被选中'分两层交付：三档全选中的进核心层，"
+            "只在部分档位出现的进假设敏感层，带标记走人工确认，不与核心层混在一份清单里发出。"
+        ),
+        "stable_core": {
+            "n_kox": core_n,
+            "amount_usd": round(core_amt, 2),
+            "share_of_spend": round(core_amt / tier_total, 4) if tier_total else None,
+            "action": "可直接下单：入选不依赖 decay 取值。",
+        },
+        "assumption_sensitive": {
+            "n_kox": sens_n,
+            "amount_usd": round(sens_amt, 2),
+            "share_of_spend": round(sens_amt / tier_total, 4) if tier_total else None,
+            "action": "标记'重复触达折扣假设敏感'，交人工确认或改按单条采购，不自动执行。",
+        },
+        "why_not_just_a_caveat": (
+            "判据不达标时若只写一句'名单不唯一'，投手拿到的仍是一份不知道哪里靠不住的清单。"
+            "分层把不确定性定位到具体的人和金额上，让'假设不确定'产生一个分流动作，"
+            "而不是笼统地打折整份名单的可信度。"
+        ),
+    }
     headline = (
         f"decay ∈ {tuple(levels)}（正式链路用 {ref}）："
         f"合计少浪费 ${min(saved_values):,.0f}~${max(saved_values):,.0f}"
@@ -382,6 +478,8 @@ def decay_sensitivity_report(
             "这些数字**必然**随档位变，不属于'应当稳定'的范畴，照实报出。",
         ],
         "blockers": blockers,
+        "caveats": caveats,
+        "delivery_policy": delivery_policy,
         "verdict": verdict,
         "headline": headline,
         "note": (

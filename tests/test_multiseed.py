@@ -222,6 +222,27 @@ def test_variance_attribution_reports_both_arms_and_extreme_counts(
             assert 0.0 <= row[arm]["min"] <= row[arm]["max"] <= 1.0
 
 
+def test_pooled_test_declares_its_pseudo_replication(two_seed_payload: dict[str, Any]) -> None:
+    """pooled 的 n_obs 是「种子 × campaign」观测数，不是独立试验数，产物必须自己说清。
+
+    这是最容易被面试官一句话打穿的地方：36 个观测里，每 3 个共享同一个达人库。
+    伪重复会高估自由度、把 p 值压得更小，所以 pooled 的 p 值量级不能当证据用。
+    独立单位是种子 —— 这句话必须写在产物里，而不是等人来问。
+    """
+    b = two_seed_payload["B_variance_attribution"]
+    unit = b["independence_unit"]
+    pooled = b["pooled_all_campaigns"]
+    assert unit["n_obs_pooled"] == pooled["n_obs"]
+    assert unit["n_obs_pooled"] == unit["n_seeds"] * unit["n_campaigns"]
+    assert unit["independent_unit"] == "seed"
+    assert unit["pooled_p_value_usable"] is False, "pooled p 值不能被标成可用"
+    assert "独立样本" in unit["note"]
+    assert "伪重复" in b["independence_caveat"] or "pseudo" in b["independence_caveat"].lower()
+    # 真正可用的替代证据必须同时在场：逐 campaign 检验 + 不依赖分布假设的计数
+    assert all("variance_ratio_test" in row for row in b["per_campaign"].values())
+    assert "conditional_win_rate_by_baseline_luck" in b
+
+
 def test_gate_metric_robustness_covers_required_metrics(two_seed_payload: dict[str, Any]) -> None:
     m = two_seed_payload["C_gate_metric_robustness"]["metrics"]
     for key in (
