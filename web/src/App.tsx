@@ -338,6 +338,7 @@ export default function App(): React.ReactElement {
               llmCompare={art.llmCompare}
               audit={art.audit}
               metrics={art.metrics}
+              multiseed={art.multiseed}
             />
           )}
           {tab === 'arch' && (
@@ -348,7 +349,9 @@ export default function App(): React.ReactElement {
               thresholdsMeta={art.manifest.thresholds_meta}
             />
           )}
-          {tab === 'notes' && <NotesTab promptBench={art.promptBench} audit={art.audit} metrics={art.metrics} />}
+          {tab === 'notes' && (
+            <NotesTab promptBench={art.promptBench} audit={art.audit} metrics={art.metrics} multiseed={art.multiseed} />
+          )}
         </div>
       </main>
 

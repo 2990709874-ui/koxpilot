@@ -27,6 +27,15 @@ export interface ManifestArtifact {
   n_groups?: number;
   note?: string;
   reason?: string;
+  top_level_keys?: string[];
+}
+
+/** prepare-data 的关键字段在位自检结果（缺字段时页面顶部亮条，面板降级）。 */
+export interface FieldAuditRow {
+  artifact: string;
+  path: string;
+  what: string;
+  present: boolean;
 }
 
 export interface Manifest {
@@ -43,6 +52,7 @@ export interface Manifest {
   };
   thresholds_meta: Record<string, unknown>;
   artifacts: ManifestArtifact[];
+  field_audit?: FieldAuditRow[];
   warnings?: string[];
   notes?: string[];
   note?: string;
@@ -121,6 +131,8 @@ export interface Artifacts {
   metrics: Loose | null;
   budget: Loose | null;
   audit: Loose | null;
+  /** 12 种子稳健性（含三臂两段归因）。缺失时 #cost 只展示单种子口径并明说。 */
+  multiseed: Loose | null;
   consistency: ConsistencyReport | null;
   llmBench: Loose | null;
   promptBench: Loose | null;
@@ -159,10 +171,11 @@ export async function loadArtifacts(): Promise<Artifacts> {
     return fetchJson<Loose>(f ?? fallback, false);
   };
 
-  const [metrics, budget, audit, consistency, llmBench, promptBench, llmCompare] = await Promise.all([
+  const [metrics, budget, audit, multiseed, consistency, llmBench, promptBench, llmCompare] = await Promise.all([
     optional('metrics', 'data/metrics.json'),
     optional('budget', 'data/budget.json'),
     optional('audit', 'data/audit.json'),
+    optional('multiseed', 'data/multiseed.json'),
     fetchJson<ConsistencyReport>('data/consistency.json', false),
     optional('llm_bench', 'data/llm_bench.json'),
     optional('prompt_bench', 'data/prompt_bench.json'),
@@ -192,6 +205,7 @@ export async function loadArtifacts(): Promise<Artifacts> {
     metrics,
     budget,
     audit,
+    multiseed,
     consistency,
     llmBench,
     promptBench,

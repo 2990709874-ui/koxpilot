@@ -19,9 +19,121 @@ export interface LogEntry {
   fix: string[];
   cost?: string;
   files: string[];
+  /**
+   * 有这个 id 的条目，会由 Notes.tsx 在卡片里额外渲染一块「产物现场证据」——
+   * 那一块的每个数字都是运行时从 public/data 下的 JSON 现读的，本文件不写任何当前值。
+   */
+  evidenceId?: string;
 }
 
 export const ITERATION_LOG: LogEntry[] = [
+  {
+    id: 'ablation-sign',
+    weight: 'critical',
+    kicker: '虚假声称 · 一个绝对值把结论说反了',
+    title: '消融表用 abs(delta) 判「有贡献」，于是负贡献规则也被标成有贡献',
+    punchline:
+      '早期 contributes = abs(ΔF1) ≥ 0.001，不看符号。有一条 G1 规则关掉之后严口径 F1 反而更高，却被标成"有贡献"，note 还跟着总括成「所有 G1 规则都有可测量的边际贡献」。',
+    found:
+      '逐条核对 table_4_ablation.by_g1_rule 时发现：某条规则的 ΔF1 是正号（关掉它 F1 上升），但那一行的 contributes 是 true。既然 delta = 变体 − 全量，正号只能读作"这条规则在拖累严口径 F1"。',
+    cause:
+      '判据写成了绝对值：只要"有可测量的变化"就算有贡献。这类 bug 不会崩、不会报错，只会让一句总括结论方向相反地写进产物和页面 —— 比崩溃危险得多。',
+    fix: [
+      '判定钉在 contribution_sign() 上，输出三档枚举：positive（delta ≤ −eps）/ negative（delta ≥ +eps）/ negligible（abs(delta) < eps），contributes 只表示正贡献',
+      '每行额外给 contribution_note 说明这条规则到底在做什么，by_layer 则对水号 F1 与三分类准确率各给一个符号',
+      '产物里把结果拆成 positive_rules / negative_rules / dead_rules 三个列表，并删掉那句「所有规则都有贡献」的总括句',
+      '前端消融表同步从"✓ / —"两态改成三态 Badge，负贡献那一行整行标黄，判据文字也从 contribution_criteria 现读',
+    ],
+    cost: '对外口径从"7 条规则全部有效"退成"6 正 1 负"，并且必须在页面上解释为什么负贡献那条没被删掉。',
+    files: ['eval/metrics.py::contribution_sign', 'tests/test_eval_metrics.py::TestAblation', 'web/src/tabs/Evaluation.tsx'],
+    evidenceId: 'ablation-sign',
+  },
+  {
+    id: 'uplift-denominator',
+    weight: 'critical',
+    kicker: '虚假声称 · 分母趋 0 导致比率爆炸',
+    title: '有效曝光提升是「以基线为分母」的比率，基线几乎全打水漂时它会放大几千倍',
+    punchline:
+      '按粉丝量买的基线只选 4~7 个头部号，某些种子它把 99.9% 预算花在水号上 —— 分母趋近 0，单个 campaign 的相对提升观测到过 +3585×，一个样本就能绑架整组均值。',
+    found:
+      '把反事实审计推到 12 个种子上做汇总时，某些 campaign 的跨种子 mean 高到不像话（几万个百分点），而 median 只有一百多个百分点。差这么远只能是分母问题，不是效果问题。',
+    cause:
+      '相对提升的分母是基线自己的有效曝光。基线选人极少、又容易整单踩在水号上，分母可以逼近 0。更糟的是旧实现在分母为 0 时返回 0.0，等于把"基线全打水漂、KOXPilot 全中"这个最有利的样本记成"没有提升" —— 方向相反的虚假声称，一样得修。',
+    fix: [
+      '给每条 per-campaign 与 totals 补有界口径：rate_gap_pp（有效曝光率差，∈[−100,100] 百分点）、symmetric_uplift（∈[−1,1]）、absolute_gain_views（绝对增量曝光）',
+      '加 ratio_denominator_fragile 标记；分母不可靠时 headline 不再引用那个无界比率',
+      '分母为 0 时相对提升给 null（无定义），不再给 0.0',
+      '多种子汇总的 per-campaign 主结论换成有界口径，无界比率降级成 effective_view_uplift_ratio_reference 仅供参考',
+      '前端把有界口径提到显眼位置，无界比率保留但明确标注"只能单条看"',
+    ],
+    cost: '最好看的那个"+3585×"彻底不能用了；对外能说的是"有效曝光率从 A 提到 B，差 xx 个百分点"这种朴素得多的说法。',
+    files: ['eval/audit.py', 'eval/multiseed.py', 'tests/test_audit_value.py'],
+    evidenceId: 'uplift-denominator',
+  },
+  {
+    id: 'third-arm',
+    weight: 'critical',
+    kicker: '归因缺口 · 补一条对照臂后结论反转',
+    title: '"少浪费的钱"里到底哪部分是门禁的功劳？加了第三臂才发现单种子那个答案是反的',
+    punchline:
+      '原来只有"KOXPilot vs 按粉丝量买"两臂，差额说不清是门禁筛出来的还是仅仅因为结构分散化。补了只做分散、不看门禁的第三臂之后：单种子看像分散化贡献更大，12 个种子看恰好相反。',
+    found:
+      '基线只选 4~7 个头部号，而 KOXPilot 会买上百条 —— 两臂之间同时变了"分散程度"和"质量判断"两件事。这种对照没法支撑"门禁值这么多钱"的说法，所以补了中间臂 diversified_no_gate（强制结构配额、按每美元名义曝光排序，仍不看门禁），做链式差分。',
+    cause:
+      '定稿那一个种子上，结构分散化那一段的差额比门禁与质量排序更大，如果就此对外说"价值主要来自分散化"，会被 12 个种子直接推翻：分散化那一段的标准差是均值的三倍多、有若干种子为负；而门禁与质量排序那一段 12/12 为正、离散度小得多。单种子结论不是稳健结论。',
+    fix: [
+      '三臂链式差分：基线 → 第三臂（结构分散化的贡献）→ KOXPilot（门禁与质量排序的贡献），并显式校验两段可加、负贡献不截断',
+      '字段名如实叫 by_gating_and_quality_ranking —— 第三臂到 KOXPilot 之间同时变了两件事，共用同一批分数无法再拆，不谎报成"纯门禁效果"',
+      '把 12 种子的分布（mean ± std、95% CI、为负的种子数）作为对外主口径，单种子数字降级成"定稿种子那一次"',
+      '如实登记第三臂的两个缺陷：它绝对有效曝光常常超过 KOXPilot，且平均选五百多人在采购上不可执行 —— 它是归因隔离臂，不是"更强的基线"',
+      '守卫测试：第三臂对"质量字段整体对调 / 伪造 verdict / 伪造分数"必须完全不变（并反向断言 KOXPilot 臂会变）',
+    ],
+    cost: '招牌数字从"少浪费 32.5%"退成"12 个种子 21.5% ± 13.7%，其中定稿种子那一次是 32.5%"，且必须承认对照臂在绝对曝光上赢过我们。',
+    files: ['eval/audit.py::counterfactual_report', 'eval/multiseed.py', 'tests/test_value_attribution.py'],
+    evidenceId: 'third-arm',
+  },
+  {
+    id: 'fit-audit',
+    weight: 'high',
+    kicker: '口径落差 · 从自述改成可审计',
+    title: 'A4 的 LLM 适配分明明打好了，正式链路却用的是规则版',
+    punchline:
+      '缓存里有真实 LLM 打的适配分，但 budget / eval 走的是 rule_fit_score。以前文档只写一句"没注入"，那是无法被检验的自述；现在它是一份带判据的注入反事实。',
+    found:
+      '梳理"哪些是真 LLM、哪些是规则"时对上了这处落差：llm_cache.json 有每个 brief 数百条 fit 分，正式指标链路一条都没消费。',
+    cause:
+      '构建期离线打分只覆盖了抽样候选，覆盖率不足以支撑全量注入；而且 LLM 打分里对市场/语言/平台的扣分与规则层已有的判据重复，直接接上会双重惩罚。',
+    fix: [
+      '新增离线注入反事实：把缓存里的 LLM 分注入 evaluate_all 后真的重跑门禁与预算，报判定翻转数与 gt 口径下的浪费金额差',
+      '"要不要升格为正式口径"由三条现算判据决定（覆盖率、双算率、覆盖子集上是否单向只降），不由我写死结论',
+      '正式链路的 fit_source 里一条 injected: 都不许出现，并有测试断言',
+      '全表禁止出现任何准确率类字段 —— 语义适配没有 ground truth，给"准确率"就是编的',
+      '前端把覆盖率、双算率、判定翻转数、金额差与最终决策一并展示，不只展示结论',
+    ],
+    cost: '结论只能是"这份缓存回答不了全量注入会更好还是更差"，而不是"LLM 有用/没用"；A4 在正式指标里仍是规则实现。',
+    files: ['eval/llm_fit.py', 'tests/test_llm_fit_audit.py', 'web/src/tabs/CostValue.tsx'],
+    evidenceId: 'fit-audit',
+  },
+  {
+    id: 'decay-scan',
+    weight: 'high',
+    kicker: '关键参数长期无证据',
+    title: '采购模型里的边际衰减 decay=0.7 是个假设，扫描常量摆了很久却没进产物',
+    punchline:
+      'POST_DECAY_SCAN = (0.5, 0.7, 0.9) 在策略代码里定义了很久，结果一直没落到产物 —— 也就是这个直接决定"同一个人买几条"的参数，长期没有任何敏感性证据。',
+    found:
+      '自查文档与代码的对不上之处时发现：注释声称 metrics 会给三档扫描，metrics.json 里没有这个字段。',
+    cause: '扫描函数写了但没接进产物流水线，文档先于实现被写下，属于"声称与产物不一致"。',
+    fix: [
+      '补 decay 扫描并落进 metrics.budget_decay_sensitivity：三档共用同一批门禁结果（门禁与 decay 无关），逐档重跑三臂预算 + gt 审计',
+      '参照档的数字必须与正式预算/反事实结果逐项一致（同一套代码路径），否则说明扫描走了平行实现',
+      '结论分两半，两半都写：价值结论稳（合计少浪费相对离差很小、两段归因符号不翻转），但选中名单会变（Jaccard 与金额加权重叠低于自设判据），判定 selection_stable = false',
+      '前端把两半并排展示，不允许只展示"结论稳"那一半',
+    ],
+    cost: '这份达人名单的正确读法从"最优解"退成"给定 decay=0.7 假设下的一个方案"。扫描也不能证明 0.7 本身对 —— 那需要真实投放的重复触达数据。',
+    files: ['eval/decay_scan.py', 'budget/policy.py::POST_DECAY_SCAN', 'web/src/tabs/CostValue.tsx'],
+    evidenceId: 'decay-scan',
+  },
   {
     id: 'self-proof-1',
     weight: 'critical',
@@ -132,6 +244,8 @@ export const ITERATION_LOG: LogEntry[] = [
 export interface RegressionRow {
   metric: string;
   early: string;
+  /** 页面用它挑对应的"从产物现读"函数；不做字符串模糊匹配，避免加行时串味。 */
+  finalKey: string;
   /** 最终值从哪个产物字段读（UI 会显示这个路径，方便核对）。 */
   finalSource: string;
   why: string;
@@ -143,36 +257,90 @@ export const REGRESSIONS: RegressionRow[] = [
   {
     metric: '规则基线 F1（标签错配任务）',
     early: '1.000',
+    finalKey: 'rule_baseline_f1',
     finalSource: 'prompt_bench.json → rule_baseline_f1',
     why: '修掉第一次评测自证：gt 不再等价于「两个集合是否相交」',
     worse: true,
     spotlight: true,
   },
   {
-    metric: '反事实价值：少浪费金额',
-    early: '$104,239（42.5%）',
-    finalSource: 'audit.json → counterfactual_value_audit.totals.saved_usd',
-    why: '数据重新生成后候选池结构变化',
+    metric: '对外口径：少浪费占预算比',
+    early: '定稿单种子那一次',
+    finalKey: 'saved_share_multiseed',
+    finalSource: 'multiseed.json → A_value_robustness.saved_share_of_budget',
+    why: '单种子不是稳健结论。对外改用 12 种子分布，定稿那一次降级成"其中一个种子"',
     worse: true,
     spotlight: true,
   },
   {
-    metric: '有效曝光提升',
-    early: '+133.6%',
-    finalSource: 'audit.json → counterfactual_value_audit.totals.effective_view_uplift',
-    why: '同上',
+    metric: '价值主要来自哪一段',
+    early: '结构分散化（单种子看更大）',
+    finalKey: 'arm_attribution',
+    finalSource: 'multiseed.json → A_value_robustness.arm_attribution',
+    why: '补第三臂 diversified_no_gate 后，12 种子把这个结论反转成「门禁与质量排序」',
+    worse: false,
+    spotlight: true,
+  },
+  {
+    metric: '反事实价值：少浪费金额（定稿种子）',
+    early: '$104,239（42.5%）',
+    finalKey: 'saved_usd_single',
+    finalSource: 'audit.json → counterfactual_value_audit.totals.saved_usd',
+    why: '数据重新生成后候选池结构变化',
     worse: true,
+  },
+  {
+    metric: '有效曝光提升（无界比率）',
+    early: '+133.6%',
+    finalKey: 'uplift_unbounded',
+    finalSource: 'audit.json → counterfactual_value_audit.totals.effective_view_uplift',
+    why: '同上；且这个口径分母是基线有效曝光，已降级为"只能单条看"',
+    worse: true,
+  },
+  {
+    metric: '有效曝光的对外口径（有界）',
+    early: '只有无界比率可用',
+    finalKey: 'uplift_bounded',
+    finalSource: 'audit.json → counterfactual_value_audit.totals.effective_view_uplift_bounded',
+    why: '分母趋 0 会让比率爆炸到几千倍，改用有界的有效曝光率差（百分点）当主口径',
+    worse: false,
+  },
+  {
+    metric: 'G1 逐条规则的贡献判定',
+    early: '7/7 有贡献（abs 判定）',
+    finalKey: 'ablation_split',
+    finalSource: 'metrics.json → table_4_ablation.positive_rules / negative_rules / dead_rules',
+    why: '绝对值判据不看符号，把"关掉后 F1 反而更好"的规则也算成有贡献',
+    worse: true,
+  },
+  {
+    metric: 'decay 假设的敏感性证据',
+    early: '无（扫描常量未进产物）',
+    finalKey: 'decay',
+    finalSource: 'metrics.json → budget_decay_sensitivity.stability',
+    why: '关键采购参数长期没有证据；补扫描后价值结论稳、但选中名单不稳',
+    worse: true,
+  },
+  {
+    metric: 'A4 LLM 适配分的落差',
+    early: '只有一句"没注入"',
+    finalKey: 'fit_audit',
+    finalSource: 'metrics.json → table_6_llm_vs_rule.semantic_fit_llm_vs_rule',
+    why: '把无法检验的自述改成带三条判据的注入反事实；覆盖率不够，不予升格',
+    worse: false,
   },
   {
     metric: '三分类整体准确率',
     early: '0.6776',
+    finalKey: 'verdict_accuracy',
     finalSource: 'metrics.json → table_2_verdict_confusion.accuracy',
-    why: '同上',
+    why: '数据重新生成后候选池结构变化',
     worse: true,
   },
   {
     metric: '阈值敏感性最大 F1 偏移',
     early: '0.0523（不稳健）',
+    finalKey: 'sensitivity',
     finalSource: 'metrics.json → table_5_sensitivity.max_abs_f1_shift',
     why: '没有为了好看去调阈值，也没有把「≤0.05 才算稳健」的判据放宽到 0.06',
     worse: true,
@@ -180,6 +348,7 @@ export const REGRESSIONS: RegressionRow[] = [
   {
     metric: '规则版语义适配分布',
     early: 'mean 1.0（假象）',
+    finalKey: 'neutral_spec',
     finalSource: '迭代日志实测：mean 0.60~0.62，p10 = 0.20',
     why: '修掉中性 spec 误传，指标才有区分度',
     worse: false,
@@ -190,6 +359,11 @@ export const METHOD_RULES: string[] = [
   '看到 F1 接近 1.0 —— 先假设自己在作弊，去找 ground truth 与特征之间的等价路径',
   '看到多个方法指标完全相同 —— 先假设可分性退化，或代码没真的用上预测',
   '看到某个指标在全样本上毫无区分度（分位数全等）—— 先怀疑调用方传错了语义边界，而不是函数写错了',
+  '判「有没有用」的地方一律不许出现 abs()：符号就是结论，取绝对值等于把方向丢掉',
+  '任何以"对照组"为分母的比率 —— 先问分母能不能趋近 0；能，就必须同时给一个有界口径，且分母为 0 时给 null 而不是 0',
+  '两个方案之间同时变了两件事 —— 差额就不可归因，要么加中间臂，要么把字段名写成"两件事的合计"，不许挑一个好听的说法',
+  '任何"招牌数字"只有单次实验支撑 —— 先当它是运气，多跑几个种子再决定对外怎么说；反转了就改口径',
+  '代码里摆着的扫描常量、缓存里躺着的分数，如果没进产物，就等于这个假设没有证据 —— 补证据，或者明写"无证据"',
   '任何「重新生成数据」之后 —— 先确认缓存、固化产物、baseline 是否都跟着失效了',
   '修完之后接受更差的数字，并把变差的原因写清楚',
 ];
@@ -197,6 +371,10 @@ export const METHOD_RULES: string[] = [
 export const GUARD_TESTS: string[] = [
   '静态扫描测试：AST 遍历门禁 / 预算 / LLM 层源码，断言不出现对 gt、true_categories、is_fraud 等字段的任何访问',
   '泄漏哨兵测试：断言朴素 Jaccard 规则的 F1 必须 < 0.95，且正例的 Jaccard 分布不得退化成双峰',
+  '消融符号测试：断言贡献判定是带符号的三态而不是 abs()，且总括 note 里不许再出现「所有规则都有贡献」这句话',
+  '有界 uplift 测试：断言分母为 0 时相对提升是 null 而非 0，且 rate_gap_pp / symmetric_uplift 永远落在各自的有界区间内',
+  '三臂归因测试：第三臂对「质量字段整体对调 / 伪造 verdict / 伪造分数」必须完全不变（并反向断言 KOXPilot 臂会变），两段贡献必须可加、负贡献不许截断',
+  'A4 口径审计测试：升格结论必须由覆盖率/双算率/单向性三条判据现算（喂一份"覆盖率 100% + 双向"的假缓存必须自动翻成"可升格"），正式链路 fit_source 里不许有 injected:，全表不许出现任何准确率类字段',
   '双实现一致性：TS 引擎与 Python 参考实现对同一份 5,000 条数据逐字段比对（含中文 human_text 逐字符）',
 ];
 
@@ -242,10 +420,37 @@ export const BOUNDARIES: Boundary[] = [
       '一部分正例的观测被 bio 完全带偏，只看 declared + observed 在信息上无法检出。要突破必须引入第三方信号（实际带货商品类目、评论语义）—— 这是下一步方案，不是已完成的能力。',
     tone: 'warn',
   },
+  {
+    title: '对照臂只有三条，且第三臂不是"更强的基线"',
+    body:
+      '反事实只有"按粉丝量降序"这一个朴素基线，加一条只做结构分散、不看门禁的归因隔离臂。第三臂按每美元名义曝光排序，本质是 CPM 最优，它平均要选五百多人（采购上不可执行），绝对有效曝光还常常超过 KOXPilot。所以本实验回答的是"比朴素买法好多少、其中门禁占多少"，没有回答"对专业买手还赢多少"。',
+    tone: 'warn',
+  },
+  {
+    title: '"门禁贡献"是门禁过滤 + 质量排序的合计，不能再拆',
+    body:
+      '第三臂到 KOXPilot 之间同时变了两件事：候选池只收 pass，排序换成质量加权价值。二者共用同一批真实性/适配分数，实现上无法分离，所以字段名如实叫 by_gating_and_quality_ranking。要再拆需要第四臂（"过滤 pass 但仍按每美元曝光排序"），本轮没做。',
+    tone: 'warn',
+  },
+  {
+    title: '价值结论用 12 种子，名单用单种子',
+    body:
+      '对外的价值幅度一律读 12 个种子的分布（含为负的种子数），单种子只是"定稿那一次"。但页面上展示的达人名单、逐单计划仍来自定稿种子 + decay=0.7 这一组假设 —— decay 扫描已证明价值结论不依赖该假设，而选中名单会随它变动。名单是"一个方案"，不是唯一解。',
+    tone: 'warn',
+  },
+  {
+    title: 'A4 的 LLM 适配分只做离线对照，没接进正式链路',
+    body:
+      '缓存里的 LLM 适配分覆盖不到整个候选池，且与规则层对市场/语言/平台的扣分重复。是否升格由覆盖率、双算率、覆盖子集单向性三条现算判据决定，当前判定为不升格；注入反事实的结果如实展示，包括它在某个 campaign 上反而多浪费钱。',
+    tone: 'muted',
+  },
 ];
 
 export const KNOWN_DEFECTS: string[] = [
   '关键字段只缺 1 个时 completeness = 0.8 不触发 G0.1，会造成 G0 层漏检 —— 这是刻意保留的真实缺陷，没有为了指标去改判据',
   'SPEC 3.3 合成 gt.verdict 时未把「多源标签冲突」计入 review，而 SPEC 4.G2.2 要求口径冲突需人核，两处口径不一致。因此假阳性里有一部分是纯口径性的（唯一命中就是 G2.2），产品上它们确实该进人核队列。本实现保留 G2.2 判定，并给出屏蔽 G2.2 的对照矩阵',
   '阈值 ±20% 扰动下最大 F1 偏移超过自设的稳健判据（≤0.05），stable = false 如实保留在产物里',
+  'G1 里有一条规则对严口径 F1 是负贡献（关掉它 F1 反而更高），没有删掉它 —— 它是软信号、单独命中只推 review 不 reject，且是宽口径召回的来源之一。产物里标成 negative 并列进 negative_rules，不粉饰成"有贡献"',
+  '按层消融里有一层关掉后三分类准确率反而更高，同样保留 —— 原因是 gt 与门禁在"多源标签冲突"上的口径冲突，指标不是唯一裁判，但反例照实标在表里',
+  'decay ∈ {0.5, 0.7, 0.9} 三档下选中名单会变（Jaccard 与金额加权重叠低于自设的 0.8 判据），selection_stable = false 如实保留；扫描只能证明价值结论不依赖这个假设，不能证明 0.7 本身是对的',
 ];

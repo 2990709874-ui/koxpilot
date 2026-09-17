@@ -710,4 +710,193 @@ export function DonutRing({
   );
 }
 
+// ---------------------------------------------------------------------------
+// 三臂链式差分：把「基线 → 第三臂 → KOXPilot」的浪费金额与两段贡献画在一起
+// ---------------------------------------------------------------------------
+export interface ArmBar {
+  key: string;
+  label: string;
+  sub?: string;
+  /** 该臂的浪费金额（越低越好）。 */
+  wasted: number;
+  color: string;
+  /** 相对上一臂的贡献额（第一臂为 null）。 */
+  contribution?: number | null;
+  contributionLabel?: string;
+  /** 附加的对照口径（有效曝光率、选中人数等），照实展示，不隐藏不利项。 */
+  chips?: Array<{ k: string; v: string; tone?: 'good' | 'bad' | 'muted' }>;
+}
+
+export function ArmWaterfall({
+  arms,
+  fmt = (x: number) => `$${int0(x)}`,
+}: {
+  arms: ArmBar[];
+  fmt?: (x: number) => string;
+}) {
+  const max = Math.max(...arms.map((a) => a.wasted), 1);
+  return (
+    <div className="space-y-2.5">
+      {arms.map((a, i) => {
+        const contrib = a.contribution ?? null;
+        return (
+          <div key={a.key}>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+              <span className="text-[11.5px] text-slate-300">
+                <span className="num mr-1.5 text-[10px] text-slate-600">{i + 1}</span>
+                {a.label}
+              </span>
+              <span className="num text-[11.5px]" style={{ color: a.color }}>
+                浪费 {fmt(a.wasted)}
+              </span>
+            </div>
+            {a.sub && <div className="muted mt-0.5 leading-relaxed">{a.sub}</div>}
+            <div className="mt-1 h-2.5 overflow-hidden rounded-sm bg-white/[0.05]">
+              <div
+                className="h-full rounded-sm transition-all duration-500"
+                style={{ width: `${(a.wasted / max) * 100}%`, background: a.color }}
+              />
+            </div>
+            {a.chips && a.chips.length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                {a.chips.map((c) => (
+                  <span key={c.k} className="text-[10.5px] text-slate-500">
+                    {c.k}{' '}
+                    <b
+                      className={`num ${
+                        c.tone === 'good' ? 'text-emerald-300' : c.tone === 'bad' ? 'text-rose-300' : 'text-slate-300'
+                      }`}
+                    >
+                      {c.v}
+                    </b>
+                  </span>
+                ))}
+              </div>
+            )}
+            {contrib !== null && Number.isFinite(contrib) && (
+              <div className="mt-1.5 flex items-center gap-1.5 pl-3">
+                <span className="text-[10px] text-slate-600">↳</span>
+                <span
+                  className={`num rounded px-1.5 py-0.5 text-[10.5px] ${
+                    contrib >= 0
+                      ? 'border border-emerald-400/25 bg-emerald-400/10 text-emerald-200'
+                      : 'border border-rose-400/25 bg-rose-400/10 text-rose-200'
+                  }`}
+                >
+                  {a.contributionLabel ?? '相对上一臂'} {contrib >= 0 ? '−' : '+'}
+                  {fmt(Math.abs(contrib))} 浪费
+                </span>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// 逐种子散点带：把「均值 ± 标准差 / 95% CI / 每个种子的点」一次画完
+// 目的：让「4/12 个种子为负」这种事在图上直接看得见，而不是只写在文字里
+// ---------------------------------------------------------------------------
+export function SeedStrip({
+  points,
+  mean,
+  ciLow,
+  ciHigh,
+  zeroLine = true,
+  fmt = (x: number) => fixed(x, 0),
+  color = '#22d3ee',
+  negColor = '#fb7185',
+  height = 74,
+  label,
+}: {
+  points: Array<{ seed: number | string; value: number }>;
+  mean: number;
+  ciLow?: number | null;
+  ciHigh?: number | null;
+  zeroLine?: boolean;
+  fmt?: (x: number) => string;
+  color?: string;
+  negColor?: string;
+  height?: number;
+  label?: React.ReactNode;
+}) {
+  const vals = points.map((p) => p.value);
+  const cand = [...vals, mean, ...(zeroLine ? [0] : []), ...(ciLow != null ? [ciLow] : []), ...(ciHigh != null ? [ciHigh] : [])];
+  const lo = Math.min(...cand);
+  const hi = Math.max(...cand);
+  const span = hi - lo || 1;
+  const pad = span * 0.08;
+  const min = lo - pad;
+  const max = hi + pad;
+  const xOf = (v: number): number => ((v - min) / (max - min)) * 100;
+  const showZero = zeroLine && min < 0 && max > 0;
+  return (
+    <div>
+      {label && <div className="muted mb-1">{label}</div>}
+      {/* 用绝对定位的 HTML 元素而不是 SVG：避免 viewBox 拉伸把点画成椭圆 */}
+      <div className="relative w-full" style={{ height }}>
+        {/* 95% CI 区间 */}
+        {ciLow != null && ciHigh != null && (
+          <div
+            className="absolute top-1/2 -translate-y-1/2 rounded-sm"
+            style={{
+              left: `${xOf(ciLow)}%`,
+              width: `${Math.max(0.3, xOf(ciHigh) - xOf(ciLow))}%`,
+              height: 22,
+              background: color,
+              opacity: 0.15,
+            }}
+          />
+        )}
+        {/* 0 线：跨 0 就是"符号不稳定" */}
+        {showZero && (
+          <div
+            className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 border-l border-dashed"
+            style={{ left: `${xOf(0)}%`, height: 40, borderColor: negColor }}
+          />
+        )}
+        {/* 均值线 */}
+        <div
+          className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
+          style={{ left: `${xOf(mean)}%`, height: 32, width: 1.5, background: color }}
+        />
+        {/* 每个种子一个点（纵向轻微错开，避免重叠遮挡） */}
+        {points.map((p, i) => (
+          <span
+            key={String(p.seed)}
+            title={`seed ${p.seed}：${fmt(p.value)}`}
+            className="absolute h-[6px] w-[6px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{
+              left: `${xOf(p.value)}%`,
+              top: `calc(50% + ${((i % 3) - 1) * 7}px)`,
+              background: p.value < 0 ? negColor : color,
+              opacity: 0.9,
+            }}
+          />
+        ))}
+        {showZero && (
+          <span
+            className="num absolute text-[9px]"
+            style={{ left: `${xOf(0)}%`, top: 0, color: negColor, transform: 'translateX(-50%)' }}
+          >
+            0
+          </span>
+        )}
+      </div>
+      <div className="mt-0.5 flex flex-wrap items-center justify-between gap-x-3 text-[10px]">
+        <span className="num text-slate-500">min {fmt(Math.min(...vals))}</span>
+        {ciLow != null && ciHigh != null && (
+          <span className="num" style={{ color }}>
+            95% CI [{fmt(ciLow)}, {fmt(ciHigh)}]
+            {ciLow < 0 && ciHigh > 0 && <span className="ml-1 text-rose-300">跨 0</span>}
+          </span>
+        )}
+        <span className="num text-slate-500">max {fmt(Math.max(...vals))}</span>
+      </div>
+    </div>
+  );
+}
+
 export { compact };

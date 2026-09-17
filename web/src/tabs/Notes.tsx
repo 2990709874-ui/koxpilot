@@ -1,9 +1,16 @@
 import React from 'react';
-import { AlertTriangle, ArrowDown, BookOpen, Bug, ChevronDown, FileWarning, ShieldCheck, Wrench } from 'lucide-react';
+import { AlertTriangle, ArrowDown, BookOpen, Bug, ChevronDown, FileWarning, ShieldCheck, Sigma, Wrench } from 'lucide-react';
 import { Badge, Note, Panel, TruthChip } from '../components/ui';
 import { BOUNDARIES, GUARD_TESTS, ITERATION_LOG, KNOWN_DEFECTS, METHOD_RULES, REGRESSIONS, type LogEntry } from '../content/notes';
 import type { Loose } from '../lib/artifacts';
-import { fixed, pct1, usd0 } from '../lib/format';
+import { fixed, int0, pct1, usd0 } from '../lib/format';
+
+/** 带符号的定点数：+0.0149 / −26.93。方向就是结论，所以符号不能省。 */
+function signedFixed(v: number, digits = 2): string {
+  if (!Number.isFinite(v)) return '—';
+  if (v === 0) return '0';
+  return `${v > 0 ? '+' : ''}${v.toFixed(digits)}`;
+}
 
 const WEIGHT_STYLE: Record<LogEntry['weight'], { border: string; kicker: string; icon: React.ReactElement }> = {
   critical: {
@@ -23,7 +30,7 @@ const WEIGHT_STYLE: Record<LogEntry['weight'], { border: string; kicker: string;
   },
 };
 
-function LogCard({ e, defaultOpen }: { e: LogEntry; defaultOpen: boolean }): React.ReactElement {
+function LogCard({ e, defaultOpen, evidence }: { e: LogEntry; defaultOpen: boolean; evidence?: React.ReactNode }): React.ReactElement {
   const [open, setOpen] = React.useState(defaultOpen);
   const st = WEIGHT_STYLE[e.weight];
   return (
@@ -58,6 +65,19 @@ function LogCard({ e, defaultOpen }: { e: LogEntry; defaultOpen: boolean }): Rea
               ))}
             </ul>
           </div>
+          {evidence && (
+            <div className="md:col-span-3">
+              <div className="rounded-xl border border-cyan-300/25 bg-cyan-400/[0.05] px-3 py-2.5">
+                <div className="mb-1.5 flex items-center gap-1.5">
+                  <Sigma size={11} className="text-cyan-300" />
+                  <span className="text-[10.5px] font-medium uppercase tracking-wider text-cyan-200/90">
+                    修完之后的产物现场证据（本页运行时从 public/data 现读）
+                  </span>
+                </div>
+                {evidence}
+              </div>
+            </div>
+          )}
           {e.cost && (
             <div className="md:col-span-3">
               <div className="rounded-lg border border-white/10 bg-black/25 px-3 py-2">
@@ -75,6 +95,18 @@ function LogCard({ e, defaultOpen }: { e: LogEntry; defaultOpen: boolean }): Rea
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** 证据块里的一格：一个数字 + 它的产物字段路径。字段路径直接写在下面，方便打开 JSON 核对。 */
+function Cell({ label, value, path, tone = 'plain' }: { label: string; value: string; path: string; tone?: 'plain' | 'good' | 'warn' }): React.ReactElement {
+  const cls = tone === 'good' ? 'text-emerald-200' : tone === 'warn' ? 'text-amber-200' : 'text-cyan-100';
+  return (
+    <div className="rounded-lg border border-white/10 bg-black/25 px-2.5 py-1.5">
+      <div className="text-[10.5px] leading-snug text-slate-400">{label}</div>
+      <div className={`num mt-0.5 text-[14px] font-semibold leading-none ${cls}`}>{value}</div>
+      <div className="num mt-1 text-[9.5px] leading-snug text-slate-500">{path}</div>
     </div>
   );
 }
@@ -128,27 +160,213 @@ export function NotesTab({
   promptBench,
   audit,
   metrics,
+  multiseed,
 }: {
   promptBench: Loose | null;
   audit: Loose | null;
   metrics: Loose | null;
+  multiseed: Loose | null;
 }): React.ReactElement {
   const ruleF1 = promptBench ? Number(promptBench.rule_baseline_f1) : null;
   const cfTotals = (audit?.counterfactual_value_audit?.totals ?? null) as Loose | null;
+  const bounded = (cfTotals?.effective_view_uplift_bounded ?? null) as Loose | null;
+  const va = (audit?.counterfactual_value_audit?.value_attribution ?? null) as Loose | null;
   const t2 = metrics?.table_2_verdict_confusion as Loose | undefined;
+  const t4 = metrics?.table_4_ablation as Loose | undefined;
   const t5 = metrics?.table_5_sensitivity as Loose | undefined;
+  const decay = metrics?.budget_decay_sensitivity as Loose | undefined;
+  const fit = (metrics?.table_6_llm_vs_rule as Loose | undefined)?.semantic_fit_llm_vs_rule as Loose | undefined;
+  const A = multiseed?.A_value_robustness as Loose | undefined;
+  const arm = A?.arm_attribution as Loose | undefined;
 
-  /** REGRESSIONS 里每一行的"最终值"从产物取，取不到就明确显示未生成，不回填字面量。 */
-  const finalOf = (metric: string): string => {
-    if (metric.startsWith('规则基线 F1')) return ruleF1 === null ? '产物未生成' : fixed(ruleF1, 4);
-    if (metric.includes('少浪费金额'))
-      return cfTotals ? `${usd0(Number(cfTotals.saved_usd))}（${pct1(Number(cfTotals.saved_share_of_budget))}）` : '产物未生成';
-    if (metric.includes('有效曝光提升'))
-      return cfTotals ? `+${pct1(Number(cfTotals.effective_view_uplift))}` : '产物未生成';
-    if (metric.includes('三分类')) return t2 ? fixed(Number(t2.accuracy), 4) : '产物未生成';
-    if (metric.includes('敏感性'))
-      return t5 ? `${fixed(Number(t5.max_abs_f1_shift), 4)}（stable=${String(t5.stable)}）` : '产物未生成';
-    return '见迭代日志';
+  /** ± 一个 std 的紧凑写法，只在这一页用。 */
+  const meanStd = (d: Loose | undefined, f: (x: number) => string): string =>
+    d ? `${f(Number(d.mean))} ± ${f(Number(d.std))}` : '产物未生成';
+
+  /**
+   * REGRESSIONS 里每一行的"最终值"从产物取，取不到就明确显示未生成，不回填字面量。
+   * 用 finalKey 精确分派，不做字符串包含匹配 —— 加行时不会串味。
+   */
+  const FINAL: Record<string, () => string> = {
+    rule_baseline_f1: () => (ruleF1 === null ? '产物未生成' : fixed(ruleF1, 4)),
+    saved_share_multiseed: () =>
+      A ? `${meanStd(A.saved_share_of_budget as Loose, (x) => pct1(x))}（n=${String((A.saved_share_of_budget as Loose).n)}）` : '产物未生成',
+    arm_attribution: () =>
+      arm
+        ? `门禁与质量排序 ${usd0(Number((arm.saved_usd_by_gating as Loose).mean))} / 分散化 ${usd0(Number((arm.saved_usd_by_diversification as Loose).mean))}`
+        : '产物未生成',
+    saved_usd_single: () =>
+      cfTotals ? `${usd0(Number(cfTotals.saved_usd))}（${pct1(Number(cfTotals.saved_share_of_budget))}）` : '产物未生成',
+    uplift_unbounded: () => (cfTotals ? `+${pct1(Number(cfTotals.effective_view_uplift))}` : '产物未生成'),
+    uplift_bounded: () =>
+      bounded
+        ? `${pct1(Number(bounded.baseline_effective_view_rate))} → ${pct1(Number(bounded.koxpilot_effective_view_rate))}（${fixed(Number(bounded.rate_gap_pp), 2)}pp）`
+        : '产物未生成',
+    ablation_split: () =>
+      t4
+        ? `正 ${((t4.positive_rules ?? []) as unknown[]).length} / 负 ${((t4.negative_rules ?? []) as unknown[]).length} / 死 ${((t4.dead_rules ?? []) as unknown[]).length}`
+        : '产物未生成',
+    decay: () =>
+      decay
+        ? `名单 Jaccard 最低 ${fixed(Number((decay.stability as Loose).selection_jaccard_min_vs_reference), 4)}（selection_stable=${String((decay.stability as Loose).selection_stable)}）`
+        : '产物未生成',
+    fit_audit: () =>
+      fit
+        ? `覆盖率 ${pct1(Number((fit.totals as Loose).coverage_share))} → ${String(fit.decision)}`
+        : '产物未生成',
+    verdict_accuracy: () => (t2 ? fixed(Number(t2.accuracy), 4) : '产物未生成'),
+    sensitivity: () =>
+      t5 ? `${fixed(Number(t5.max_abs_f1_shift), 4)}（stable=${String(t5.stable)}）` : '产物未生成',
+    neutral_spec: () => '见迭代日志',
+  };
+  const finalOf = (key: string): string => (FINAL[key] ? FINAL[key]() : '见迭代日志');
+
+  /**
+   * 本轮五条自我修复的「产物现场证据」。
+   * 每一格都写清字段路径 —— 这一页所有当前值都由此现读，content/notes.ts 里一个当前数字都没有。
+   */
+  const negRuleRow = ((t4?.by_g1_rule ?? []) as Loose[]).find(
+    (v) => String(v.contribution ?? '') === 'negative',
+  );
+  const EVIDENCE: Record<string, React.ReactNode> = {
+    'ablation-sign': t4 ? (
+      <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
+        <Cell
+          label="正向贡献规则"
+          value={`${((t4.positive_rules ?? []) as string[]).length} 条`}
+          path="table_4_ablation.positive_rules"
+          tone="good"
+        />
+        <Cell
+          label={`负贡献规则${((t4.negative_rules ?? []) as string[]).length > 0 ? `（${((t4.negative_rules ?? []) as string[]).join('、')}）` : ''}`}
+          value={`${((t4.negative_rules ?? []) as string[]).length} 条`}
+          path="table_4_ablation.negative_rules"
+          tone="warn"
+        />
+        <Cell
+          label={negRuleRow ? `${String(negRuleRow.variant)} 关掉后的严口径 ΔF1` : '负贡献规则的 ΔF1'}
+          value={negRuleRow ? signedFixed(Number((negRuleRow.delta as Loose).d_fraud_f1_strict), 4) : '—'}
+          path="table_4_ablation.by_g1_rule[].delta.d_fraud_f1_strict"
+          tone="warn"
+        />
+        <Cell
+          label="判定阈值 eps（三态共用）"
+          value={fixed(Number((t4.contribution_criteria as Loose)?.eps), 3)}
+          path="table_4_ablation.contribution_criteria.eps"
+        />
+      </div>
+    ) : null,
+    'uplift-denominator': bounded ? (
+      <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
+        <Cell
+          label="有界口径：基线 → KOXPilot 有效曝光率"
+          value={`${pct1(Number(bounded.baseline_effective_view_rate))} → ${pct1(Number(bounded.koxpilot_effective_view_rate))}`}
+          path="counterfactual_value_audit.totals.effective_view_uplift_bounded"
+          tone="good"
+        />
+        <Cell
+          label="有界口径：曝光率差（百分点，∈[−100,100]）"
+          value={`${signedFixed(Number(bounded.rate_gap_pp), 2)}pp`}
+          path="…effective_view_uplift_bounded.rate_gap_pp"
+          tone="good"
+        />
+        <Cell
+          label="对称提升（∈[−1,1]）"
+          value={signedFixed(Number(bounded.symmetric_uplift), 4)}
+          path="…effective_view_uplift_bounded.symmetric_uplift"
+        />
+        <Cell
+          label="旧的无界比率（分母 = 基线有效曝光，只能单条看）"
+          value={cfTotals ? `+${pct1(Number(cfTotals.effective_view_uplift))}` : '—'}
+          path="counterfactual_value_audit.totals.effective_view_uplift"
+          tone="warn"
+        />
+      </div>
+    ) : null,
+    'third-arm': arm ? (
+      <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
+        <Cell
+          label={`门禁与质量排序（${String(arm.n_seeds)} 种子 mean ± std）`}
+          value={meanStd(arm.saved_usd_by_gating as Loose, usd0)}
+          path="A_value_robustness.arm_attribution.saved_usd_by_gating"
+          tone="good"
+        />
+        <Cell
+          label="结构分散化（同口径）"
+          value={meanStd(arm.saved_usd_by_diversification as Loose, usd0)}
+          path="…arm_attribution.saved_usd_by_diversification"
+          tone="warn"
+        />
+        <Cell
+          label="为负的种子数：门禁段 / 分散化段"
+          value={`${String(arm.n_seeds_gating_contribution_negative)} / ${String(arm.n_seeds_diversification_contribution_negative)}`}
+          path="…arm_attribution.n_seeds_*_contribution_negative"
+          tone="warn"
+        />
+        <Cell
+          label="第三臂绝对有效曝光高于 KOXPilot 的种子数"
+          value={`${String(arm.n_seeds_third_arm_more_effective_views)} / ${String(arm.n_seeds)}`}
+          path="…arm_attribution.n_seeds_third_arm_more_effective_views"
+          tone="warn"
+        />
+      </div>
+    ) : null,
+    'fit-audit': fit ? (
+      <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
+        <Cell
+          label="LLM 适配分覆盖候选池"
+          value={`${pct1(Number((fit.totals as Loose).coverage_share))}（${int0(Number((fit.totals as Loose).covered_by_llm))}/${int0(Number((fit.totals as Loose).candidate_pool))}）`}
+          path="…semantic_fit_llm_vs_rule.totals.coverage_share"
+          tone="warn"
+        />
+        <Cell
+          label="与规则层重复扣分（双算率）"
+          value={pct1(Number((fit.totals as Loose).double_counted_share))}
+          path="…totals.double_counted_share"
+          tone="warn"
+        />
+        <Cell
+          label="注入后门禁判定翻转 / 浪费金额差（gt 口径）"
+          value={`${int0(Number((fit.totals as Loose).n_verdict_flips))} 条 / ${usd0(Number((fit.totals as Loose).wasted_delta_usd_llm_minus_rule))}`}
+          path="…totals.n_verdict_flips / wasted_delta_usd_llm_minus_rule"
+        />
+        <Cell
+          label="正式链路当前 fit 来源"
+          value={String(fit.formal_chain_fit_source)}
+          path="…semantic_fit_llm_vs_rule.formal_chain_fit_source"
+        />
+      </div>
+    ) : null,
+    'decay-scan': decay ? (
+      <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
+        <Cell
+          label={`三档 decay（${((decay.scan ?? []) as number[]).join(' / ')}）下的合计少浪费`}
+          value={((decay.stability as Loose).saved_usd_total_by_decay as number[] | undefined)
+            ? (((decay.stability as Loose).saved_usd_total_by_decay as number[]).map((x) => usd0(x)).join(' · '))
+            : '—'}
+          path="budget_decay_sensitivity.stability.saved_usd_total_by_decay"
+          tone="good"
+        />
+        <Cell
+          label="两段归因符号是否稳定"
+          value={String((decay.stability as Loose).sign_stable)}
+          path="…stability.sign_stable"
+          tone="good"
+        />
+        <Cell
+          label={`选中名单 Jaccard 最低（判据 ≥ ${fixed(Number((decay.stability as Loose).threshold), 2)}）`}
+          value={fixed(Number((decay.stability as Loose).selection_jaccard_min_vs_reference), 4)}
+          path="…stability.selection_jaccard_min_vs_reference"
+          tone="warn"
+        />
+        <Cell
+          label="金额加权重叠最低 / 名单稳定判定"
+          value={`${fixed(Number((decay.stability as Loose).spend_overlap_share_min_vs_reference), 4)} · ${String((decay.stability as Loose).selection_stable)}`}
+          path="…stability.spend_overlap_share_min_vs_reference"
+          tone="warn"
+        />
+      </div>
+    ) : null,
   };
 
   return (
@@ -161,18 +379,25 @@ export function NotesTab({
       >
         <p className="text-[12.5px] leading-relaxed text-slate-300">
           下面每一条都可以对着源码和产物复核：<b className="text-slate-100">两次评测自证</b>、
-          <b className="text-slate-100">一个会静默产生错误结论的缓存 bug</b>、一次并发写冲突、一格"恒等于 1.0"的无意义数据，
-          以及四处<b className="text-slate-100">"修完之后数字变差、但照实采用"</b>的取舍。
+          <b className="text-slate-100">两处会让结论方向相反的"虚假声称"</b>（一个绝对值判据、一个分母趋 0 的比率）、
+          <b className="text-slate-100">一次补对照臂之后把自己的结论推翻</b>、一个会静默产生错误结论的缓存 bug、
+          一处"缓存里有分但正式链路没用"的口径落差、一个长期没有证据的关键参数，
+          以及一整张<b className="text-slate-100">"修完之后数字变差、但照实采用"</b>的对照表。
         </p>
+        <Note tone="warn">
+          本轮新增的五条自我修复（消融符号判定、有界 uplift、三臂归因、A4 口径审计、decay 敏感性）都带一块
+          <b className="text-amber-100">「产物现场证据」</b>：展开卡片就能看到修完之后的当前值和它对应的 JSON 字段路径。
+          这一页的历史值是字面量（产物里查不到），当前值一律现读。
+        </Note>
       </Panel>
 
-      {/* ============ 两个最重要的数字 ============ */}
+      {/* ============ 三个最重要的数字 ============ */}
       <div>
         <div className="mb-2 flex items-center gap-2">
-          <h3 className="text-[15px] font-semibold text-slate-100">两个最重要的数字，都是我自己把它改小的</h3>
-          <Badge className="border-rose-400/30 bg-rose-400/10 text-rose-200">对外口径取修完之后那个更难看的值</Badge>
+          <h3 className="text-[15px] font-semibold text-slate-100">三个最重要的口径，都是我自己把它改难看的</h3>
+          <Badge className="border-rose-400/30 bg-rose-400/10 text-rose-200">对外口径取修完之后那个更保守的值</Badge>
         </div>
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-3">
           <SpotlightSwap
             label="① 标签错配任务上的规则基线 F1"
             early="1.000"
@@ -183,24 +408,41 @@ export function NotesTab({
             source="prompt_bench.json → rule_baseline_f1（历史值 1.000 来自 koxpilot-build/02-ITERATION-LOG.md）"
           />
           <SpotlightSwap
-            label="② 反事实价值：相比「按粉丝量买」少浪费的钱"
-            early="$104,239"
-            earlyTag="早期版本（42.5%）"
-            final={cfTotals ? usd0(Number(cfTotals.saved_usd)) : '产物未生成'}
+            label="② 少浪费占预算比：从招牌单种子退成 12 种子分布"
+            early={cfTotals ? pct1(Number(cfTotals.saved_share_of_budget)) : '产物未生成'}
+            earlyTag="单种子（定稿那一次，读 audit.json）"
+            final={A ? pct1(Number((A.saved_share_of_budget as Loose).mean)) : '产物未生成'}
             finalSub={
-              cfTotals
-                ? `占 ${usd0(Number(cfTotals.budget_usd))} 预算的 ${pct1(Number(cfTotals.saved_share_of_budget))}；有效曝光 +${pct1(Number(cfTotals.effective_view_uplift))}（早期是 +133.6%）`
+              A
+                ? `± ${pct1(Number((A.saved_share_of_budget as Loose).std))}（n=${String((A.saved_share_of_budget as Loose).n)}，95% CI ${pct1(Number((A.saved_share_of_budget as Loose).ci95_low))}~${pct1(Number((A.saved_share_of_budget as Loose).ci95_high))}，最差种子 ${pct1(Number((A.saved_share_of_budget as Loose).min))}）`
                 : undefined
             }
-            why="数据集重新生成后候选池结构变了，价值数字整体缩水。我没有保留那份更好看的旧结果，也没有去挑一个更有利的 baseline 口径 —— 全站展示的一律是最终产物里的数字。"
-            source="audit.json → counterfactual_value_audit.totals（历史值 $104,239 / +133.6% 来自迭代日志）"
+            why="那个招牌数字本身没算错，它只是一个种子上的结果。跑到 12 个种子之后：均值明显更低、离散度很大、还有种子是负的（跑输基线）。对外口径改成 12 种子分布，单种子降级成「其中一次」。"
+            source="multiseed.json → A_value_robustness.saved_share_of_budget（左侧单种子值读 audit.json → counterfactual_value_audit.totals）"
+          />
+          <SpotlightSwap
+            label="③ 价值主要来自哪一段：结论被自己的实验推翻"
+            early="结构分散化"
+            earlyTag={
+              va
+                ? `单种子看（占总差额 ${pct1(Number((va.waste_reduction_usd as Loose).share_of_total_by_diversification))}）`
+                : '单种子看'
+            }
+            final={arm ? '门禁与质量排序' : '产物未生成'}
+            finalSub={
+              arm
+                ? `12 种子 ${usd0(Number((arm.saved_usd_by_gating as Loose).mean))} ± ${usd0(Number((arm.saved_usd_by_gating as Loose).std))}（CV ${fixed(Number((arm.saved_usd_by_gating as Loose).cv), 2)}，${String(arm.n_seeds_gating_contribution_negative)}/${String(arm.n_seeds)} 为负）；分散化 ${usd0(Number((arm.saved_usd_by_diversification as Loose).mean))} ± ${usd0(Number((arm.saved_usd_by_diversification as Loose).std))}（CV ${fixed(Number((arm.saved_usd_by_diversification as Loose).cv), 2)}，${String(arm.n_seeds_diversification_contribution_negative)}/${String(arm.n_seeds)} 为负）`
+                : undefined
+            }
+            why="补了只做分散、不看门禁的第三臂之后，定稿种子上分散化那一段更大 —— 但 12 个种子把它翻了过来：分散化那段标准差是均值的三倍多、有种子为负；门禁与质量排序那段每个种子都为正、离散度小得多。稳定可对外承诺的是后者。"
+            source="multiseed.json → A_value_robustness.arm_attribution（左侧单种子占比读 audit.json → counterfactual_value_audit.value_attribution）"
           />
         </div>
       </div>
 
       {/* ============ 完整回退表 ============ */}
       <Panel
-        title="四处「修完之后数字变差，但照实采用」"
+        title={`${REGRESSIONS.length} 处「口径改过之后照实采用」`}
         subtitle="左列是历史值（迭代日志记录），右列由本页从产物 JSON 现读 —— 你可以打开对应文件核对"
         tone="warn"
       >
@@ -217,14 +459,14 @@ export function NotesTab({
             </thead>
             <tbody>
               {REGRESSIONS.map((r) => (
-                <tr key={r.metric} className={`hairline ${r.spotlight ? 'bg-rose-400/[0.05]' : ''}`}>
+                <tr key={r.finalKey} className={`hairline ${r.spotlight ? 'bg-rose-400/[0.05]' : ''}`}>
                   <td className="td text-[12px] text-slate-200">
                     {r.metric}
                     {r.spotlight && <Badge className="ml-1.5 border-rose-400/30 bg-rose-400/10 text-rose-200">重点</Badge>}
                   </td>
                   <td className="td num text-slate-500 line-through decoration-rose-400/60">{r.early}</td>
                   <td className={`td num text-[13px] font-semibold ${r.worse ? 'text-rose-200' : 'text-emerald-200'}`}>
-                    {finalOf(r.metric)}
+                    {finalOf(r.finalKey)}
                   </td>
                   <td className="td text-[11.5px] text-slate-400">{r.why}</td>
                   <td className="td num text-[10px] text-slate-500">{r.finalSource}</td>
@@ -245,15 +487,26 @@ export function NotesTab({
       <div>
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <h3 className="text-[15px] font-semibold text-slate-100">迭代日志（按严重程度排序）</h3>
-          <Badge className="border-rose-400/30 bg-rose-400/10 text-rose-200">2 次评测自证</Badge>
-          <Badge className="border-amber-400/30 bg-amber-400/10 text-amber-200">1 个静默错误结论的缓存 bug</Badge>
-          <Badge className="border-amber-400/30 bg-amber-400/10 text-amber-200">1 格无意义数据</Badge>
-          <Badge className="border-white/15 text-slate-400">2 项已知局限</Badge>
-          <span className="muted">critical 两条默认展开</span>
+          <Badge className="border-rose-400/30 bg-rose-400/10 text-rose-200">
+            {ITERATION_LOG.filter((e) => e.weight === 'critical').length} 条 critical（含 2 处虚假声称）
+          </Badge>
+          <Badge className="border-amber-400/30 bg-amber-400/10 text-amber-200">
+            {ITERATION_LOG.filter((e) => e.weight === 'high').length} 条 high
+          </Badge>
+          <Badge className="border-cyan-300/30 bg-cyan-400/10 text-cyan-200">
+            {ITERATION_LOG.filter((e) => e.evidenceId && EVIDENCE[e.evidenceId]).length} 条带产物现场证据
+          </Badge>
+          <Badge className="border-white/15 text-slate-400">{KNOWN_DEFECTS.length} 项刻意保留的缺陷</Badge>
+          <span className="muted">critical 默认展开</span>
         </div>
         <div className="space-y-2.5">
           {ITERATION_LOG.map((e) => (
-            <LogCard key={e.id} e={e} defaultOpen={e.weight === 'critical'} />
+            <LogCard
+              key={e.id}
+              e={e}
+              defaultOpen={e.weight === 'critical'}
+              evidence={e.evidenceId ? EVIDENCE[e.evidenceId] : undefined}
+            />
           ))}
         </div>
       </div>

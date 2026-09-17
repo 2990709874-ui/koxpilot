@@ -1,11 +1,105 @@
 import React from 'react';
-import { AlertTriangle, ArrowRight, Ban, Coins, Cpu, TriangleAlert, Zap } from 'lucide-react';
-import { BenchChart, DuoBars, TokenBars, type BenchBar } from '../components/charts';
+import { AlertTriangle, ArrowRight, Ban, Coins, Cpu, Scale, Sliders, TriangleAlert, Users, Zap } from 'lucide-react';
+import { ArmWaterfall, BenchChart, DuoBars, SeedStrip, TokenBars, type ArmBar, type BenchBar } from '../components/charts';
 import { Badge, MissingArtifact, Note, Panel, Segmented, Stat, TruthChip } from '../components/ui';
 import type { Loose } from '../lib/artifacts';
 import { compact, fixed, int0, pct1, usd0 } from '../lib/format';
 
 const MODEL_LABEL: Record<string, string> = { ark: 'ARK', azure: 'Azure', none: '无模型' };
+
+/** multiseed 里每个统计块的形状：{n, mean, std, min, max, median, ci95_low, ci95_high, cv}。 */
+interface SeedStat {
+  n: number;
+  mean: number;
+  std: number;
+  min: number;
+  max: number;
+  median: number;
+  ci95_low: number;
+  ci95_high: number;
+  cv: number;
+}
+const asStat = (o: Loose | undefined | null): SeedStat | null =>
+  o && Number.isFinite(Number(o.mean))
+    ? {
+        n: Number(o.n),
+        mean: Number(o.mean),
+        std: Number(o.std),
+        min: Number(o.min),
+        max: Number(o.max),
+        median: Number(o.median),
+        ci95_low: Number(o.ci95_low),
+        ci95_high: Number(o.ci95_high),
+        cv: Number(o.cv),
+      }
+    : null;
+
+const pp = (x: number, digits = 2): string => (Number.isFinite(x) ? `${x >= 0 ? '+' : ''}${x.toFixed(digits)}pp` : '—');
+
+/** 一行"均值 ± 标准差 · CV · N/N 为正"的稳健性摘要。 */
+function RobustRow({
+  title,
+  stat,
+  points,
+  fmt,
+  nNegative,
+  color,
+  verdict,
+  verdictTone,
+}: {
+  title: React.ReactNode;
+  stat: SeedStat;
+  points: Array<{ seed: number | string; value: number }>;
+  fmt: (x: number) => string;
+  nNegative: number;
+  color: string;
+  verdict: string;
+  verdictTone: 'good' | 'bad';
+}): React.ReactElement {
+  const crossesZero = stat.ci95_low < 0 && stat.ci95_high > 0;
+  return (
+    <div
+      className={`rounded-xl border px-3 py-2.5 ${
+        verdictTone === 'good' ? 'border-emerald-400/30 bg-emerald-400/[0.06]' : 'border-rose-400/30 bg-rose-400/[0.06]'
+      }`}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <span className="text-[12px] font-medium text-slate-100">{title}</span>
+        <Badge
+          className={
+            verdictTone === 'good'
+              ? 'border-emerald-400/35 bg-emerald-400/10 text-emerald-200'
+              : 'border-rose-400/35 bg-rose-400/10 text-rose-200'
+          }
+        >
+          {verdict}
+        </Badge>
+      </div>
+      <div className="num mt-1 text-[19px] font-semibold" style={{ color }}>
+        {fmt(stat.mean)}
+        <span className="ml-1 text-[12px] font-normal text-slate-400">± {fmt(stat.std)}</span>
+      </div>
+      <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10.5px] text-slate-500">
+        <span>
+          中位数 <b className="num text-slate-300">{fmt(stat.median)}</b>
+        </span>
+        <span>
+          变异系数 CV <b className={`num ${stat.cv <= 0.5 ? 'text-emerald-300' : 'text-rose-300'}`}>{fixed(stat.cv, 2)}</b>
+        </span>
+        <span>
+          为正的种子{' '}
+          <b className={`num ${nNegative === 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+            {stat.n - nNegative}/{stat.n}
+          </b>
+        </span>
+        {crossesZero && <span className="text-rose-300">95% CI 跨 0 → 符号不可靠</span>}
+      </div>
+      <div className="mt-1.5">
+        <SeedStrip points={points} mean={stat.mean} ciLow={stat.ci95_low} ciHigh={stat.ci95_high} fmt={fmt} color={color} />
+      </div>
+    </div>
+  );
+}
 
 export function CostValueTab({
   promptBench,
@@ -13,15 +107,19 @@ export function CostValueTab({
   llmCompare,
   audit,
   metrics,
+  multiseed,
 }: {
   promptBench: Loose | null;
   llmBench: Loose | null;
   llmCompare: Loose | null;
   audit: Loose | null;
   metrics: Loose | null;
+  multiseed: Loose | null;
 }): React.ReactElement {
   const [view, setView] = React.useState<'arms' | 'versions'>('arms');
   const [picked, setPicked] = React.useState<string | null>(null);
+  /** 归因口径切换：single = 定稿单种子（招牌），multi = 12 种子（更诚实）。 */
+  const [attrView, setAttrView] = React.useState<'single' | 'multi'>('multi');
 
   const arms = ((promptBench?.arms ?? []) as Loose[]).filter((a) => a.prompt_version !== 'rule');
   const ruleArm = ((promptBench?.arms ?? []) as Loose[]).find((a) => a.prompt_version === 'rule') ?? null;
@@ -72,6 +170,126 @@ export function CostValueTab({
   const totals = (llmBench?.totals ?? null) as Loose | null;
   const perTask = (llmBench?.per_task ?? {}) as Record<string, Loose>;
   const costAudit = (audit?.cost_audit ?? null) as Loose | null;
+
+  // ---- 反事实价值审计：单种子（定稿）口径 ------------------------------------
+  const cva = (audit?.counterfactual_value_audit ?? null) as Loose | null;
+  const cvaTotals = (cva?.totals ?? null) as Loose | null;
+  const bounded = (cvaTotals?.effective_view_uplift_bounded ?? null) as Loose | null;
+  const attr = (cva?.value_attribution ?? null) as Loose | null;
+  const wr = (attr?.waste_reduction_usd ?? null) as Loose | null;
+  const rate = (attr?.effective_view_rate_pp ?? null) as Loose | null;
+  const nSel = (attr?.n_selected ?? null) as Loose | null;
+  const effViews = (attr?.effective_views_gt ?? null) as Loose | null;
+  const cvaPer = (cva?.per_campaign ?? []) as Loose[];
+  /** 为负的 campaign：从产物里找，不写死 BRIEF-002。 */
+  const losers = cvaPer.filter((c) => Number(c.saved_usd) < 0);
+
+  // ---- 12 种子稳健性：两段归因 ----------------------------------------------
+  const aRob = (multiseed?.A_value_robustness ?? null) as Loose | null;
+  const armAttr = (aRob?.arm_attribution ?? null) as Loose | null;
+  const perSeed = (multiseed?.per_seed ?? []) as Loose[];
+  const gateStat = asStat(armAttr?.saved_usd_by_gating as Loose | undefined);
+  const divStat = asStat(armAttr?.saved_usd_by_diversification as Loose | undefined);
+  const gatePpStat = asStat(armAttr?.rate_gap_pp_by_gating as Loose | undefined);
+  const divPpStat = asStat(armAttr?.rate_gap_pp_by_diversification as Loose | undefined);
+  const thirdArmN = asStat(armAttr?.third_arm_n_selected as Loose | undefined);
+  const seedPoints = React.useMemo(
+    () =>
+      perSeed.map((s) => ({
+        seed: Number(s.seed),
+        gating: Number((s.value as Loose)?.saved_usd_by_gating),
+        div: Number((s.value as Loose)?.saved_usd_by_diversification),
+        gatingPp: Number((s.value as Loose)?.rate_gap_pp_by_gating),
+        divPp: Number((s.value as Loose)?.rate_gap_pp_by_diversification),
+      })),
+    [perSeed],
+  );
+  /** 单种子上"分散化占比"的印象 vs 12 种子上的均值占比 —— 反转就体现在这两个数上。 */
+  const singleDivShare = wr ? Number(wr.share_of_total_by_diversification) : null;
+  const multiDivShare =
+    gateStat && divStat && gateStat.mean + divStat.mean !== 0 ? divStat.mean / (gateStat.mean + divStat.mean) : null;
+  /** 无界 uplift 在 12 种子 per-campaign 上炸到多大：取三个 campaign 的 max 里的最大值。 */
+  const ratioBlowup = React.useMemo(() => {
+    const per = (aRob?.per_campaign ?? {}) as Record<string, Loose>;
+    let best: { cid: string; max: number; median: number } | null = null;
+    for (const [cid, v] of Object.entries(per)) {
+      const r = v.effective_view_uplift_ratio_reference as Loose | undefined;
+      if (!r) continue;
+      const mx = Number(r.max);
+      if (!Number.isFinite(mx)) continue;
+      if (!best || mx > best.max) best = { cid, max: mx, median: Number(r.median) };
+    }
+    return best;
+  }, [aRob]);
+
+  // ---- decay 建模假设的三档敏感性 -------------------------------------------
+  const decayScan = (metrics?.budget_decay_sensitivity ?? null) as Loose | null;
+  const decayRows = (decayScan?.per_decay ?? []) as Loose[];
+  const decayStab = (decayScan?.stability ?? null) as Loose | null;
+  /** 合计少浪费的相对离差 = 极差 / 均值（在 TS 里算，定义写在页面上，与产物三档金额可核对）。 */
+  const savedSpread = React.useMemo(() => {
+    const vals = decayRows.map((r) => Number(r.saved_usd_total)).filter((v) => Number.isFinite(v));
+    if (vals.length < 2) return null;
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const lo = Math.min(...vals);
+    const hi = Math.max(...vals);
+    return { lo, hi, mean, rel: mean !== 0 ? (hi - lo) / mean : null };
+  }, [decayRows]);
+
+  // ---- A4 语义适配：LLM 版 vs 规则版 ----------------------------------------
+  const fitAudit = (metrics?.table_6_llm_vs_rule as Loose | undefined)?.semantic_fit_llm_vs_rule as Loose | undefined;
+  const fitTotals = (fitAudit?.totals ?? null) as Loose | null;
+  const fitChecks = (fitAudit?.checks ?? {}) as Record<string, boolean>;
+
+  /** 三臂瀑布图的行（单种子口径）。 */
+  const armBars: ArmBar[] = React.useMemo(() => {
+    if (!wr || !rate || !nSel || !effViews) return [];
+    const koxViews = Number(effViews.koxpilot);
+    return [
+      {
+        key: 'baseline',
+        label: '基线：按粉丝量降序买（不看门禁、无结构约束）',
+        wasted: Number(wr.wasted_baseline),
+        color: '#f87171',
+        chips: [
+          { k: '有效曝光率', v: pct1(Number(rate.baseline)), tone: 'bad' },
+          { k: '选中', v: `${int0(Number(nSel.baseline))} 人` },
+          { k: '有效曝光', v: compact(Number(effViews.baseline)) },
+        ],
+      },
+      {
+        key: 'third',
+        label: '第三臂 diversified_no_gate：只做结构分散化，完全不看门禁',
+        sub: String((attr?.arms as Loose | undefined)?.diversified_no_gate ?? ''),
+        wasted: Number(wr.wasted_diversified_no_gate),
+        color: '#fbbf24',
+        contribution: Number(wr.by_diversification),
+        contributionLabel: '结构分散化贡献',
+        chips: [
+          { k: '有效曝光率', v: pct1(Number(rate.diversified_no_gate)) },
+          { k: '选中', v: `${int0(Number(nSel.diversified_no_gate))} 人`, tone: 'bad' },
+          {
+            k: '有效曝光',
+            v: compact(Number(effViews.diversified_no_gate)),
+            tone: Number(effViews.diversified_no_gate) > koxViews ? 'bad' : 'muted',
+          },
+        ],
+      },
+      {
+        key: 'kox',
+        label: 'KOXPilot：门禁过滤 + 结构约束 + 质量加权价值排序',
+        wasted: Number(wr.wasted_koxpilot),
+        color: '#22d3ee',
+        contribution: Number(wr.by_gating_and_quality_ranking),
+        contributionLabel: '门禁与质量排序贡献',
+        chips: [
+          { k: '有效曝光率', v: pct1(Number(rate.koxpilot)), tone: 'good' },
+          { k: '选中', v: `${int0(Number(nSel.koxpilot))} 人`, tone: 'good' },
+          { k: '有效曝光', v: compact(koxViews) },
+        ],
+      },
+    ];
+  }, [wr, rate, nSel, effViews, attr]);
 
   return (
     <div className="space-y-4">
@@ -336,47 +554,124 @@ export function CostValueTab({
         </Panel>
       </div>
 
-      {/* ================= 成本审计 ================= */}
-      <div className="grid gap-3 lg:grid-cols-[1fr_1fr]">
+
+      {/* ================= A4 语义适配：LLM 版 vs 规则版 ================= */}
+      {fitAudit && fitTotals ? (
         <Panel
-          title="④ 三种架构方案的调用量对比"
-          subtitle="调用次数是可数真值（按候选池规模推算），不是估的"
-          right={<TruthChip kind="python" />}
+          title="④ A4 语义适配：LLM 版 vs 规则版的量化审计（结论是「不升格」）"
+          subtitle={`离线对照：${String((fitAudit.llm as Loose)?.model ?? '')}，抽样 ${int0(Number((fitAudit.llm as Loose)?.fit_sample_n))} 条；正式链路的 fit_score 仍是 ${String(fitAudit.formal_chain_fit_source)}`}
+          right={
+            <div className="flex items-center gap-1.5">
+              <Badge className="border-amber-400/35 bg-amber-400/10 text-amber-200">{String(fitAudit.decision)}</Badge>
+              <TruthChip kind="llm-offline" />
+            </div>
+          }
         >
-          {costAudit ? (
-            <>
-              <div className="space-y-2.5">
-                {((costAudit.schemes ?? []) as Loose[]).map((s) => {
-                  const maxCalls = Math.max(...((costAudit.schemes ?? []) as Loose[]).map((x) => Number(x.calls_total)), 1);
-                  const isOurs = String(s.scheme).includes('KOXPilot');
-                  return (
-                    <div key={String(s.scheme)}>
-                      <div className="flex items-baseline justify-between">
-                        <span className={`text-[12px] ${isOurs ? 'text-cyan-100' : 'text-slate-300'}`}>
-                          {String(s.scheme)}
-                          {isOurs && <Badge className="ml-1.5 border-cyan-400/30 bg-cyan-400/10 text-cyan-200">本实现</Badge>}
-                        </span>
-                        <span className="num text-[12px] text-slate-300">{int0(Number(s.calls_total))} 次调用</span>
-                      </div>
-                      <div className="mt-1 h-2.5 overflow-hidden rounded-sm bg-white/[0.05]">
-                        <div
-                          className="h-full rounded-sm"
-                          style={{
-                            width: `${(Number(s.calls_total) / maxCalls) * 100}%`,
-                            background: isOurs ? '#22d3ee' : Number(s.calls_total) === 0 ? '#64748b' : '#fb7185',
-                          }}
-                        />
-                      </div>
-                      <div className="muted mt-1">{String(s.desc)}</div>
-                    </div>
-                  );
-                })}
+          <div className="grid gap-3 xl:grid-cols-[1fr_1.15fr]">
+            <div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <Stat
+                  label="覆盖率"
+                  value={pct1(Number(fitTotals.coverage_share))}
+                  hint={`${int0(Number(fitTotals.covered_by_llm))}/${int0(Number(fitTotals.candidate_pool))} 人；升格门槛 ${pct1(Number((fitAudit.thresholds as Loose).coverage_min_for_promotion), 0)}`}
+                  tone="bad"
+                />
+                <Stat
+                  label="口径重叠（双算）"
+                  value={pct1(Number(fitTotals.double_counted_share))}
+                  hint={`${int0(Number(fitTotals.n_llm_below_rule_above))} 人中已被定向/G2.4/audience_match 处理过；允许上限 ${pct1(Number((fitAudit.thresholds as Loose).double_count_max_for_promotion), 0)}`}
+                  tone="bad"
+                />
+                <Stat
+                  label="注入后判定翻转"
+                  value={int0(Number(fitTotals.n_verdict_flips))}
+                  hint={`阈值 ${fixed(Number(fitAudit.review_threshold), 2)}；影响几乎不在判定上，而在 value(k) 的 fit 因子`}
+                />
+                <Stat
+                  label="浪费金额差（LLM − 规则）"
+                  value={usd0(Number(fitTotals.wasted_delta_usd_llm_minus_rule))}
+                  hint={`${usd0(Number(fitTotals.wasted_spend_usd_rule))} → ${usd0(Number(fitTotals.wasted_spend_usd_llm))}（gt 口径）`}
+                  tone={Number(fitTotals.wasted_delta_usd_llm_minus_rule) < 0 ? 'good' : 'warn'}
+                />
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <Note tone="warn">
+                <b className="text-amber-200">三条判据全部不通过</b>（
+                {Object.entries(fitChecks).map(([k, v]) => (
+                  <span key={k} className="num mr-2 text-[10.5px]">
+                    {k}=<b className={v ? 'text-emerald-300' : 'text-rose-300'}>{String(v)}</b>
+                  </span>
+                ))}
+                ）。注意浪费金额差是<b className="text-amber-200">负的（LLM 略好 {usd0(Math.abs(Number(fitTotals.wasted_delta_usd_llm_minus_rule)))}）</b>
+                —— 数字对 LLM 有利，但我没有据此升格，因为它建立在 {pct1(Number(fitTotals.coverage_share))} 覆盖率和{' '}
+                {pct1(Number(fitTotals.double_counted_share))} 双算率之上，是口径叠加的产物而不是能力提升。
+              </Note>
+            </div>
+            <div className="space-y-2">
+              {((fitAudit.blockers ?? []) as string[]).map((b, i) => (
+                <div key={b} className="rounded-xl border border-rose-400/25 bg-rose-400/[0.06] px-3 py-2">
+                  <div className="flex items-start gap-1.5">
+                    <span className="num mt-[1px] shrink-0 rounded bg-rose-400/15 px-1.5 text-[9.5px] text-rose-200">
+                      阻断 {i + 1}
+                    </span>
+                    <p className="text-[11.5px] leading-relaxed text-slate-300">{b}</p>
+                  </div>
+                </div>
+              ))}
+              <Note>
+                {((fitAudit.caveats ?? []) as string[])[2] ?? ''}
+              </Note>
+            </div>
+          </div>
+        </Panel>
+      ) : (
+        <MissingArtifact
+          file="data/metrics.json → table_6_llm_vs_rule.semantic_fit_llm_vs_rule"
+          what="A4 语义适配的 LLM/规则量化审计"
+          how="重跑 Python 侧评测生成该字段后执行 npm run refresh"
+        />
+      )}
+
+      {/* ================= 成本审计 ================= */}
+      <Panel
+        title="⑤ 三种架构方案的调用量对比"
+        subtitle="调用次数是可数真值（按候选池规模推算），不是估的"
+        right={<TruthChip kind="python" />}
+      >
+        {costAudit ? (
+          <div className="grid gap-3 lg:grid-cols-[1.3fr_1fr]">
+            <div className="space-y-2.5">
+              {((costAudit.schemes ?? []) as Loose[]).map((s) => {
+                const maxCalls = Math.max(...((costAudit.schemes ?? []) as Loose[]).map((x) => Number(x.calls_total)), 1);
+                const isOurs = String(s.scheme).includes('KOXPilot');
+                return (
+                  <div key={String(s.scheme)}>
+                    <div className="flex items-baseline justify-between">
+                      <span className={`text-[12px] ${isOurs ? 'text-cyan-100' : 'text-slate-300'}`}>
+                        {String(s.scheme)}
+                        {isOurs && <Badge className="ml-1.5 border-cyan-400/30 bg-cyan-400/10 text-cyan-200">本实现</Badge>}
+                      </span>
+                      <span className="num text-[12px] text-slate-300">{int0(Number(s.calls_total))} 次调用</span>
+                    </div>
+                    <div className="mt-1 h-2.5 overflow-hidden rounded-sm bg-white/[0.05]">
+                      <div
+                        className="h-full rounded-sm"
+                        style={{
+                          width: `${(Number(s.calls_total) / maxCalls) * 100}%`,
+                          background: isOurs ? '#22d3ee' : Number(s.calls_total) === 0 ? '#64748b' : '#fb7185',
+                        }}
+                      />
+                    </div>
+                    <div className="muted mt-1">{String(s.desc)}</div>
+                  </div>
+                );
+              })}
+            </div>
+            <div>
+              <div className="grid grid-cols-2 gap-2">
                 <Stat
                   label="调用量降低"
                   value={`${fixed(Number(costAudit.call_reduction_vs_full_llm), 2)}×`}
-                  hint="混合架构 vs 全 LLM（888 → 225 次）"
+                  hint="混合架构 vs 全 LLM"
                   tone="good"
                   icon={<Cpu size={11} />}
                 />
@@ -388,66 +683,505 @@ export function CostValueTab({
                 />
               </div>
               <Note tone="warn">
-                <b className="text-amber-200">产物口径说明：</b>audit.json 的 <code className="font-mono text-[10px]">token_account</code> 是{' '}
+                <b className="text-amber-200">产物口径说明：</b>audit.json 的{' '}
+                <code className="font-mono text-[10px]">token_account</code> 是{' '}
                 <code className="font-mono text-[10px]">null</code>、status = {String(costAudit.status)} ——
                 因为成本审计跑在 LLM 真调之前。我没有回头改这份产物去"补齐"，而是把真实 token 账放在 llm_bench.json 并在上面第 ③ 块展示。
                 两份产物的时序差异如实呈现。
               </Note>
-            </>
-          ) : (
-            <MissingArtifact file="data/audit.json" what="成本审计" />
-          )}
-        </Panel>
+            </div>
+          </div>
+        ) : (
+          <MissingArtifact file="data/audit.json" what="成本审计" />
+        )}
+      </Panel>
 
+      {/* ================= 反事实价值账：三臂 + 结论反转 ================= */}
+      {cva && cvaTotals ? (
         <Panel
-          title="⑤ 钱花得值不值：反事实价值账"
-          subtitle="以 gt 为裁判对照「按粉丝量买」，三个 campaign 合计"
-          right={<TruthChip kind="audit" />}
+          title="⑥ 钱花得值不值：三臂反事实价值账 —— 以及一个被 12 种子推翻的结论"
+          subtitle="以 ground truth 为裁判。第三臂 diversified_no_gate 只做结构分散化、完全不看门禁，用来把「少浪费」拆成两段：分散化贡献 + 门禁与质量排序贡献"
+          right={
+            <div className="flex flex-wrap items-center gap-2">
+              {armAttr && (
+                <Segmented
+                  size="sm"
+                  value={attrView}
+                  onChange={setAttrView}
+                  options={[
+                    { value: 'single', label: '定稿单种子（招牌口径）', hint: '好看，但只有 1 个样本' },
+                    { value: 'multi', label: `${int0(Number(armAttr.n_seeds))} 种子（更诚实）`, hint: '结论在这里反转' },
+                  ]}
+                />
+              )}
+              <TruthChip kind="audit" />
+            </div>
+          }
         >
-          {audit?.counterfactual_value_audit ? (
-            <>
-              <div className="mb-3 grid grid-cols-3 gap-2">
-                <Stat
-                  label="合计少浪费"
-                  value={usd0(Number((audit.counterfactual_value_audit as Loose).totals.saved_usd))}
-                  hint={`占 ${usd0(Number((audit.counterfactual_value_audit as Loose).totals.budget_usd))} 预算的 ${pct1(Number((audit.counterfactual_value_audit as Loose).totals.saved_share_of_budget))}`}
-                  tone="good"
-                  icon={<Coins size={11} />}
-                />
-                <Stat
-                  label="有效曝光提升"
-                  value={`+${pct1(Number((audit.counterfactual_value_audit as Loose).totals.effective_view_uplift))}`}
-                  hint={`${compact(Number((audit.counterfactual_value_audit as Loose).totals.effective_views_baseline))} → ${compact(Number((audit.counterfactual_value_audit as Loose).totals.effective_views_koxpilot))}（水号曝光按 0 计）`}
-                  tone="accent"
-                />
-                <Stat
-                  label="其中一个 campaign 为负"
-                  value="BRIEF-002"
-                  hint="少浪费 −$5,118、有效曝光 −2.3%；照实保留，不从汇总里剔除"
-                  tone="bad"
-                />
-              </div>
-              <DuoBars
-                leftName="按粉丝量买（基线）"
-                rightName="KOXPilot"
-                fmt={(x) => (x > 1e5 ? compact(x) : usd0(x))}
-                rows={((audit.counterfactual_value_audit as Loose).per_campaign as Loose[]).map((c) => ({
-                  label: `${String(c.campaign_id)}　预算 ${usd0(Number(c.budget_usd))}`,
-                  left: Number((c.baseline as Loose).wasted_spend_usd),
-                  right: Number((c.koxpilot as Loose).wasted_spend_usd),
-                  note: String(c.headline),
-                }))}
+          {/* ---- 总口径：招牌数字 + 有界口径 ---- */}
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+            <Stat
+              label="合计少浪费（单种子）"
+              value={usd0(Number(cvaTotals.saved_usd))}
+              hint={`占 ${usd0(Number(cvaTotals.budget_usd))} 预算的 ${pct1(Number(cvaTotals.saved_share_of_budget))}`}
+              tone="good"
+              icon={<Coins size={11} />}
+            />
+            {bounded ? (
+              <Stat
+                label="有效曝光率（有界口径）"
+                value={pp(Number(bounded.rate_gap_pp))}
+                hint={`${pct1(Number(bounded.baseline_effective_view_rate))} → ${pct1(Number(bounded.koxpilot_effective_view_rate))}；symmetric_uplift ${fixed(Number(bounded.symmetric_uplift), 4)} ∈[−1,1]`}
+                tone="accent"
+                icon={<Scale size={11} />}
               />
-              <Note>
-                方法：{String((audit.counterfactual_value_audit as Loose).method.baseline)}；
-                {String((audit.counterfactual_value_audit as Loose).method.judge)}
-              </Note>
-            </>
-          ) : (
-            <MissingArtifact file="data/audit.json" what="反事实价值审计" />
+            ) : (
+              <Stat label="有界口径" value="未生成" hint="缺 effective_view_uplift_bounded" tone="warn" />
+            )}
+            <Stat
+              label="有效曝光提升（无界口径）"
+              value={`+${pct1(Number(cvaTotals.effective_view_uplift))}`}
+              hint={`分母是基线有效曝光 ${compact(Number(cvaTotals.effective_views_baseline))}；总口径分母够大可读，但跨样本聚合一律用左边的有界口径`}
+              tone="warn"
+            />
+            {losers.length > 0 ? (
+              <Stat
+                label={`${losers.length} 个 campaign 为负`}
+                value={losers.map((c) => String(c.campaign_id)).join(' / ')}
+                hint={losers
+                  .map(
+                    (c) =>
+                      `少浪费 ${usd0(Number(c.saved_usd))}、有效曝光率 ${pp(Number((c.effective_view_uplift_bounded as Loose)?.rate_gap_pp))}`,
+                  )
+                  .join('；')}
+                tone="bad"
+              />
+            ) : (
+              <Stat label="为负的 campaign" value="0 个" hint="本轮三个 campaign 全部为正" tone="good" />
+            )}
+          </div>
+          <Note tone="warn">
+            <AlertTriangle size={11} className="mr-1 inline" />
+            <b className="text-amber-200">上面第三格那个 +{pct1(Number(cvaTotals.effective_view_uplift))} 是无界比率，请不要跨样本引用。</b>
+            它的分母是基线有效曝光，基线一旦几乎把钱全烧在水号上（浪费率 &gt;99%），分母趋 0，比率会爆炸。
+            {ratioBlowup && (
+              <>
+                {' '}
+                实测在 12 种子的 <span className="num">{ratioBlowup.cid}</span> 上，这个比率最大炸到{' '}
+                <b className="num text-rose-200">×{fixed(ratioBlowup.max, 1)}</b>（同一格的中位数只有{' '}
+                <span className="num">×{fixed(ratioBlowup.median, 2)}</span>）—— 这就是为什么现在补了有界口径
+                （rate_gap_pp ∈[−100,100]、symmetric_uplift ∈[−1,1]），并规定聚合只用有界口径。
+              </>
+            )}
+          </Note>
+
+          {/* ---- 结论反转 ---- */}
+          {armAttr && gateStat && divStat && wr && (
+            <div className="mt-3 overflow-hidden rounded-2xl border border-rose-400/30 bg-gradient-to-br from-rose-400/[0.09] via-transparent to-emerald-400/[0.07] px-4 py-3.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className="border-rose-400/35 bg-rose-400/10 text-rose-200">结论反转</Badge>
+                <h4 className="text-[13.5px] font-semibold text-slate-100">
+                  单种子看像"分散化占七成"；12 种子看，稳定的价值来源是<b className="text-emerald-200">门禁与质量排序</b>，不是分散投放
+                </h4>
+              </div>
+              <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                <div className="rounded-xl border border-white/10 bg-black/25 px-3 py-2.5">
+                  <div className="text-[11px] font-medium text-slate-400">
+                    定稿单种子（招牌口径 · n = 1）
+                    <Badge className="ml-1.5 border-amber-400/30 bg-amber-400/10 text-amber-200">好看但样本 = 1</Badge>
+                  </div>
+                  <div className="mt-2 space-y-1.5">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-[11.5px] text-amber-200">结构分散化</span>
+                      <span className="num text-[15px] font-semibold text-amber-200">
+                        {usd0(Number(wr.by_diversification))}
+                        <span className="ml-1 text-[11px] font-normal text-slate-500">
+                          占 {pct1(Number(wr.share_of_total_by_diversification))}
+                        </span>
+                      </span>
+                    </div>
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-[11.5px] text-cyan-200">门禁与质量排序</span>
+                      <span className="num text-[15px] font-semibold text-cyan-200">
+                        {usd0(Number(wr.by_gating_and_quality_ranking))}
+                        <span className="ml-1 text-[11px] font-normal text-slate-500">
+                          占 {pct1(Number(wr.share_of_total_by_gating))}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
+                    只看这一列，很容易得出"价值主要来自把钱摊开"的结论 —— 这是本页曾经的叙事，
+                    <b className="text-rose-200">它是采样运气，不是规律</b>。
+                  </p>
+                </div>
+                <div className="rounded-xl border border-emerald-400/25 bg-black/25 px-3 py-2.5">
+                  <div className="text-[11px] font-medium text-slate-400">
+                    {int0(Number(armAttr.n_seeds))} 种子（更诚实的口径 · 对外结论取这一列）
+                    <Badge className="ml-1.5 border-emerald-400/30 bg-emerald-400/10 text-emerald-200">采用</Badge>
+                  </div>
+                  <div className="mt-2 space-y-1.5">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-[11.5px] text-amber-200">结构分散化</span>
+                      <span className="num text-[15px] font-semibold text-amber-200">
+                        {usd0(divStat.mean)}
+                        <span className="ml-1 text-[11px] font-normal text-slate-500">± {usd0(divStat.std)}</span>
+                      </span>
+                    </div>
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-[11.5px] text-cyan-200">门禁与质量排序</span>
+                      <span className="num text-[15px] font-semibold text-cyan-200">
+                        {usd0(gateStat.mean)}
+                        <span className="ml-1 text-[11px] font-normal text-slate-500">± {usd0(gateStat.std)}</span>
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-[11px] leading-relaxed text-slate-300">
+                    门禁那一段 CV <b className="num text-emerald-300">{fixed(gateStat.cv, 2)}</b>、
+                    <b className="num text-emerald-300">
+                      {gateStat.n - Number(armAttr.n_seeds_gating_contribution_negative)}/{gateStat.n}
+                    </b>{' '}
+                    个种子为正；分散化那一段 CV <b className="num text-rose-300">{fixed(divStat.cv, 2)}</b>、
+                    <b className="num text-rose-300">{int0(Number(armAttr.n_seeds_diversification_contribution_negative))}</b>{' '}
+                    个种子为负，95% CI{' '}
+                    <b className="num text-rose-300">
+                      [{usd0(divStat.ci95_low)}, {usd0(divStat.ci95_high)}]
+                    </b>{' '}
+                    跨 0。
+                    {singleDivShare !== null && multiDivShare !== null && (
+                      <>
+                        {' '}
+                        分散化的"占比"从单种子的 <span className="num">{pct1(singleDivShare)}</span> 掉到 12 种子均值的{' '}
+                        <span className="num">{pct1(multiDivShare)}</span>。
+                      </>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ---- 主体：按口径切换 ---- */}
+          <div className="mt-3">
+            {attrView === 'single' || !armAttr || !gateStat || !divStat ? (
+              <div className="grid gap-3 xl:grid-cols-[1.1fr_1fr]">
+                <div>
+                  <div className="muted mb-2">
+                    三臂链式差分（定稿单种子）：{String(attr?.definition ?? '')}
+                  </div>
+                  {armBars.length > 0 ? (
+                    <ArmWaterfall arms={armBars} />
+                  ) : (
+                    <MissingArtifact file="data/audit.json → counterfactual_value_audit.value_attribution" what="三臂归因" />
+                  )}
+                  {rate && (
+                    <Note>
+                      有效曝光率同向拆分：{pct1(Number(rate.baseline))} →（第三臂）{pct1(Number(rate.diversified_no_gate))} →
+                      （KOXPilot）{pct1(Number(rate.koxpilot))}；分散化 {pp(Number(rate.gap_by_diversification_pp))}、
+                      门禁与质量排序 {pp(Number(rate.gap_by_gating_and_quality_ranking_pp))}，合计{' '}
+                      {pp(Number(rate.gap_total_pp))}。
+                    </Note>
+                  )}
+                </div>
+                <div>
+                  <div className="muted mb-2">逐 campaign 浪费金额：基线 vs KOXPilot（含为负的那一个，未剔除）</div>
+                  <DuoBars
+                    leftName="按粉丝量买（基线）"
+                    rightName="KOXPilot"
+                    fmt={(x) => (x > 1e5 ? compact(x) : usd0(x))}
+                    rows={cvaPer.map((c) => ({
+                      label: `${String(c.campaign_id)}　预算 ${usd0(Number(c.budget_usd))}`,
+                      left: Number((c.baseline as Loose).wasted_spend_usd),
+                      right: Number((c.koxpilot as Loose).wasted_spend_usd),
+                      note: String(c.headline),
+                    }))}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-3 lg:grid-cols-2">
+                <RobustRow
+                  title={<>门禁与质量排序 · 少浪费金额（{int0(gateStat.n)} 种子）</>}
+                  stat={gateStat}
+                  points={seedPoints.map((p) => ({ seed: p.seed, value: p.gating }))}
+                  fmt={usd0}
+                  nNegative={Number(armAttr.n_seeds_gating_contribution_negative)}
+                  color="#22d3ee"
+                  verdict="稳定为正"
+                  verdictTone="good"
+                />
+                <RobustRow
+                  title={<>结构分散化 · 少浪费金额（{int0(divStat.n)} 种子）</>}
+                  stat={divStat}
+                  points={seedPoints.map((p) => ({ seed: p.seed, value: p.div }))}
+                  fmt={usd0}
+                  nNegative={Number(armAttr.n_seeds_diversification_contribution_negative)}
+                  color="#fbbf24"
+                  verdict="符号不稳定"
+                  verdictTone="bad"
+                />
+                {gatePpStat && (
+                  <RobustRow
+                    title={<>门禁与质量排序 · 有效曝光率差（有界口径）</>}
+                    stat={gatePpStat}
+                    points={seedPoints.map((p) => ({ seed: p.seed, value: p.gatingPp }))}
+                    fmt={(x) => pp(x)}
+                    nNegative={seedPoints.filter((p) => p.gatingPp < 0).length}
+                    color="#22d3ee"
+                    verdict="与金额口径同向"
+                    verdictTone="good"
+                  />
+                )}
+                {divPpStat && (
+                  <RobustRow
+                    title={<>结构分散化 · 有效曝光率差（有界口径）</>}
+                    stat={divPpStat}
+                    points={seedPoints.map((p) => ({ seed: p.seed, value: p.divPp }))}
+                    fmt={(x) => pp(x)}
+                    nNegative={seedPoints.filter((p) => p.divPp < 0).length}
+                    color="#fbbf24"
+                    verdict="与金额口径同向：也不稳"
+                    verdictTone="bad"
+                  />
+                )}
+                <div className="lg:col-span-2">
+                  <Note tone="good">
+                    <b className="text-emerald-200">可加性已显式校验：</b>
+                    {String((armAttr.additivity_check as Loose).note ?? '')} 均值合计{' '}
+                    <span className="num">{usd0(Number((armAttr.additivity_check as Loose).mean_total))}</span> vs 两段之和{' '}
+                    <span className="num">
+                      {usd0(Number((armAttr.additivity_check as Loose).mean_diversification_plus_gating))}
+                    </span>
+                    ，绝对误差 <span className="num">{fixed(Number((armAttr.additivity_check as Loose).abs_error), 4)}</span>。
+                    另：总口径下 KOXPilot 跑输基线的种子有{' '}
+                    <b className="num text-rose-200">
+                      {int0(Number(aRob?.n_seeds_koxpilot_loses_overall))}/{int0(Number(aRob?.n_seeds))}
+                    </b>{' '}
+                    个（seed {((aRob?.seeds_koxpilot_loses_overall ?? []) as number[]).join(', ')}），一并写在这里。
+                  </Note>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ---- 三条必须一起展示的反面事实 ---- */}
+          {armAttr && (
+            <div className="mt-3">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <h4 className="text-[13px] font-semibold text-slate-100">三条不许只报一半的反面事实</h4>
+                <Badge className="border-rose-400/30 bg-rose-400/10 text-rose-200">与上面的好结论同等重要</Badge>
+              </div>
+              <div className="grid gap-2 lg:grid-cols-3">
+                <div className="rounded-xl border border-rose-400/25 bg-rose-400/[0.06] px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-rose-200">
+                    <Ban size={12} />
+                    第三臂的绝对有效曝光赢过我们
+                  </div>
+                  <p className="mt-1 text-[11px] leading-relaxed text-slate-300">
+                    在{' '}
+                    <b className="num text-rose-200">
+                      {int0(Number(armAttr.n_seeds_third_arm_more_effective_views))}/{int0(Number(armAttr.n_seeds))}
+                    </b>{' '}
+                    个种子上，第三臂的绝对有效曝光都高于 KOXPilot
+                    {effViews && (
+                      <>
+                        （定稿单种子：<span className="num">{compact(Number(effViews.diversified_no_gate))}</span> vs{' '}
+                        <span className="num">{compact(Number(effViews.koxpilot))}</span>）
+                      </>
+                    )}
+                    。原因是它按"每美元名义曝光"排序，专挑 CPM 最便宜的长尾；KOXPilot 优化的是质量加权价值，会
+                    <b className="text-slate-100">主动放弃便宜但不对味的曝光</b>。所以三臂可比的口径是
+                    <b className="text-slate-100">浪费金额与有效曝光率</b>，绝对曝光数不是 KOXPilot 的优化目标。
+                  </p>
+                </div>
+                <div className="rounded-xl border border-amber-400/25 bg-amber-400/[0.06] px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-amber-200">
+                    <Users size={12} />
+                    第三臂平均选 {thirdArmN ? int0(thirdArmN.mean) : '—'} 人，真实采购不可执行
+                  </div>
+                  <p className="mt-1 text-[11px] leading-relaxed text-slate-300">
+                    {thirdArmN && (
+                      <>
+                        12 种子均值 <b className="num text-amber-200">{int0(thirdArmN.mean)}</b> 人（min{' '}
+                        <span className="num">{int0(thirdArmN.min)}</span> / max <span className="num">{int0(thirdArmN.max)}</span>
+                        ）
+                      </>
+                    )}
+                    {nSel && (
+                      <>
+                        ，定稿单种子上是 <span className="num">{int0(Number(nSel.diversified_no_gate))}</span> 人，而基线{' '}
+                        <span className="num">{int0(Number(nSel.baseline))}</span> 人 / KOXPilot{' '}
+                        <span className="num">{int0(Number(nSel.koxpilot))}</span> 人
+                      </>
+                    )}
+                    。同一笔钱摊到五百多个达人身上，在真实采购里签约、寄样、排期都不可执行 ——
+                    <b className="text-slate-100">它只是对照臂，不是一个方案</b>；"分散化贡献"里也天然含着"摊得更开"的大数效应。
+                  </p>
+                </div>
+                <div className="rounded-xl border border-white/12 bg-white/[0.03] px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-slate-200">
+                    <TriangleAlert size={12} className="text-slate-400" />
+                    "门禁贡献"其实是"门禁过滤 + 质量排序"的合计
+                  </div>
+                  <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
+                    第三臂与 KOXPilot 的差额里同时包含两件事：门禁过滤掉 review/reject，以及排序依据从"每美元名义曝光"换成
+                    "质量加权价值"。二者<b className="text-slate-200">共用同一批真实性/适配分数，在实现上无法再拆细</b>，
+                    所以这里合并命名为"门禁与质量排序"，不谎报成纯门禁效果。
+                  </p>
+                </div>
+              </div>
+              <Note>{String(armAttr.caveat ?? '')}</Note>
+              {((attr?.caveats ?? []) as string[]).map((c) => (
+                <Note key={c.slice(0, 24)}>{c}</Note>
+              ))}
+            </div>
+          )}
+
+          <Note>
+            方法：{String((cva.method as Loose).baseline)}；第三臂 = {String((cva.method as Loose).third_arm)}；
+            {String((cva.method as Loose).judge)}
+          </Note>
+          {!multiseed && (
+            <MissingArtifact
+              file="data/multiseed.json"
+              what="12 种子稳健性与两段归因"
+              how="跑 PYTHONPATH=src python -m koxpilot.cli multiseed --seeds 12 生成 output/multiseed.json 后重跑 npm run refresh。缺它时本页只能展示单种子口径 —— 那个口径会给出相反的归因结论。"
+            />
           )}
         </Panel>
-      </div>
+      ) : (
+        <MissingArtifact file="data/audit.json" what="反事实价值审计" />
+      )}
+
+      {/* ================= decay 建模假设敏感性 ================= */}
+      {decayScan && decayRows.length > 0 ? (
+        <Panel
+          title="⑦ 预算模型里 decay = 0.7 这个建模假设，扛不扛得住扫描？"
+          subtitle={`${String(decayScan.assumption)} · ${String(decayScan.assumption_kind)}；扫描 ${((decayScan.scan ?? []) as number[]).join(' / ')}，正式链路用 ${fixed(Number(decayScan.reference_decay), 1)}`}
+          tone="warn"
+          right={
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">价值结论不依赖该假设</Badge>
+              <Badge className="border-rose-400/30 bg-rose-400/10 text-rose-200">但选谁会变</Badge>
+              <TruthChip kind="python" />
+            </div>
+          }
+        >
+          <div className="grid gap-3 xl:grid-cols-[1.25fr_1fr]">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px]">
+                <thead>
+                  <tr>
+                    <th className="th">decay</th>
+                    <th className="th text-right">选中人数</th>
+                    <th className="th text-right">总条数</th>
+                    <th className="th text-right">合计少浪费</th>
+                    <th className="th text-right">分散化</th>
+                    <th className="th text-right">门禁与质量排序</th>
+                    <th className="th text-right">有效曝光率差</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {decayRows.map((r) => {
+                    const isRef = Boolean(r.is_reference);
+                    return (
+                      <tr key={String(r.decay)} className={`hairline ${isRef ? 'bg-cyan-400/[0.07]' : ''}`}>
+                        <td className="td num">
+                          {fixed(Number(r.decay), 1)}
+                          {isRef && (
+                            <Badge className="ml-1.5 border-cyan-400/30 bg-cyan-400/10 text-cyan-200">正式链路</Badge>
+                          )}
+                        </td>
+                        <td className="td num text-right">{int0(Number(r.n_selected_total))}</td>
+                        <td className="td num text-right">{int0(Number(r.n_posts_total))}</td>
+                        <td className="td num text-right font-semibold text-emerald-200">
+                          {usd0(Number(r.saved_usd_total))}
+                          <div className="muted">{pct1(Number(r.saved_share_of_budget))}</div>
+                        </td>
+                        <td className="td num text-right text-amber-200">{usd0(Number(r.saved_usd_by_diversification))}</td>
+                        <td className="td num text-right text-cyan-200">
+                          {usd0(Number(r.saved_usd_by_gating_and_quality_ranking))}
+                        </td>
+                        <td className="td num text-right">{pp(Number(r.effective_view_rate_gap_pp_total))}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <Note>
+                <b className="text-slate-300">这些必然随 decay 变，不属于"应当稳定"的范畴：</b>
+                {((decayScan.what_moves_with_decay ?? []) as string[]).map((w) => (
+                  <span key={w.slice(0, 16)} className="mt-1 block">
+                    · {w}
+                  </span>
+                ))}
+              </Note>
+            </div>
+            <div className="space-y-2">
+              <div className="rounded-xl border border-emerald-400/30 bg-emerald-400/[0.06] px-3 py-2.5">
+                <div className="flex items-center gap-1.5 text-[12px] font-medium text-emerald-200">
+                  <Sliders size={12} />
+                  好的那一半：价值结论不依赖这个假设
+                </div>
+                <div className="mt-1.5 space-y-1 text-[11px] leading-relaxed text-slate-300">
+                  {savedSpread && (
+                    <div>
+                      合计少浪费在 <b className="num">{usd0(savedSpread.lo)}</b> ~ <b className="num">{usd0(savedSpread.hi)}</b>{' '}
+                      之间，相对离差（极差 / 均值）只有{' '}
+                      <b className="num text-emerald-300">{pct1(savedSpread.rel ?? 0)}</b>。
+                    </div>
+                  )}
+                  {decayStab && (
+                    <div>
+                      两段归因符号逐档均未翻转：
+                      {Object.entries((decayStab.sign_stable ?? {}) as Record<string, boolean>).map(([k, v]) => (
+                        <span key={k} className="num ml-1.5 text-[10.5px]">
+                          {k}=<b className={v ? 'text-emerald-300' : 'text-rose-300'}>{String(v)}</b>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="rounded-xl border border-rose-400/30 bg-rose-400/[0.06] px-3 py-2.5">
+                <div className="flex items-center gap-1.5 text-[12px] font-medium text-rose-200">
+                  <AlertTriangle size={12} />
+                  难听的那一半：具体选谁会变，且没过我自设的判据
+                </div>
+                {decayStab && (
+                  <div className="mt-1.5 space-y-1 text-[11px] leading-relaxed text-slate-300">
+                    <div>
+                      选中名单 Jaccard 最低{' '}
+                      <b className="num text-rose-200">{fixed(Number(decayStab.selection_jaccard_min_vs_reference), 3)}</b>
+                      、金额加权重叠最低{' '}
+                      <b className="num text-rose-200">{fixed(Number(decayStab.spend_overlap_share_min_vs_reference), 3)}</b>
+                      ，都低于自设判据{' '}
+                      <b className="num">{fixed(Number(decayStab.threshold), 2)}</b> ——
+                      <b className="text-rose-200">selection_stable = {String(decayStab.selection_stable)}</b>。
+                    </div>
+                    <div>
+                      即：这个假设不影响"要不要用 KOXPilot"，但影响"最终名单里是哪些人、每人买几条"。
+                      落到真实采购上，这是必须交代的不确定性，不能拿"结论稳"一句话盖过去。
+                    </div>
+                  </div>
+                )}
+              </div>
+              <Note tone="warn">
+                <b className="text-amber-200">判定：</b>
+                <code className="font-mono text-[10px]">{String(decayScan.verdict)}</code>
+                <span className="mt-1 block">{String(decayScan.headline)}</span>
+              </Note>
+              <Note>{String(decayScan.note ?? '')}</Note>
+            </div>
+          </div>
+        </Panel>
+      ) : (
+        <MissingArtifact
+          file="data/metrics.json → budget_decay_sensitivity"
+          what="decay 建模假设的敏感性扫描"
+          how="重跑 Python 侧预算链路生成该字段后执行 npm run refresh。缺它时页面上 decay = 0.7 就只是一个没有证据的选择。"
+        />
+      )}
 
       {/* ================= 缺失产物 ================= */}
       {!llmCompare && (
@@ -456,9 +1190,10 @@ export function CostValueTab({
           what="LLM / 规则逐条差异明细"
           how={
             <>
-              metrics.json 的表 6 里 LLM 一列也是空的（status ={' '}
+              metrics.json 的表 6 status ={' '}
               <code className="font-mono text-[10px]">{String((metrics?.table_6_llm_vs_rule as Loose | undefined)?.status ?? 'unknown')}</code>
-              ），原因同上：评测跑在 LLM 真调之前。可用的真实 LLM 对照在 llm_bench.json 与 prompt_bench.json，已在本页第 ②③ 块展示。
+              ，其中 A4 语义适配的量化对照已经补齐（见上面第 ④ 块）；仍然缺的是<b>逐条</b>差异明细这份单独产物。
+              可用的真实 LLM 对照在 llm_bench.json 与 prompt_bench.json，已在本页第 ②③ 块展示。
             </>
           }
         />
@@ -466,9 +1201,12 @@ export function CostValueTab({
 
       <Note>
         <ArrowRight size={11} className="mr-1 inline text-cyan-300" />
-        本页想说的其实是一句反直觉的话：<b className="text-slate-200">大模型不是免费的准确率</b>。
-        它在标签错配这种"需要业务常识判断相邻品类"的任务上确实赢过规则；但只有当 Prompt 把业务判据写清楚之后才赢，
-        而在 G0/G1 这类纯统计信号的任务上，规则又快又准还 0 token —— 所以生产链路是混合的，不是"全都上模型"。
+        本页想说两句反直觉的话。第一句：<b className="text-slate-200">大模型不是免费的准确率</b> ——
+        它在标签错配这种需要业务常识的任务上确实赢过规则，但只有把业务判据写清楚之后才赢；在 G0/G1 这类纯统计信号上，
+        规则又快又准还 0 token，所以生产链路是混合的。第二句更贵：
+        <b className="text-slate-200">单个种子上的归因可能整个反过来</b> ——
+        定稿那一次看像"钱省在分散投放上"，跑满 12 个种子才发现分散化的符号都不稳，稳定的那一段是门禁与质量排序。
+        招牌数字我留着，但对外结论取的是更诚实的那一列。
       </Note>
     </div>
   );

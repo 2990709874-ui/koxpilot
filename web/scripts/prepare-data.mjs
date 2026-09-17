@@ -108,11 +108,16 @@ function main() {
     ['metrics', 'output/metrics.json', 'metrics.json'],
     ['budget', 'output/budget.json', 'budget.json'],
     ['audit', 'output/audit.json', 'audit.json'],
+    // multiseed：12 种子稳健性 + 三臂两段归因的唯一来源。它是"结论反转"那一页的证据，
+    // 缺了 #cost 页只能展示单种子口径，因此必须搬进 bundle（整份搬，不挑字段）。
+    ['multiseed', 'output/multiseed.json', 'multiseed.json'],
     ['prompt_bench', 'output/prompt_bench.json', 'prompt_bench.json'],
     ['llm_bench', 'output/llm_bench.json', 'llm_bench.json'],
     ['llm_compare', 'output/llm_compare.json', 'llm_compare.json'],
   ];
   const datasetShas = new Map([['verdicts_or_inputs:kox_5000.json', null]]);
+  /** 产物整份 JSON.stringify 原样搬运，不做字段白名单 —— 这里登记以便核对。 */
+  const shipped = new Map();
 
   for (const [key, rel, outName] of OPTIONAL) {
     const abs = path.join(ROOT, rel);
@@ -125,11 +130,33 @@ function main() {
     const bytes = writeJson(outName, j.data);
     const ds = j.data?.meta?.dataset_sha256 ?? null;
     if (ds) datasetShas.set(rel, ds);
+    shipped.set(key, j.data);
     artifacts.push({
       key, file: `data/${outName}`, source: rel, present: true,
       source_bytes: j.bytes, shipped_bytes: bytes, source_sha256: j.sha256, dataset_sha256: ds,
+      top_level_keys: Object.keys(j.data ?? {}),
+      note: '原样整份搬运（不做字段白名单）：Python 侧新增的字段会自动出现在前端，不需要改本脚本',
     });
   }
+
+  // ---- 关键字段在位自检：页面上的重口径结论依赖它们，缺一个就该在 UI 顶部亮条 ----
+  const at = (obj, dotted) => dotted.split('.').reduce((o, k) => (o === null || o === undefined ? undefined : o[k]), obj);
+  const REQUIRED_FIELDS = [
+    ['audit', 'counterfactual_value_audit.value_attribution', '三臂链式差分归因（#cost 的两段归因面板）'],
+    ['audit', 'counterfactual_value_audit.totals.effective_view_uplift_bounded', '有界 uplift 口径（rate_gap_pp / symmetric_uplift）'],
+    ['metrics', 'budget_decay_sensitivity', 'decay 建模假设的三档敏感性扫描'],
+    ['metrics', 'table_4_ablation.contribution_criteria', '消融 contribution 三态判据'],
+    ['metrics', 'table_4_ablation.negative_rules', '负贡献规则清单（G1.6）'],
+    ['metrics', 'table_6_llm_vs_rule.semantic_fit_llm_vs_rule', 'A4 语义适配 LLM vs 规则量化审计'],
+    ['multiseed', 'A_value_robustness.arm_attribution', '12 种子两段归因统计（结论反转的证据）'],
+  ];
+  const fieldAudit = REQUIRED_FIELDS.map(([key, dotted, what]) => {
+    const present = shipped.has(key) && at(shipped.get(key), dotted) !== undefined;
+    if (!present) {
+      warnings.push(`字段缺失：${key}.${dotted}（${what}）—— 对应面板会降级为"未生成"，不会用旧口径的数字顶上`);
+    }
+    return { artifact: key, path: dotted, what, present };
+  });
 
   // ---- 口径一致性自检：所有产物必须指向同一份达人库 ----------------------
   const verdictsPath = path.join(ROOT, 'output', 'verdicts.json');
@@ -171,8 +198,9 @@ function main() {
     },
     thresholds_meta: thresholds.data.meta ?? null,
     artifacts,
+    field_audit: fieldAudit,
     warnings,
-    note: '本文件由 scripts/prepare-data.mjs 生成；前端所有数字来自 artifacts 列出的产物或浏览器内 TS 引擎实时计算，无硬编码。',
+    note: '本文件由 scripts/prepare-data.mjs 生成；前端所有数字来自 artifacts 列出的产物或浏览器内 TS 引擎实时计算，无硬编码。可选产物一律整份搬运，不做字段白名单，因此 Python 侧新增字段无需改本脚本；field_audit 只做「在位与否」的自检。',
   };
   writeJson('manifest.json', manifest);
 
@@ -183,6 +211,11 @@ function main() {
   for (const a of artifacts) {
     const state = a.present ? `ok   ${a.file ?? '(不进 bundle)'}` : 'miss (前端降级)';
     console.log(`[prepare-data]   ${a.key.padEnd(18)} ${state}`);
+  }
+  const okFields = fieldAudit.filter((f) => f.present).length;
+  console.log(`[prepare-data] 关键字段自检 ${okFields}/${fieldAudit.length} 在位：`);
+  for (const f of fieldAudit) {
+    console.log(`[prepare-data]   ${f.present ? 'ok  ' : 'MISS'} ${f.artifact}.${f.path}  — ${f.what}`);
   }
   if (warnings.length) {
     console.log('[prepare-data] 警告：');

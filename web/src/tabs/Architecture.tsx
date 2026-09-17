@@ -226,13 +226,15 @@ export function ArchitectureTab({
                   ['反事实审计', `${int0(c.budget.matched_audits ?? 0)} / ${int0(c.budget.compared_audits ?? 0)} 一致`],
                   ['来源', (c.budget.source ?? []).join('、')],
                 ]}
-                note="含 selected[] 顺序、金额、posts、约束检查与 trace 中文措辞"
+                note="含 selected[] 逐条金额/posts/顺序、约束检查与 trace 中文措辞逐字符；不含第三臂（浏览器引擎只实现 koxpilot 与 baseline_followers 两臂）"
               />
             </div>
 
             <div className="mt-3 grid gap-3 lg:grid-cols-[1.1fr_1fr]">
               <div>
-                <div className="muted mb-1.5">六个分配臂逐项核对（读 consistency.json 的 arms 数组）</div>
+                <div className="muted mb-1.5">
+                  {int0((c.budget.arms ?? []).length)} 个分配臂逐项核对（读 consistency.json 的 arms 数组）
+                </div>
                 <table className="w-full">
                   <thead>
                     <tr>
@@ -376,6 +378,36 @@ export function ArchitectureTab({
               </tbody>
             </table>
           </div>
+          {(manifest.field_audit ?? []).length > 0 && (
+            <div className="border-t border-white/[0.06] px-4 py-2.5">
+              <div className="muted mb-1.5">
+                关键字段在位自检（prepare-data 对可选产物<b className="text-slate-400">整份原样搬运、不做字段白名单</b>，
+                所以 Python 侧新增字段会自动到前端；这里只核对页面上重口径结论依赖的字段是否真的在）
+              </div>
+              <div className="grid gap-1 lg:grid-cols-2">
+                {(manifest.field_audit ?? []).map((f) => (
+                  <div
+                    key={`${f.artifact}.${f.path}`}
+                    className={`flex items-start gap-1.5 rounded-lg border px-2 py-1.5 ${
+                      f.present ? 'border-emerald-400/20 bg-emerald-400/[0.04]' : 'border-rose-400/30 bg-rose-400/[0.06]'
+                    }`}
+                  >
+                    {f.present ? (
+                      <CheckCircle2 size={11} className="mt-[2px] shrink-0 text-emerald-400" />
+                    ) : (
+                      <XCircle size={11} className="mt-[2px] shrink-0 text-rose-400" />
+                    )}
+                    <div className="min-w-0">
+                      <div className="num truncate text-[10px] text-slate-400">
+                        {f.artifact}.{f.path}
+                      </div>
+                      <div className="muted">{f.what}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {(manifest.warnings ?? []).length > 0 && (
             <div className="border-t border-white/[0.06] px-4 py-2">
               {(manifest.warnings ?? []).map((w) => (

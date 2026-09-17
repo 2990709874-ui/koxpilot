@@ -559,7 +559,10 @@ export function allocate(
     let totalPosts = 0;
     for (const v of sel.posts.values()) totalPosts += v;
     trace.push(
-      `边际性价比贪心：候选 ${pool.length} 人 / ${slots.length} 个内容名额，` +
+      // 排序依据要写进 trace：Python 侧本轮起有第三臂（同一套结构约束、排序换成"名义曝光/报价"），
+      // 所以这句话必须点明"这一臂按什么排"，否则两个臂的 trace 长得一样、也就看不出差别在哪。
+      // 浏览器引擎只实现 koxpilot（质量加权价值）与 followers（粉丝量降序）两臂，故这里固定是价值口径。
+      `边际性价比贪心（排序依据：质量加权价值/报价）：候选 ${pool.length} 人 / ${slots.length} 个内容名额，` +
         `选入 ${sel.candById.size} 人共 ${totalPosts} 条，花费 ${fmtUsd0(sel.spent)}` +
         `（长尾 ${fmtPct1(sel.longtailShare)}，头部 ${fmtPct1(sel.headShare)}）`,
     );

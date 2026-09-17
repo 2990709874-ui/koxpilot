@@ -14,6 +14,25 @@ const FRAUD_TYPE_LABEL: Record<string, string> = {
   view_inflation: '刷播放',
 };
 
+/**
+ * 消融表 contribution 三态的展示样式。
+ * 判据本身（eps 与三档的定义）一律从 metrics.json 的 contribution_criteria 读，这里只管配色和中文标签。
+ * 刻意不用"✓ / —"两态：那正是被修掉的那个 bug（abs(delta) 不看符号，把负贡献规则也标成有贡献）。
+ */
+const CONTRIB_STYLE: Record<string, { label: string; short: string; kind: string; cls: string }> = {
+  positive: { label: '正向贡献', short: '正向', kind: 'positive', cls: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200' },
+  negative: { label: '负贡献 · 拖累该指标', short: '负贡献', kind: 'negative', cls: 'border-amber-400/40 bg-amber-400/15 text-amber-100' },
+  negligible: { label: '近乎无影响', short: '无影响', kind: 'negligible', cls: 'border-white/15 text-slate-400' },
+  unknown: { label: '未判定', short: '未判定', kind: 'unknown', cls: 'border-white/15 text-slate-500' },
+};
+
+/** 带符号的定点数：+0.0764 / −0.0014，避免把"更高"写成裸数字看不出方向。 */
+function signed(v: number, digits = 4): string {
+  if (!Number.isFinite(v)) return '—';
+  if (v === 0) return '0';
+  return `${v > 0 ? '+' : ''}${fixed(v, digits)}`;
+}
+
 /** TS 现算 vs Python 产物的一行对照。差异不为 0 就红 —— 不做容差放宽。 */
 function ParityRow({ label, ts, py, digits = 4 }: { label: string; ts: number; py: number; digits?: number }): React.ReactElement {
   const same = Math.abs(ts - py) < 5 * 10 ** -(digits + 1);
@@ -63,6 +82,11 @@ export function EvaluationTab({
   const t4 = metrics?.table_4_ablation as Loose | undefined;
   const t5 = metrics?.table_5_sensitivity as Loose | undefined;
   const weak = (metrics?.weak_spots ?? []) as Loose[];
+
+  /** 按层消融里第一个"关掉它三分类反而更好"的层。用来把反例写成数据驱动，而不是写死 −G2。 */
+  const negLayer = ((t4?.by_layer ?? []) as Loose[]).find(
+    (v) => String(((v.contribution ?? {}) as Loose).verdict_accuracy ?? '') === 'negative',
+  );
 
   const stratRows = React.useMemo(() => {
     const src = (t3?.[stratDim === 'follower_bucket' ? 'by_follower_bucket' : stratDim === 'platform' ? 'by_platform' : stratDim === 'country' ? 'by_country' : 'by_platform_bucket'] ?? {}) as Record<string, Loose>;
@@ -411,37 +435,57 @@ export function EvaluationTab({
                   <th className="th">变体</th>
                   <th className="th text-right">水号 F1</th>
                   <th className="th text-right">Δ F1</th>
-                  <th className="th text-right">三分类准确率</th>
                   <th className="th text-right">Δ 准确率</th>
+                  <th className="th">对水号 F1 / 三分类</th>
                 </tr>
               </thead>
               <tbody>
                 {((t4?.by_layer ?? []) as Loose[]).map((v) => {
                   const m = v.metrics as Loose;
                   const d = v.delta as Loose;
+                  const c = (v.contribution ?? {}) as Loose;
+                  const cf = CONTRIB_STYLE[String(c.fraud_f1_strict ?? '')] ?? CONTRIB_STYLE.unknown;
+                  const cv = CONTRIB_STYLE[String(c.verdict_accuracy ?? '')] ?? CONTRIB_STYLE.unknown;
                   return (
-                    <tr key={String(v.variant)} className="hairline">
+                    <tr key={String(v.variant)} className={`hairline ${cv.kind === 'negative' ? 'bg-amber-400/[0.07]' : ''}`}>
                       <td className="td num">
                         {String(v.variant)}
-                        <div className="muted max-w-[220px] truncate">{String(v.role)}</div>
+                        <div className="muted max-w-[200px] truncate" title={String(v.role)}>
+                          {String(v.role)}
+                        </div>
                       </td>
                       <td className="td num text-right">{fixed(Number(m.fraud_f1_strict), 4)}</td>
                       <td className={`td num text-right ${Number(d.d_fraud_f1_strict) < 0 ? 'text-emerald-300' : 'text-slate-500'}`}>
                         {Number(d.d_fraud_f1_strict) === 0 ? '0' : fixed(Number(d.d_fraud_f1_strict), 4)}
                       </td>
-                      <td className="td num text-right">{fixed(Number(m.verdict_accuracy), 4)}</td>
                       <td className={`td num text-right ${Number(d.d_verdict_accuracy) < 0 ? 'text-emerald-300' : 'text-amber-300'}`}>
                         {Number(d.d_verdict_accuracy) === 0 ? '0' : fixed(Number(d.d_verdict_accuracy), 4)}
+                      </td>
+                      <td className="td">
+                        <div className="flex flex-col gap-1">
+                          <Badge className={cf.cls}>{cf.short}</Badge>
+                          <Badge className={cv.cls}>{cv.short}</Badge>
+                        </div>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
-            <Note tone="warn">
-              注意 <b className="text-amber-200">−G2 的三分类准确率反而更高（+0.0764）</b>。我没有据此删掉 G2 ——
-              原因就是上面那条口径冲突：G2.2 的"错判"在产品上是对的。指标不是唯一裁判，但也不能假装这个反例不存在。
-            </Note>
+            {negLayer && (
+              <Note tone="warn">
+                注意 <b className="text-amber-200">
+                  {String(negLayer.variant)} 的三分类准确率反而更高（
+                  {signed(Number((negLayer.delta as Loose).d_verdict_accuracy), 4)}）
+                </b>
+                ，所以它在"三分类"这一列是{' '}
+                <b className="text-amber-100">
+                  {(CONTRIB_STYLE[String(((negLayer.contribution ?? {}) as Loose).verdict_accuracy ?? '')] ?? CONTRIB_STYLE.unknown).label}
+                </b>
+                。我没有据此删掉它 —— 原因就是上面那条口径冲突：G2.2 的"错判"在产品上是对的。
+                指标不是唯一裁判，但也不能假装这个反例不存在，所以三态标签直接标在表里。
+              </Note>
+            )}
           </div>
           <div>
             <div className="muted mb-1.5">
@@ -478,23 +522,93 @@ export function EvaluationTab({
                       <th className="th">关掉的规则</th>
                       <th className="th text-right">权重</th>
                       <th className="th text-right">Δ 水号 F1</th>
-                      <th className="th text-center">有贡献</th>
+                      <th className="th text-center">贡献判定</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {((t4?.by_g1_rule ?? []) as Loose[]).map((v) => (
-                      <tr key={String(v.variant)} className="hairline">
-                        <td className="td num">
-                          {String(v.variant)}
-                          <span className="ml-1.5 text-[10px] text-slate-500">{ruleLabel(String(v.variant).slice(1))}</span>
-                        </td>
-                        <td className="td num text-right">{fixed(Number(v.weight), 2)}</td>
-                        <td className="td num text-right text-emerald-300">{fixed(Number((v.delta as Loose).d_fraud_f1_strict), 4)}</td>
-                        <td className="td text-center">{v.contributes ? '✓' : '—'}</td>
-                      </tr>
-                    ))}
+                    {((t4?.by_g1_rule ?? []) as Loose[]).map((v) => {
+                      const d = Number((v.delta as Loose).d_fraud_f1_strict);
+                      const kind = String(v.contribution ?? '');
+                      const style = CONTRIB_STYLE[kind] ?? CONTRIB_STYLE.unknown;
+                      return (
+                        <tr
+                          key={String(v.variant)}
+                          className={`hairline ${kind === 'negative' ? 'bg-amber-400/[0.07]' : ''}`}
+                          title={String(v.contribution_note ?? '')}
+                        >
+                          <td className="td num">
+                            {String(v.variant)}
+                            <span className="ml-1.5 text-[10px] text-slate-500">{ruleLabel(String(v.variant).slice(1))}</span>
+                          </td>
+                          <td className="td num text-right">{fixed(Number(v.weight), 2)}</td>
+                          <td className={`td num text-right ${d < 0 ? 'text-emerald-300' : d > 0 ? 'text-amber-300' : 'text-slate-500'}`}>
+                            {d > 0 ? '+' : ''}
+                            {fixed(d, 4)}
+                          </td>
+                          <td className="td text-center">
+                            <Badge className={style.cls} title={String(v.contribution_note ?? '')}>
+                              {style.label}
+                            </Badge>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
+              </div>
+            )}
+            {/* ---- contribution 三态：把「关掉后 F1 反而更好」这件事摆到台面上 ---- */}
+            {t4?.contribution_criteria && (
+              <div className="mt-2 rounded-xl border border-amber-400/30 bg-amber-400/[0.07] px-3 py-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="flex items-center gap-1.5 text-[12px] font-semibold text-amber-100">
+                    <ShieldAlert size={12} />
+                    这张表原来撒了一个谎，我把它修了
+                  </span>
+                  <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
+                    正向 {((t4.positive_rules ?? []) as string[]).length} 条
+                  </Badge>
+                  <Badge className="border-amber-400/35 bg-amber-400/10 text-amber-200">
+                    负向 {((t4.negative_rules ?? []) as string[]).length} 条
+                  </Badge>
+                  <Badge className="border-white/15 text-slate-400">
+                    死规则 {((t4.dead_rules ?? []) as unknown[]).length} 条
+                  </Badge>
+                </div>
+                <p className="mt-1.5 text-[11.5px] leading-relaxed text-slate-300">
+                  早期实现用 <code className="rounded bg-black/30 px-1 font-mono text-[10px] text-rose-200">abs(delta) &ge; {String((t4.contribution_criteria as Loose).eps)}</code>{' '}
+                  判"有贡献"，<b className="text-rose-200">不看符号</b> —— 于是{' '}
+                  {((t4.negative_rules ?? []) as string[]).join('、')} 这种"关掉后 F1 反而更好"的规则也被算成有贡献。
+                  现在改成 <b className="text-amber-100">三态判定</b>：
+                </p>
+                <div className="mt-1.5 grid gap-1 sm:grid-cols-3">
+                  {(['positive', 'negative', 'negligible'] as const).map((k) => (
+                    <div key={k} className="rounded-lg border border-white/10 bg-black/25 px-2 py-1.5">
+                      <Badge className={CONTRIB_STYLE[k].cls}>{CONTRIB_STYLE[k].label}</Badge>
+                      <div className="muted mt-1">{String((t4.contribution_criteria as Loose)[k] ?? '')}</div>
+                    </div>
+                  ))}
+                </div>
+                {((t4.negative_rules ?? []) as string[]).map((rid) => {
+                  const row = ((t4.by_g1_rule ?? []) as Loose[]).find((v) => String(v.variant) === rid);
+                  if (!row) return null;
+                  return (
+                    <p key={rid} className="mt-2 text-[11.5px] leading-relaxed text-amber-50/90">
+                      <b className="num text-amber-100">{rid}</b>（{ruleLabel(rid.slice(1))}，权重{' '}
+                      {fixed(Number(row.weight), 2)}）：关掉它严口径 F1{' '}
+                      <b className="num text-amber-200">
+                        {signed(Number((row.delta as Loose).d_fraud_f1_strict), 4)}
+                      </b>{' '}
+                      —— 也就是说<b className="text-amber-100">它在这个指标上是净负担</b>。我没有偷偷删掉它、也没有继续把它算作"有贡献"：
+                      保留理由（软信号、只推 review、宽口径召回来源）写在 docs/03-evaluation.md 表 4 一节，
+                      判定则如实标成 negative。<b className="text-slate-100">一张全是"✓"的消融表才是可疑的。</b>
+                    </p>
+                  );
+                })}
+                <div className="muted mt-1.5">
+                  判据来源：metrics.json → table_4_ablation.contribution_criteria（metric ={' '}
+                  {String((t4.contribution_criteria as Loose).metric)}）
+                </div>
               </div>
             )}
             <Note tone="good">
