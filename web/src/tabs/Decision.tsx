@@ -69,6 +69,7 @@ export function DecisionTab({
   koxById,
   budgetArtifact,
   auditArtifact,
+  metricsArtifact,
   includeReview,
   decay,
 }: {
@@ -76,6 +77,7 @@ export function DecisionTab({
   koxById: Map<string, Partial<Kox>>;
   budgetArtifact: Loose | null;
   auditArtifact: Loose | null;
+  metricsArtifact: Loose | null;
   includeReview: boolean;
   decay: number;
 }): React.ReactElement {
@@ -93,7 +95,52 @@ export function DecisionTab({
     return [...plan.selected].sort((x, y) => key(y) - key(x));
   }, [plan, sort]);
 
+  /**
+   * 交付分层标记：kox_id -> 核心层 / 假设敏感层（含三档金额区间）。
+   * 全部读 metrics.json → budget_decay_sensitivity.per_campaign[*].delivery_tiers，不写死任何人或人数。
+   * 产物是按"正式链路那一档 decay、不纳入 review"算出来的，所以只有参数与产物口径一致时才敢往行上打标。
+   */
+  const decaySens = (metricsArtifact?.budget_decay_sensitivity ?? null) as Loose | null;
+  const referenceDecay = decaySens ? Number(decaySens.reference_decay) : null;
+  const tierByKox = React.useMemo(() => {
+    const out = new Map<string, { tier: 'core' | 'sensitive'; min: number; ref: number; max: number; decays: number[] }>();
+    const cid = result?.spec.campaign_id;
+    if (!decaySens || !cid) return out;
+    const row = ((decaySens.per_campaign ?? []) as Loose[]).find((c) => String(c.campaign_id) === cid);
+    const tiers = (row?.delivery_tiers ?? null) as Loose | null;
+    if (!tiers) return out;
+    for (const [tier, key] of [
+      ['core', 'stable_core'],
+      ['sensitive', 'assumption_sensitive'],
+    ] as const) {
+      for (const k of (((tiers[key] as Loose | undefined)?.kox ?? []) as Loose[])) {
+        out.set(String(k.kox_id), {
+          tier,
+          min: Number(k.amount_usd_min),
+          ref: Number(k.amount_usd_reference),
+          max: Number(k.amount_usd_max),
+          decays: ((k.selected_at_decays ?? []) as number[]).map(Number),
+        });
+      }
+    }
+    return out;
+  }, [decaySens, result?.spec.campaign_id]);
+
   if (!result || !plan) return <div className="muted px-1">流水线尚未运行。</div>;
+
+  /** 当前这份清单里核心 / 敏感各占多少（用行上的实际金额汇总，不引用产物里的汇总数）。 */
+  const tierRowStats = { core: 0, sensitive: 0, coreUsd: 0, sensitiveUsd: 0 };
+  for (const a of plan.selected) {
+    const t = tierByKox.get(a.kox_id);
+    if (!t) continue;
+    if (t.tier === 'core') {
+      tierRowStats.core += 1;
+      tierRowStats.coreUsd += a.amount_usd;
+    } else {
+      tierRowStats.sensitive += 1;
+      tierRowStats.sensitiveUsd += a.amount_usd;
+    }
+  }
 
   const other = arm === 'koxpilot' ? result.baseline : result.plan;
   const audit = result.audit;
@@ -101,6 +148,8 @@ export function DecisionTab({
 
   // 产物口径下（不含 review、衰减 0.7）可以和 Python 产物直接对数；参数一改就不可比，如实说明
   const comparable = !includeReview && decay === 0.7;
+  /** 分层标记只有在参数与产物口径一致（不纳入 review、decay = 参照档）时才敢往行上打。 */
+  const tierComparable = !includeReview && referenceDecay !== null && Math.abs(decay - referenceDecay) < 1e-9;
   const pyPlan = ((budgetArtifact?.plans ?? []) as Loose[]).find((p) => p.campaign_id === result.spec.campaign_id) ?? null;
   const pyArm = pyPlan ? (pyPlan[arm === 'koxpilot' ? 'koxpilot' : 'baseline_followers'] as Loose | undefined) : undefined;
   const parityRows: Array<[string, string, string, boolean]> = [];
@@ -307,6 +356,7 @@ export function DecisionTab({
                 <th className="th text-right">价值分</th>
                 <th className="th text-right">性价比</th>
                 <th className="th">入选方式</th>
+                <th className="th">交付分层</th>
                 <th className="th">门禁</th>
                 <th className="th">gt</th>
               </tr>
@@ -346,6 +396,29 @@ export function DecisionTab({
                     <td className="td num text-right">{fixed(a.efficiency, 2)}</td>
                     <td className="td text-[11px] text-slate-400">{PICKED_BY_LABEL[a.picked_by] ?? a.picked_by}</td>
                     <td className="td">
+                      {(() => {
+                        const t = tierByKox.get(a.kox_id);
+                        if (!tierComparable) {
+                          return (
+                            <Hint text={`分层来自 metrics.json 的 decay 三档扫描，产物口径是「不纳入 review、decay = ${referenceDecay ?? '?'}」。当前参数与该口径不一致，标记会误导，所以这里不显示。`}>
+                              <span className="text-[10px] text-slate-600">口径不符</span>
+                            </Hint>
+                          );
+                        }
+                        if (arm !== 'koxpilot') return <span className="text-[10px] text-slate-600">—</span>;
+                        if (!t) return <span className="text-[10px] text-slate-600">未在扫描内</span>;
+                        return t.tier === 'core' ? (
+                          <Hint text={`三档 decay（${((decaySens?.scan ?? []) as number[]).join(' / ')}）都选中这个人，入选不依赖该假设，可直接下单。金额区间 $${Math.round(t.min)} ~ $${Math.round(t.max)}。`}>
+                            <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">核心</Badge>
+                          </Hint>
+                        ) : (
+                          <Hint text={`只在 decay = ${t.decays.map((d) => d.toFixed(1)).join(' / ')} 时被选中，换档会掉出名单；金额区间 $${Math.round(t.min)} ~ $${Math.round(t.max)}（min = 0 表示某一档整个没选它）。按分层交付规则：标记「重复触达折扣假设敏感」，转人工确认或改按单条采购，不自动执行。`}>
+                            <Badge className="border-amber-400/35 bg-amber-400/10 text-amber-200">假设敏感</Badge>
+                          </Hint>
+                        );
+                      })()}
+                    </td>
+                    <td className="td">
                       <Badge className={VERDICT_COLOR[a.verdict]}>{VERDICT_LABEL[a.verdict] ?? a.verdict}</Badge>
                     </td>
                     <td className="td">
@@ -364,6 +437,23 @@ export function DecisionTab({
           </table>
         </div>
         <div className="border-t border-white/[0.06] px-4 py-2">
+          {tierComparable && arm === 'koxpilot' && tierByKox.size > 0 && (
+            <div className="mb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
+              <span className="text-slate-400">
+                本 campaign 交付分层（读 metrics.json → budget_decay_sensitivity.per_campaign[*].delivery_tiers）：
+              </span>
+              <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
+                核心 {int0(tierRowStats.core)} 人 · {usd0(tierRowStats.coreUsd)}
+              </Badge>
+              <Badge className="border-amber-400/35 bg-amber-400/10 text-amber-200">
+                假设敏感 {int0(tierRowStats.sensitive)} 人 · {usd0(tierRowStats.sensitiveUsd)}
+                {plan.spent_usd > 0 && <>（{pct1(tierRowStats.sensitiveUsd / plan.spent_usd)} 支出）</>}
+              </Badge>
+              <span className="muted">
+                敏感层不自动执行：转人工确认或改按单条采购 —— 换一档"重复触达折扣"假设，这些人就会掉出名单。
+              </span>
+            </div>
+          )}
           <span className="muted">
             gt 一列只用于事后审计展示 —— 分配过程完全读不到它。基线臂里那些标红的人，就是「按粉丝量买」实际会把钱交给谁。
           </span>

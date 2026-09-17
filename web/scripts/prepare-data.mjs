@@ -149,6 +149,9 @@ function main() {
     ['metrics', 'table_4_ablation.negative_rules', '负贡献规则清单（G1.6）'],
     ['metrics', 'table_6_llm_vs_rule.semantic_fit_llm_vs_rule', 'A4 语义适配 LLM vs 规则量化审计'],
     ['multiseed', 'A_value_robustness.arm_attribution', '12 种子两段归因统计（结论反转的证据）'],
+    ['metrics', 'budget_decay_sensitivity.delivery_policy', '分层交付策略（selection_stable=false 的分流动作，#cost/#decision 都读它）'],
+    ['metrics', 'budget_decay_sensitivity.caveats', 'decay 扫描的 caveats（与 blockers 分列，缺它读者只会看到一片绿）'],
+    ['multiseed', 'B_variance_attribution.independence_unit', '方差归因的独立单位口径（pooled p 值是否可用）'],
   ];
   const fieldAudit = REQUIRED_FIELDS.map(([key, dotted, what]) => {
     const present = shipped.has(key) && at(shipped.get(key), dotted) !== undefined;

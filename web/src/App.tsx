@@ -318,6 +318,7 @@ export default function App(): React.ReactElement {
               koxById={koxById}
               budgetArtifact={art.budget}
               auditArtifact={art.audit}
+              metricsArtifact={art.metrics}
               includeReview={includeReview}
               decay={decay}
             />

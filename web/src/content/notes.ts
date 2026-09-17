@@ -238,6 +238,64 @@ export const ITERATION_LOG: LogEntry[] = [
     ],
     files: ['llm/promptbench.py'],
   },
+  {
+    id: 'dropped-caveats',
+    weight: 'high',
+    kicker: '数字对、结论对，但算完没进返回值',
+    title: 'decay 扫描里 caveats 算了却没落进产物，读者只看到一片绿',
+    punchline:
+      'blockers 与 caveats 特意分成两类、注释还写清了混装的危害，结果 caveats 算完没有进返回值。本次实测 blockers 是空的、caveats 有 1 条 —— 缺了它，页面上就只剩"判据通过"的绿色。',
+    found:
+      '把 decay 扫描接进前端时逐字段对产物，发现 metrics.json 里只有 blockers 一个键；回去看 decay_scan.py，caveats 变量算完了，返回的 dict 里没有它。',
+    cause:
+      '"分成两类"这件事只做到了计算层，没做到序列化层。这类缺失不会报错、不会崩，只会让"保留意见"这一半安静地消失 —— 而消失的恰好是不好听的那一半。',
+    fix: [
+      'caveats 补进返回值，与 blockers 分列落盘',
+      '前端把两类分开渲染，并且**空也要显式说明是空**（blockers 0 条 / caveats N 条都写出来），不让读者靠颜色猜',
+      'prepare-data 的关键字段自检加上 budget_decay_sensitivity.caveats：以后它再掉，构建期就会亮 MISS',
+    ],
+    cost: '修完页面上多出一条难听的话：金额加权重叠最低 0.651，所以本扫描只支持"价值结论不依赖 decay"，不支持"买谁、每人买几条不依赖 decay"。',
+    files: ['eval/decay_scan.py', 'web/scripts/prepare-data.mjs', 'web/src/tabs/CostValue.tsx'],
+  },
+  {
+    id: 'tiered-delivery',
+    weight: 'high',
+    kicker: '承认了不确定性，但没产生动作',
+    title: '"名单会随假设变动"是句正确的免责声明，成本全转嫁给了投手',
+    punchline:
+      'decay 判据判出 selection_stable = false，我原来的处理是在文档里补一句"名单会随假设变动"。这句没错，但投手拿到的仍是一份不知道哪里靠不住的清单：不确定性被承认了，代价却由使用者承担。',
+    found:
+      '把"结论稳、选人不稳"写进文档后自问一句：读者拿这句话能做什么动作？答案是没有动作 —— 那这句话对使用者其实等于零。',
+    cause:
+      '误把"如实标注"当成了终点。标注只解决诚实问题，不解决可用性问题；判据不达标应当触发一个分流规则，而不是给整份名单统一打折可信度。',
+    fix: [
+      '按"在几档 decay 上都被选中"把名单切两层：三档全中的进核心层，可直接下单；只在部分档出现的进假设敏感层，标记后转人工确认或改按单条采购，不自动执行',
+      '敏感层每个人带 amount_usd_min / reference / max 区间与 selected_at_decays，min 必为 0（它必然在某一档缺席）',
+      '#cost 出分层交付面板（含逐人清单），#decision 的选中清单每一行打「核心 / 假设敏感」标记；参数与产物口径不一致时标记显示"口径不符"而不是硬给一个标',
+    ],
+    cost:
+      '不确定性从"整份名单打问号"收敛成"只影响不到一成的预算、且已定位到具体的人"——数字全部从产物现算，页面不写死人数与金额。',
+    files: ['eval/decay_scan.py', 'web/src/tabs/CostValue.tsx', 'web/src/tabs/Decision.tsx'],
+  },
+  {
+    id: 'pseudo-replication',
+    weight: 'high',
+    kicker: '统计口径：p 值小得不像真的',
+    title: '方差比检验把 12 种子 × 3 campaign 当成 36 个独立样本，p 值被压到不可当真',
+    punchline:
+      'pooled 的 F 检验报出 p ≈ 2.7e-21。但 36 个观测是 12 个种子 × 3 个 campaign，同一种子下三个 campaign 共享同一个达人库，属伪重复：自由度被高估，p 值被进一步压小。',
+    found:
+      '准备把这个 p 值放到页面上时反过来问自己："36 个样本"里有多少是独立的？答案是 12 —— 独立单位是种子，不是 (seed, campaign) 组合。',
+    cause:
+      '把"观测数"直接当成了"独立试验数"。这个错误的方向永远是让结论显得更强，所以它特别容易被自己放过去。',
+    fix: [
+      '产物新增 independence_unit，显式写明 independent_unit = seed、pooled_p_value_usable = false',
+      '页面主报独立单位上的检验：三个 campaign 各自 n = 12 的方差比 p 值；pooled 那个仍然展示，但紧挨着标注"伪重复，量级不可当真"',
+      '主证据换成不依赖分布假设的两项：极端频次计数（基线浪费率 >50% 的观测数 vs KOXPilot 的 0）与按基线运气分档的条件胜率',
+      '措辞统一成「36 个 (seed, campaign) 观测」，不再写「36 个独立样本」',
+    ],
+    files: ['eval/multiseed.py', 'web/src/tabs/CostValue.tsx'],
+  },
 ];
 
 /** 「修完之后数字变差，但照实采用」。final 由页面从 JSON 读，这里只存历史值与原因。 */
@@ -376,6 +434,8 @@ export const GUARD_TESTS: string[] = [
   '三臂归因测试：第三臂对「质量字段整体对调 / 伪造 verdict / 伪造分数」必须完全不变（并反向断言 KOXPilot 臂会变），两段贡献必须可加、负贡献不许截断',
   'A4 口径审计测试：升格结论必须由覆盖率/双算率/单向性三条判据现算（喂一份"覆盖率 100% + 双向"的假缓存必须自动翻成"可升格"），正式链路 fit_source 里不许有 injected:，全表不许出现任何准确率类字段',
   '双实现一致性：TS 引擎与 Python 参考实现对同一份 5,000 条数据逐字段比对（含中文 human_text 逐字符）',
+  '分层交付与独立单位测试：decay 扫描必须同时返回 blockers 与 caveats（两者混装即失败），selection_stable=false 必须落出 stable_core / assumption_sensitive 分层；方差归因必须写明 independent_unit=seed 且 pooled_p_value_usable=false',
+  '以上守护规则由 Python 侧 745 个测试承载（pytest 收集口径，含参数化用例），前端另有 npm run verify 做双实现逐字段比对',
 ];
 
 export interface Boundary {

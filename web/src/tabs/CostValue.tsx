@@ -205,6 +205,22 @@ export function CostValueTab({
   const losers = cvaPer.filter((c) => Number(c.saved_usd) < 0);
 
   // ---- 12 种子稳健性：两段归因 ----------------------------------------------
+  // ---- B 方差归因：伪重复口径 ------------------------------------------------
+  const bVar = (multiseed?.B_variance_attribution ?? null) as Loose | null;
+  const bPooled = (bVar?.pooled_all_campaigns ?? null) as Loose | null;
+  const bUnit = (bVar?.independence_unit ?? null) as Loose | null;
+  const bPerCampaign = React.useMemo(() => {
+    const raw = bVar?.per_campaign;
+    if (!raw) return [] as Array<{ cid: string; v: Loose }>;
+    return Array.isArray(raw)
+      ? (raw as Loose[]).map((v) => ({ cid: String(v.campaign_id), v }))
+      : Object.entries(raw as Record<string, Loose>).map(([cid, v]) => ({ cid, v }));
+  }, [bVar]);
+  const bBands = ((bVar?.conditional_win_rate_by_baseline_luck as Loose | undefined)?.bands ?? []) as Loose[];
+  const bCond = (bVar?.conditional_win_rate_by_baseline_luck ?? null) as Loose | null;
+  /** 科学计数法：p 值一律这么写，避免 0.000000 看不出量级。 */
+  const sci = (x: number, digits = 1): string => (Number.isFinite(x) ? x.toExponential(digits) : '—');
+
   const aRob = (multiseed?.A_value_robustness ?? null) as Loose | null;
   const armAttr = (aRob?.arm_attribution ?? null) as Loose | null;
   const perSeed = (multiseed?.per_seed ?? []) as Loose[];
@@ -263,6 +279,22 @@ export function CostValueTab({
   const decayScan = (metrics?.budget_decay_sensitivity ?? null) as Loose | null;
   const decayRows = (decayScan?.per_decay ?? []) as Loose[];
   const decayStab = (decayScan?.stability ?? null) as Loose | null;
+  /** 分层交付：判据不达标时的分流规则（全部读产物，逐 campaign 明细也读产物）。 */
+  const delivery = (decayScan?.delivery_policy ?? null) as Loose | null;
+  const deliveryCore = (delivery?.stable_core ?? null) as Loose | null;
+  const deliverySens = (delivery?.assumption_sensitive ?? null) as Loose | null;
+  const decayPerCampaign = (decayScan?.per_campaign ?? []) as Loose[];
+  const decayBlockers = (decayScan?.blockers ?? []) as string[];
+  const decayCaveats = (decayScan?.caveats ?? []) as string[];
+  /** 敏感层逐人清单：把三个 campaign 的人拼起来，按参照档金额降序（不写死人数）。 */
+  const sensitiveKox = React.useMemo(
+    () =>
+      decayPerCampaign.flatMap((c) => {
+        const t = ((c.delivery_tiers as Loose | undefined)?.assumption_sensitive as Loose | undefined)?.kox ?? [];
+        return (t as Loose[]).map((k): Loose => ({ ...k, campaign_id: String(c.campaign_id) }));
+      }),
+    [decayPerCampaign],
+  );
   /** 合计少浪费的相对离差 = 极差 / 均值（在 TS 里算，定义写在页面上，与产物三档金额可核对）。 */
   const savedSpread = React.useMemo(() => {
     const vals = decayRows.map((r) => Number(r.saved_usd_total)).filter((v) => Number.isFinite(v));
@@ -1331,6 +1363,35 @@ export function CostValueTab({
                   </div>
                 )}
               </div>
+              {/* ---- blockers / caveats 分列：两类不许混装，空也要说明是空 ---- */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.025] px-3 py-2.5">
+                <div className="text-[11.5px] font-medium text-slate-200">
+                  阻断项 {decayBlockers.length} 条 · 保留意见 {decayCaveats.length} 条
+                  <span className="muted ml-1.5">（两类分开读产物，缺一类就会让读者只看到一片绿）</span>
+                </div>
+                <div className="mt-1.5 space-y-1">
+                  {decayBlockers.length === 0 ? (
+                    <div className="text-[11px] leading-relaxed text-emerald-200/90">
+                      blockers 为空：没有"必须先解决才能对外用"的阻断项。
+                    </div>
+                  ) : (
+                    decayBlockers.map((b) => (
+                      <div key={b.slice(0, 20)} className="text-[11px] leading-relaxed text-rose-200">
+                        · 阻断：{b}
+                      </div>
+                    ))
+                  )}
+                  {decayCaveats.length === 0 ? (
+                    <div className="muted">caveats 为空。</div>
+                  ) : (
+                    decayCaveats.map((cv) => (
+                      <div key={cv.slice(0, 20)} className="text-[11px] leading-relaxed text-amber-100/90">
+                        · 保留意见：{cv}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
               <Note tone="warn">
                 <b className="text-amber-200">判定：</b>
                 <code className="font-mono text-[10px]">{String(decayScan.verdict)}</code>
@@ -1339,12 +1400,310 @@ export function CostValueTab({
               <Note>{String(decayScan.note ?? '')}</Note>
             </div>
           </div>
+
+          {/* ================= 分层交付：把"名单不稳"变成分流规则 ================= */}
+          {delivery && deliveryCore && deliverySens ? (
+            <div className="mt-3 overflow-hidden rounded-2xl border border-cyan-300/30 bg-cyan-400/[0.05] px-4 py-3.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className="border-cyan-400/35 bg-cyan-400/10 text-cyan-200">分层交付</Badge>
+                <h4 className="text-[13.5px] font-semibold text-slate-100">
+                  判据不达标不是写一句免责声明就完了：名单按"在几档 decay 上都被选中"分两层，不确定性变成分流动作
+                </h4>
+                <span className="muted ml-auto">
+                  触发条件 <code className="font-mono text-[10px]">{String(delivery.trigger)}</code>
+                </span>
+              </div>
+              <p className="mt-2 text-[11.5px] leading-relaxed text-slate-300">{String(delivery.rule)}</p>
+              <div className="mt-3 grid gap-2.5 lg:grid-cols-2">
+                <div className="rounded-xl border border-emerald-400/30 bg-black/25 px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-medium text-slate-400">核心层（三档 decay 全部选中）</span>
+                    <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">可直接下单</Badge>
+                  </div>
+                  <div className="num mt-1.5 text-[19px] font-semibold text-emerald-200">
+                    {int0(Number(deliveryCore.n_kox))} 人
+                    <span className="ml-2 text-[14px] font-normal text-slate-300">{usd0(Number(deliveryCore.amount_usd))}</span>
+                    <span className="ml-1.5 text-[12px] font-normal text-slate-500">
+                      占参照档支出 {pct1(Number(deliveryCore.share_of_spend))}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] leading-relaxed text-slate-400">{String(deliveryCore.action)}</p>
+                </div>
+                <div className="rounded-xl border border-amber-400/35 bg-black/25 px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-medium text-slate-400">假设敏感层（只在部分档位出现）</span>
+                    <Badge className="border-amber-400/35 bg-amber-400/10 text-amber-200">不自动执行</Badge>
+                  </div>
+                  <div className="num mt-1.5 text-[19px] font-semibold text-amber-200">
+                    {int0(Number(deliverySens.n_kox))} 人
+                    <span className="ml-2 text-[14px] font-normal text-slate-300">{usd0(Number(deliverySens.amount_usd))}</span>
+                    <span className="ml-1.5 text-[12px] font-normal text-slate-500">
+                      占参照档支出 {pct1(Number(deliverySens.share_of_spend))}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] leading-relaxed text-slate-400">{String(deliverySens.action)}</p>
+                </div>
+              </div>
+              <Note tone="good">
+                <b className="text-emerald-200">这句话才是要传达的：</b>这个建模假设的不确定性只影响{' '}
+                <b className="num">{pct1(Number(deliverySens.share_of_spend))}</b> 的预算（
+                {usd0(Number(deliverySens.amount_usd))}），而且已经定位到具体{' '}
+                <b className="num">{int0(Number(deliverySens.n_kox))}</b> 个人 —— 剩下{' '}
+                <b className="num">{pct1(Number(deliveryCore.share_of_spend))}</b> 的钱怎么花与 decay 取值无关。
+                从"整份名单打个问号"变成"分流规则"。
+              </Note>
+              <div className="mt-2 grid gap-3 xl:grid-cols-[1fr_1.15fr]">
+                <div className="overflow-x-auto">
+                  <div className="muted mb-1.5">逐 campaign 分层（读 per_campaign[*].delivery_tiers）</div>
+                  <table className="w-full min-w-[420px]">
+                    <thead>
+                      <tr>
+                        <th className="th">campaign</th>
+                        <th className="th text-right">参照档选中</th>
+                        <th className="th text-right">核心层</th>
+                        <th className="th text-right">敏感层（参照档内 / 并集）</th>
+                        <th className="th text-right">敏感层金额</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {decayPerCampaign.map((c) => {
+                        const t = (c.delivery_tiers ?? null) as Loose | null;
+                        const core = (t?.stable_core ?? null) as Loose | null;
+                        const sens = (t?.assumption_sensitive ?? null) as Loose | null;
+                        if (!core || !sens) return null;
+                        return (
+                          <tr key={String(c.campaign_id)} className="hairline">
+                            <td className="td num">{String(c.campaign_id)}</td>
+                            <td className="td num text-right">
+                              {int0(Number(t?.n_selected_reference))}
+                              <div className="muted">并集 {int0(Number(t?.n_union_across_decays))}</div>
+                            </td>
+                            <td className="td num text-right text-emerald-200">
+                              {int0(Number(core.n))}
+                              <div className="muted">{pct1(Number(core.share_of_reference_spend))} 支出</div>
+                            </td>
+                            <td className="td num text-right text-amber-200">
+                              {int0(Number(sens.n_in_reference_plan))} / {int0(Number(sens.n))}
+                              <div className="muted">{pct1(Number(sens.share_of_reference_spend))} 支出</div>
+                            </td>
+                            <td className="td num text-right text-amber-200">
+                              {usd0(Number(sens.amount_usd_in_reference_plan))}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  <Note>
+                    敏感层两个人数不是同一件事，故并列：<b className="text-slate-300">参照档内</b>{' '}
+                    = 在正式链路（decay ={fixed(Number(decayScan.reference_decay), 1)}）那份清单里、但换档会掉出去的人（三个 campaign 合计{' '}
+                    {int0(Number(deliverySens.n_kox))} 人，与上面那格一致）；<b className="text-slate-300">并集</b>{' '}
+                    = 三档里任意一档出现过、但没有三档全中的人（含参照档没选、别的档才冒出来的）。
+                    顶部政策格用的是前者，因为要交出去的清单就是参照档那一份。
+                  </Note>
+                </div>
+                <div>
+                  <div className="muted mb-1.5">
+                    敏感层逐人（{int0(sensitiveKox.length)} 人 · 金额区间来自三档实测，min = 0 表示该档整个没选它）
+                  </div>
+                  <div className="max-h-[280px] overflow-auto rounded-xl border border-white/10">
+                    <table className="w-full min-w-[420px]">
+                      <thead className="sticky top-0 z-10 bg-ink-800/95 backdrop-blur">
+                        <tr>
+                          <th className="th">达人 / campaign</th>
+                          <th className="th text-right">参照档金额</th>
+                          <th className="th text-right">区间 min ~ max</th>
+                          <th className="th">被选中的 decay 档</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sensitiveKox.map((k) => (
+                          <tr key={`${k.campaign_id}-${String(k.kox_id)}`} className="hairline">
+                            <td className="td">
+                              <span className="num text-[11px] text-slate-200">{String(k.kox_id)}</span>
+                              <div className="muted num">{k.campaign_id}</div>
+                            </td>
+                            <td className="td num text-right text-amber-200">{usd0(Number(k.amount_usd_reference))}</td>
+                            <td className="td num text-right text-slate-400">
+                              {usd0(Number(k.amount_usd_min))} ~ {usd0(Number(k.amount_usd_max))}
+                            </td>
+                            <td className="td num text-[10.5px] text-slate-400">
+                              {((k.selected_at_decays ?? []) as number[]).map((d) => fixed(Number(d), 1)).join(' / ')}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <Note>{String(delivery.why_not_just_a_caveat)}</Note>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <MissingArtifact
+              file="data/metrics.json → budget_decay_sensitivity.delivery_policy"
+              what="分层交付策略"
+              how="重跑 Python 侧 decay 扫描生成该字段后执行 npm run refresh。缺它时页面只能承认「名单会随假设变动」，给不出分流动作。"
+            />
+          )}
         </Panel>
       ) : (
         <MissingArtifact
           file="data/metrics.json → budget_decay_sensitivity"
           what="decay 建模假设的敏感性扫描"
           how="重跑 Python 侧预算链路生成该字段后执行 npm run refresh。缺它时页面上 decay = 0.7 就只是一个没有证据的选择。"
+        />
+      )}
+
+      {/* ================= B 方差归因：伪重复口径 ================= */}
+      {bVar && bUnit ? (
+        <Panel
+          title={`⑧ 为什么「少浪费」来自降低方差 —— 以及为什么那个 pooled p = ${
+            bPooled ? sci(Number((bPooled.variance_ratio_test as Loose).p_two_sided)) : '—'
+          } 不能用`}
+          subtitle={`观测单位：${int0(Number(bUnit.n_seeds))} 个种子 × ${int0(Number(bUnit.n_campaigns))} 个 campaign = ${int0(Number(bUnit.n_obs_pooled))} 个 (seed, campaign) 观测；独立单位是 ${String(bUnit.independent_unit)}`}
+          tone="warn"
+          right={
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Badge
+                className={
+                  bUnit.pooled_p_value_usable
+                    ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
+                    : 'border-rose-400/35 bg-rose-400/10 text-rose-200'
+                }
+              >
+                pooled_p_value_usable = {String(bUnit.pooled_p_value_usable)}
+              </Badge>
+              <TruthChip kind="python" />
+            </div>
+          }
+        >
+          <div className="grid gap-3 xl:grid-cols-[1.1fr_1fr]">
+            <div>
+              <div className="muted mb-1.5">
+                独立单位（种子）上的方差比检验：三个 campaign 各自 n = {int0(Number(bUnit.n_seeds))}，这才是可引用的口径
+              </div>
+              <table className="w-full min-w-[460px]">
+                <thead>
+                  <tr>
+                    <th className="th">campaign</th>
+                    <th className="th text-right">基线浪费率 std</th>
+                    <th className="th text-right">KOXPilot std</th>
+                    <th className="th text-right">std 比</th>
+                    <th className="th text-right">F</th>
+                    <th className="th text-right">p（双尾）</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bPerCampaign.map(({ cid, v }) => {
+                    const t = (v.variance_ratio_test ?? null) as Loose | null;
+                    return (
+                      <tr key={cid} className="hairline">
+                        <td className="td num">{cid}</td>
+                        <td className="td num text-right text-rose-300">{fixed(Number(t?.std_a), 4)}</td>
+                        <td className="td num text-right text-emerald-300">{fixed(Number(t?.std_b), 4)}</td>
+                        <td className="td num text-right">{fixed(Number(v.std_ratio_baseline_over_koxpilot), 2)}×</td>
+                        <td className="td num text-right">{fixed(Number(t?.f), 1)}</td>
+                        <td className="td num text-right font-semibold text-cyan-200">{sci(Number(t?.p_two_sided))}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {bPooled && (
+                <Note tone="warn">
+                  <AlertTriangle size={11} className="mr-1 inline" />
+                  <b className="text-amber-200">
+                    pooled（{int0(Number(bPooled.n_obs))} 个 (seed, campaign) 观测）的 F ={' '}
+                    {fixed(Number((bPooled.variance_ratio_test as Loose).f), 1)}、p ={' '}
+                    {sci(Number((bPooled.variance_ratio_test as Loose).p_two_sided))} 是伪重复，量级不可当真。
+                  </b>{' '}
+                  {String(bVar.independence_caveat ?? '')}
+                </Note>
+              )}
+              <Note>{String(bVar.caveat ?? '')}</Note>
+            </div>
+            <div className="space-y-2">
+              {bPooled && (
+                <div className="rounded-xl border border-emerald-400/30 bg-emerald-400/[0.06] px-3 py-2.5">
+                  <div className="text-[12px] font-medium text-emerald-200">
+                    主证据一：极端频次计数（不依赖任何分布假设）
+                  </div>
+                  <div className="mt-1.5 grid grid-cols-2 gap-2">
+                    <div className="rounded-lg border border-rose-400/25 bg-black/25 px-2.5 py-2">
+                      <div className="text-[10px] text-slate-500">基线浪费率 &gt; 50%</div>
+                      <div className="num text-[17px] font-semibold text-rose-200">
+                        {int0(Number(bPooled.n_obs_baseline_share_above_50pct))}/{int0(Number(bPooled.n_obs))}
+                      </div>
+                      <div className="muted">另有 {int0(Number(bPooled.n_obs_baseline_share_below_5pct))} 个观测 &lt; 5%（运气好）</div>
+                    </div>
+                    <div className="rounded-lg border border-emerald-400/25 bg-black/25 px-2.5 py-2">
+                      <div className="text-[10px] text-slate-500">KOXPilot 浪费率 &gt; 50%</div>
+                      <div className="num text-[17px] font-semibold text-emerald-200">
+                        {int0(Number(bPooled.n_obs_koxpilot_share_above_50pct))}/{int0(Number(bPooled.n_obs))}
+                      </div>
+                      <div className="muted">
+                        最大值只有 {pct1(Number((bPooled.koxpilot_waste_share as Loose).max))}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-slate-300">
+                    基线是<b className="text-rose-200">高方差赌博</b>：同一套预算，运气好时几乎不浪费，踩坑时把钱几乎全烧掉
+                    （max {pct1(Number((bPooled.baseline_waste_share as Loose).max))}）。KOXPilot 换来的主要不是"平均更好"，
+                    而是<b className="text-emerald-200">把坏尾巴切掉</b>。这两个计数是 {int0(Number(bPooled.n_obs))} 个 (seed, campaign)
+                    观测上的频次，不做任何正态假设。
+                  </p>
+                </div>
+              )}
+              {bBands.length > 0 && bCond && (
+                <div className="rounded-xl border border-white/12 bg-white/[0.03] px-3 py-2.5">
+                  <div className="text-[12px] font-medium text-slate-200">主证据二：按"基线运气"分档的条件胜率</div>
+                  <div className="mt-1.5 space-y-1.5">
+                    {bBands.map((b) => (
+                      <div key={String(b.band)} className="rounded-lg border border-white/10 bg-black/20 px-2.5 py-1.5">
+                        <div className="text-[11px] text-slate-300">{String(b.band)}</div>
+                        <div className="mt-0.5 flex flex-wrap gap-x-3 text-[10.5px] text-slate-400">
+                          <span>
+                            观测 <b className="num text-slate-200">{int0(Number(b.n_obs))}</b>
+                          </span>
+                          <span>
+                            胜率{' '}
+                            <b className={`num ${Number(b.koxpilot_win_rate) >= 0.9 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                              {pct1(Number(b.koxpilot_win_rate))}
+                            </b>
+                          </span>
+                          <span>
+                            跑输 <b className="num text-rose-300">{int0(Number(b.n_koxpilot_loses))}</b>
+                          </span>
+                          <span>
+                            平均少浪费 <b className="num text-slate-200">{usd0(Number(b.mean_saved_usd))}</b>
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-slate-400">
+                    难听的那半句一起报：全部{' '}
+                    <b className="num text-rose-200">
+                      {int0(Number(bCond.n_koxpilot_loses))}/{int0(Number(bCond.n_obs))}
+                    </b>{' '}
+                    个跑输的观测里，基线浪费率最高也只有{' '}
+                    <b className="num">{pct1(Number(bCond.max_baseline_waste_share_among_koxpilot_losses))}</b> ——
+                    即"基线本来就没踩坑"时我们赢不了，赢的是坑真的存在的那些场景。
+                  </p>
+                </div>
+              )}
+              <Note tone="warn">
+                <b className="text-amber-200">措辞纪律：</b>{String(bUnit.note ?? '')}
+              </Note>
+            </div>
+          </div>
+        </Panel>
+      ) : (
+        <MissingArtifact
+          file="data/multiseed.json → B_variance_attribution"
+          what="方差归因与伪重复口径"
+          how="跑 make multiseed 生成 output/multiseed.json（含 independence_unit）后执行 npm run refresh。"
         />
       )}
 
