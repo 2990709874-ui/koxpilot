@@ -30,6 +30,7 @@ from ..types import BudgetPlan, CampaignSpec, GateResult, Kox
 from .ablation import ablation_report
 from .audit import cost_audit_report, counterfactual_report
 from .llm_compare import llm_vs_rule_report
+from .llm_fit import llm_fit_audit
 from .metrics import fraud_report, gt_of, verdict_report
 from .sensitivity import sensitivity_report
 from .strata import strata_report
@@ -269,9 +270,15 @@ def budget_section(
     )
 
 
-def run_full_eval(ctx: EvalContext, bench_path: Path | str | None = None) -> dict[str, Any]:
+def run_full_eval(
+    ctx: EvalContext,
+    bench_path: Path | str | None = None,
+    llm_cache_path: Path | str | None = None,
+) -> dict[str, Any]:
     """跑全部六张表 + 成本账 + 反事实价值账，返回 metrics.json 的完整 payload。"""
     bench = Path(bench_path) if bench_path is not None else output_dir() / "llm_bench.json"
+    cache_default = output_dir() / "llm_cache.json"
+    llm_cache = Path(llm_cache_path) if llm_cache_path is not None else cache_default
 
     table1 = fraud_report(ctx.records, ctx.results)
     table2 = verdict_report(ctx.records, ctx.results)
@@ -314,6 +321,12 @@ def run_full_eval(ctx: EvalContext, bench_path: Path | str | None = None) -> dic
     table6 = llm_vs_rule_report(
         ctx.records, ctx.results, CampaignSpec(), bench, campaign_specs=ctx.specs
     )
+    # A4 落差的量化：LLM 适配分 vs 规则版 + "注入正式链路"的离线反事实。
+    # 放在表 6 里是因为它就是"LLM vs 规则"的第二格；**它只读不写**，
+    # 正式链路的 fit_score 仍然是规则版，metrics.json 的逐字节可复现性不受影响。
+    table6["semantic_fit_llm_vs_rule"] = llm_fit_audit(
+        ctx.records, ctx.specs, ctx.thresholds, llm_cache
+    )
 
     budget_rows, plans, baselines, diversified = budget_section(ctx)
     counterfactual = counterfactual_report(ctx.records, plans, baselines, diversified)
@@ -342,6 +355,17 @@ def run_full_eval(ctx: EvalContext, bench_path: Path | str | None = None) -> dic
     ]
     if table6.get("status") != "ok":
         honesty.append(str(table6.get("explanation")))
+    fit_audit = table6["semantic_fit_llm_vs_rule"]
+    if fit_audit.get("status") == "ok":
+        honesty.append(
+            "A4 语义适配分：正式链路用的是规则版，不是 LLM 版。"
+            + str(fit_audit["headline"])
+            + "（三条不予升格的判据见 table_6_llm_vs_rule.semantic_fit_llm_vs_rule.blockers）"
+        )
+    else:
+        honesty.append(
+            "A4 语义适配分对照未跑：" + str(fit_audit.get("note")) + " 正式链路走规则版。"
+        )
     attribution = counterfactual.get("value_attribution")
     if attribution:
         honesty.append(

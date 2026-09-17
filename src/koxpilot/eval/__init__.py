@@ -14,6 +14,7 @@ from .harness import (
     run_full_eval,
 )
 from .llm_compare import llm_vs_rule_report
+from .llm_fit import llm_fit_audit, load_llm_fit_scores
 from .metrics import (
     confusion_matrix,
     fraud_pred_loose,
@@ -35,7 +36,9 @@ __all__ = [
     "fraud_pred_loose",
     "fraud_pred_strict",
     "fraud_report",
+    "llm_fit_audit",
     "llm_vs_rule_report",
+    "load_llm_fit_scores",
     "load_eval_inputs",
     "plan_audit",
     "reject_fp_attribution",

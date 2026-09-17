@@ -276,6 +276,7 @@ PYTHONPATH=src python -m koxpilot.cli multiseed --seeds 12
 2. ~~**`harness._budget_section` 是私有函数，但它是"两臂预算 + 复用同一批 GateResult"的唯一正确入口。**~~ **已修（本轮）。** 已重命名为公开 `harness.budget_section` 并写进 `__all__`，docstring 说明它是两臂共用同一批 `GateResult` 的唯一入口；`multiseed.py` 改为 import 公开名，`harness.run_full_eval` 内部那个同名局部变量改叫 `budget_rows`（原先局部变量与函数同名，读代码时容易误以为在自我调用）。改动是纯重命名：`make eval` 前后 `output/metrics.json` **逐字节相同**（`cmp` 通过），全量 pytest 649 passed。
 3. ~~**`counterfactual_report` 的 `totals` 只给主口径 uplift，宽松口径（`FRAUD_RESIDUAL_VIEW_SHARE = 0.5`）只在 per-campaign 层有。**~~ **已修（本轮）。** `totals` 现在直接给 `effective_views_baseline_lenient` / `effective_views_koxpilot_lenient` / `effective_view_uplift_lenient`（定稿数据集：**+64.7%**，主口径 +98.6%，同向），`multiseed.py` 也改成直接引用它，不再在两处各算一遍——本文档汇总表里的 +69.1% ± 44.3% 是这个口径的跨种子分布，数值未变（同源算法，只是不再重复实现）。
 4. **`_repair_longtail` 在"长尾占比恰好为 0"时无法自举**（新发现，**未修**）。该循环先尝试"加长尾"，加不动才退让腾预算；但退让后立刻用 `longtail_share <= before_share` 判断"退让是否改善了结构"，而长尾金额为 0 时这个比值退让前后都是 0，于是必然回滚，永远补不进第一条长尾。构造用例见 `tests/test_value_attribution.py::TestThirdArmIgnoresQualitySignals::test_giving_back_slots_also_uses_the_arms_own_ruler`（该 case 如实记 `longtail_min_share` 违规，没有伪装合规，所以不是正确性事故）。真实数据的三个 campaign 上长尾占比都远大于 0（30% / 47% 量级），未触发；但这是一条真实的可达路径，改法（退让后先试补位再判断改善）会改变分配结果与全部产物，故本轮只登记不动手。
+5. **`llm_cache.json` 的 `_meta` 里没有数据集指纹**（新发现，**未修**）。缓存记了模型、采样数、采样种子与生成时间，却没记 `dataset_sha256`。于是"这批 LLM 分是给哪份数据集打的"只能靠 `kox_id` 是否还存在于当前库来反推——数据集重新生成而 id 空间不变时，错配是**静默**的。当前 `eval/llm_fit.py` 的兜底是把不存在的 id 计入 `n_scored_ids_not_in_dataset` 并如实报出来（定稿数据集上为 0），但这只是症状检测，不是指纹校验。正确修法是在 `llm/runner.py` 落盘时写入 `dataset_sha256`，代价是要等下一次 `make llm`（真花 token）才会出现在产物里，故本轮只登记。
 
 ---
 
@@ -283,5 +284,6 @@ PYTHONPATH=src python -m koxpilot.cli multiseed --seeds 12
 
 - `output/multiseed.json`——完整数据，含每个种子的明细（`per_seed`，本轮起每种子多存三臂归因字段）与四组汇总（`A_value_robustness`（内含 `arm_attribution` 三臂归因）/ `B_variance_attribution` / `C_gate_metric_robustness` / `D_weak_spot_stability`）。
 - `src/koxpilot/eval/multiseed.py`——实验代码；t / F 检验与 t 分位数用正则化不完全 Beta 函数手写实现，与项目"零第三方运行依赖"约束一致。
+- `tests/test_llm_fit_audit.py`——A4 适配分口径审计的守卫（17 条）：结论必须由覆盖率/双算率/单向性三条判据算出（构造一份"覆盖率 100% + 双向 + 无重叠"的假缓存时必须自动翻成"可升格"）、正式链路的 `fit_source` 一条 `injected:` 都不许有、缓存缺失/brief 对不上/id 不在数据集里都必须如实报状态、且全表不许出现任何准确率类字段（语义适配没有 gt）。
 - `tests/test_value_attribution.py`——三臂归因的守卫（26 条）：第三臂对"质量字段整体对调 / 伪造 verdict / 伪造真实性与适配分数"必须完全不变（并有反向对照断言 KOXPilot 臂会变）、两段贡献可加、负贡献不截断、缺第三臂时报告如实说"未跑"。
 - `tests/test_multiseed.py`——统计工具对着封闭解核对（`I_x(1,1) = x`、`t_{0.975,11} ≈ 2.201`、Cauchy 尾概率）、弱项分类逻辑用构造输入锁死、并有一条测试断言**跑多种子期间 `data/` 与 `output/` 的所有文件 mtime 不变**。

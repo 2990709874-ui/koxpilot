@@ -2317,7 +2317,357 @@
     },
     "best_llm_model": "azure",
     "f1_gain_llm_over_rule": 0.1199,
-    "explanation": "同一抽样、同一 ground truth 下比较；规则列在 rule_arm_same_sample，全量规则指标在 rule_arm.tag_mismatch。"
+    "explanation": "同一抽样、同一 ground truth 下比较；规则列在 rule_arm_same_sample，全量规则指标在 rule_arm.tag_mismatch。",
+    "semantic_fit_llm_vs_rule": {
+      "status": "ok",
+      "llm": {
+        "primary_model_key": "ark",
+        "model": "ep-20260308011145-z5d47",
+        "fit_sample_n": 260,
+        "sample_seed": 20270919,
+        "generated_at": "2026-09-17T22:39:31+0800"
+      },
+      "review_threshold": 0.5,
+      "formal_chain_fit_source": "rule:category_map+keyword",
+      "headline": "LLM 适配分覆盖候选池 14.9%（33/222 人）；离线注入后门禁判定只翻转 1 条，三个 campaign 合计少浪费 $735（gt 口径）。结论：方案 B：正式链路继续用规则版 fit_score，LLM 版只作为离线对照量化。",
+      "decision": "keep_rule_fit_in_formal_chain",
+      "decision_label": "方案 B：正式链路继续用规则版 fit_score，LLM 版只作为离线对照量化",
+      "checks": {
+        "coverage_ok": false,
+        "no_double_counting": false,
+        "not_one_sided_on_covered": false
+      },
+      "blockers": [
+        "覆盖率不足：LLM 分只覆盖三个 campaign 候选池的 14.9%（33/222 人），低于升格门槛 90%。注入后 fit_score 变成'一部分人 LLM、一部分人规则'的混合尺子，预算差异主要反映谁在采样池里。",
+        "口径重叠（双算）：'LLM 判低而规则判高'的 517 人里，97.1% 已被定向筛选 / G2.4 语言 / audience_match 乘子各自处理过，高于允许上限 20%。注入等于同一事实扣两次分。",
+        "单向偏置：被覆盖到的候选上 LLM 分只会更低、没有一个更高（采样池偏向品类正中的号，规则版给满分），注入相当于对一个非随机子集单向罚分，不是中性替换。"
+      ],
+      "thresholds": {
+        "coverage_min_for_promotion": 0.9,
+        "double_count_max_for_promotion": 0.2
+      },
+      "totals": {
+        "candidate_pool": 222,
+        "covered_by_llm": 33,
+        "coverage_share": 0.1486,
+        "n_llm_below_rule_above": 517,
+        "double_counted_share": 0.971,
+        "n_verdict_flips": 1,
+        "n_scored_ids_not_in_dataset": 0,
+        "wasted_spend_usd_rule": 11301.26,
+        "wasted_spend_usd_llm": 10565.9,
+        "wasted_delta_usd_llm_minus_rule": -735.36,
+        "llm_only_lowers_on_covered": true
+      },
+      "per_campaign": [
+        {
+          "campaign_id": "BRIEF-001",
+          "name": "3C 小家电新品 · 北美 · 看转化",
+          "n_llm_scored": 260,
+          "n_scored_ids_not_in_dataset": 0,
+          "scored_ids_not_in_dataset_sample": [],
+          "coverage": {
+            "candidate_pool": 93,
+            "covered_by_llm": 15,
+            "coverage_share": 0.1613,
+            "note": "分母是本 campaign 真实候选池（定向通过且门禁 pass），不是 5,000 全库——全库口径会把覆盖率算得更难看，但那个分母与预算决策无关。"
+          },
+          "on_all_scored": {
+            "n": 260,
+            "llm_fit_mean": 0.436,
+            "rule_fit_mean": 0.9912,
+            "mean_diff_llm_minus_rule": -0.5552,
+            "max_abs_diff": 0.88,
+            "n_llm_lower": 260,
+            "n_llm_higher": 0,
+            "n_equal": 0,
+            "n_llm_below_review_threshold": 147,
+            "n_rule_below_review_threshold": 0,
+            "same_side_of_threshold_share": 0.4346,
+            "llm_only_lowers": true
+          },
+          "on_covered_candidates": {
+            "n": 15,
+            "llm_fit_mean": 0.6947,
+            "rule_fit_mean": 1.0,
+            "mean_diff_llm_minus_rule": -0.3053,
+            "max_abs_diff": 0.55,
+            "n_llm_lower": 15,
+            "n_llm_higher": 0,
+            "n_equal": 0,
+            "n_llm_below_review_threshold": 1,
+            "n_rule_below_review_threshold": 0,
+            "same_side_of_threshold_share": 0.9333,
+            "llm_only_lowers": true
+          },
+          "double_counted": {
+            "n_llm_below_rule_above": 147,
+            "already_off_target_by_targeting": 118,
+            "already_flagged_by_G2_4_language": 114,
+            "already_low_audience_match": 59,
+            "already_covered_by_any": 140,
+            "already_covered_share": 0.9524,
+            "examples": [
+              {
+                "kox_id": "KOX-000020",
+                "llm_fit": 0.2,
+                "rule_fit": 1.0,
+                "targeting_reason": "market_off_target",
+                "hits_G2_4_language": true,
+                "audience_match": 0.584
+              },
+              {
+                "kox_id": "KOX-000029",
+                "llm_fit": 0.38,
+                "rule_fit": 0.9,
+                "targeting_reason": "platform_off_target",
+                "hits_G2_4_language": false,
+                "audience_match": 0.5216
+              },
+              {
+                "kox_id": "KOX-000030",
+                "llm_fit": 0.3,
+                "rule_fit": 0.9,
+                "targeting_reason": null,
+                "hits_G2_4_language": false,
+                "audience_match": 0.4685
+              }
+            ],
+            "note": "这三项在正式链路里各自已经扣过一次分（定向剔除 / G2.4 / audience_match 乘子）。把同一个事实再计入 G2.3 就是双算，会让'加了 LLM 之后指标变好'变成口径叠加的假象。"
+          },
+          "injection_counterfactual": {
+            "candidate_pool_rule": 93,
+            "candidate_pool_llm": 92,
+            "fit_source_mix_in_pool": {
+              "injected:llm_fit_score": 14,
+              "rule:category_map+keyword": 78
+            },
+            "n_verdict_flips": 1,
+            "verdict_flips": [
+              {
+                "kox_id": "KOX-001853",
+                "before": "pass",
+                "after": "review"
+              }
+            ],
+            "n_selected_rule": 69,
+            "n_selected_llm": 64,
+            "selection_overlap": 62,
+            "spent_usd_rule": 79855.29,
+            "spent_usd_llm": 79951.91,
+            "wasted_spend_usd_rule": 2174.72,
+            "wasted_spend_usd_llm": 3255.33,
+            "wasted_delta_usd_llm_minus_rule": 1080.61,
+            "effective_view_rate_rule": 0.9655,
+            "effective_view_rate_llm": 0.9558,
+            "effective_view_rate_gap_pp": -0.97,
+            "note": "注入只改 G2.3 的分值来源，其余 24 条规则、阈值、结构约束、排序公式完全不变；候选池与选人变化主要来自 value(k) 里 fit_score 因子的变化，不是判定翻转。"
+          }
+        },
+        {
+          "campaign_id": "BRIEF-002",
+          "name": "国货彩妆 · 东南亚 · 看互动",
+          "n_llm_scored": 260,
+          "n_scored_ids_not_in_dataset": 0,
+          "scored_ids_not_in_dataset_sample": [],
+          "coverage": {
+            "candidate_pool": 50,
+            "covered_by_llm": 5,
+            "coverage_share": 0.1,
+            "note": "分母是本 campaign 真实候选池（定向通过且门禁 pass），不是 5,000 全库——全库口径会把覆盖率算得更难看，但那个分母与预算决策无关。"
+          },
+          "on_all_scored": {
+            "n": 260,
+            "llm_fit_mean": 0.3902,
+            "rule_fit_mean": 0.9885,
+            "mean_diff_llm_minus_rule": -0.5983,
+            "max_abs_diff": 0.9,
+            "n_llm_lower": 260,
+            "n_llm_higher": 0,
+            "n_equal": 0,
+            "n_llm_below_review_threshold": 177,
+            "n_rule_below_review_threshold": 0,
+            "same_side_of_threshold_share": 0.3192,
+            "llm_only_lowers": true
+          },
+          "on_covered_candidates": {
+            "n": 5,
+            "llm_fit_mean": 0.884,
+            "rule_fit_mean": 1.0,
+            "mean_diff_llm_minus_rule": -0.116,
+            "max_abs_diff": 0.19,
+            "n_llm_lower": 5,
+            "n_llm_higher": 0,
+            "n_equal": 0,
+            "n_llm_below_review_threshold": 0,
+            "n_rule_below_review_threshold": 0,
+            "same_side_of_threshold_share": 1.0,
+            "llm_only_lowers": true
+          },
+          "double_counted": {
+            "n_llm_below_rule_above": 177,
+            "already_off_target_by_targeting": 162,
+            "already_flagged_by_G2_4_language": 96,
+            "already_low_audience_match": 8,
+            "already_covered_by_any": 172,
+            "already_covered_share": 0.9718,
+            "examples": [
+              {
+                "kox_id": "KOX-000006",
+                "llm_fit": 0.42,
+                "rule_fit": 1.0,
+                "targeting_reason": "market_off_target",
+                "hits_G2_4_language": true,
+                "audience_match": 0.7281
+              },
+              {
+                "kox_id": "KOX-000008",
+                "llm_fit": 0.28,
+                "rule_fit": 1.0,
+                "targeting_reason": "market_off_target",
+                "hits_G2_4_language": true,
+                "audience_match": 0.4998
+              },
+              {
+                "kox_id": "KOX-000024",
+                "llm_fit": 0.38,
+                "rule_fit": 1.0,
+                "targeting_reason": "market_off_target",
+                "hits_G2_4_language": false,
+                "audience_match": 0.5777
+              }
+            ],
+            "note": "这三项在正式链路里各自已经扣过一次分（定向剔除 / G2.4 / audience_match 乘子）。把同一个事实再计入 G2.3 就是双算，会让'加了 LLM 之后指标变好'变成口径叠加的假象。"
+          },
+          "injection_counterfactual": {
+            "candidate_pool_rule": 50,
+            "candidate_pool_llm": 50,
+            "fit_source_mix_in_pool": {
+              "injected:llm_fit_score": 5,
+              "rule:category_map+keyword": 45
+            },
+            "n_verdict_flips": 0,
+            "verdict_flips": [],
+            "n_selected_rule": 39,
+            "n_selected_llm": 39,
+            "selection_overlap": 39,
+            "spent_usd_rule": 44995.72,
+            "spent_usd_llm": 44996.7,
+            "wasted_spend_usd_rule": 5493.63,
+            "wasted_spend_usd_llm": 3677.66,
+            "wasted_delta_usd_llm_minus_rule": -1815.97,
+            "effective_view_rate_rule": 0.8711,
+            "effective_view_rate_llm": 0.8988,
+            "effective_view_rate_gap_pp": 2.77,
+            "note": "注入只改 G2.3 的分值来源，其余 24 条规则、阈值、结构约束、排序公式完全不变；候选池与选人变化主要来自 value(k) 里 fit_score 因子的变化，不是判定翻转。"
+          }
+        },
+        {
+          "campaign_id": "BRIEF-003",
+          "name": "休闲手游全球上线 · 日韩+巴西 · 看曝光",
+          "n_llm_scored": 260,
+          "n_scored_ids_not_in_dataset": 0,
+          "scored_ids_not_in_dataset_sample": [],
+          "coverage": {
+            "candidate_pool": 79,
+            "covered_by_llm": 13,
+            "coverage_share": 0.1646,
+            "note": "分母是本 campaign 真实候选池（定向通过且门禁 pass），不是 5,000 全库——全库口径会把覆盖率算得更难看，但那个分母与预算决策无关。"
+          },
+          "on_all_scored": {
+            "n": 260,
+            "llm_fit_mean": 0.4232,
+            "rule_fit_mean": 0.99,
+            "mean_diff_llm_minus_rule": -0.5668,
+            "max_abs_diff": 0.9,
+            "n_llm_lower": 260,
+            "n_llm_higher": 0,
+            "n_equal": 0,
+            "n_llm_below_review_threshold": 193,
+            "n_rule_below_review_threshold": 0,
+            "same_side_of_threshold_share": 0.2577,
+            "llm_only_lowers": true
+          },
+          "on_covered_candidates": {
+            "n": 13,
+            "llm_fit_mean": 0.8038,
+            "rule_fit_mean": 1.0,
+            "mean_diff_llm_minus_rule": -0.1962,
+            "max_abs_diff": 0.44,
+            "n_llm_lower": 13,
+            "n_llm_higher": 0,
+            "n_equal": 0,
+            "n_llm_below_review_threshold": 0,
+            "n_rule_below_review_threshold": 0,
+            "same_side_of_threshold_share": 1.0,
+            "llm_only_lowers": true
+          },
+          "double_counted": {
+            "n_llm_below_rule_above": 193,
+            "already_off_target_by_targeting": 179,
+            "already_flagged_by_G2_4_language": 114,
+            "already_low_audience_match": 8,
+            "already_covered_by_any": 190,
+            "already_covered_share": 0.9845,
+            "examples": [
+              {
+                "kox_id": "KOX-000004",
+                "llm_fit": 0.37,
+                "rule_fit": 1.0,
+                "targeting_reason": "market_off_target",
+                "hits_G2_4_language": false,
+                "audience_match": 0.7748
+              },
+              {
+                "kox_id": "KOX-000013",
+                "llm_fit": 0.41,
+                "rule_fit": 1.0,
+                "targeting_reason": "market_off_target",
+                "hits_G2_4_language": false,
+                "audience_match": 0.7626
+              },
+              {
+                "kox_id": "KOX-000019",
+                "llm_fit": 0.34,
+                "rule_fit": 1.0,
+                "targeting_reason": "market_off_target",
+                "hits_G2_4_language": true,
+                "audience_match": 0.6757
+              }
+            ],
+            "note": "这三项在正式链路里各自已经扣过一次分（定向剔除 / G2.4 / audience_match 乘子）。把同一个事实再计入 G2.3 就是双算，会让'加了 LLM 之后指标变好'变成口径叠加的假象。"
+          },
+          "injection_counterfactual": {
+            "candidate_pool_rule": 79,
+            "candidate_pool_llm": 79,
+            "fit_source_mix_in_pool": {
+              "injected:llm_fit_score": 13,
+              "rule:category_map+keyword": 66
+            },
+            "n_verdict_flips": 0,
+            "verdict_flips": [],
+            "n_selected_rule": 73,
+            "n_selected_llm": 74,
+            "selection_overlap": 73,
+            "spent_usd_rule": 119966.67,
+            "spent_usd_llm": 119982.71,
+            "wasted_spend_usd_rule": 3632.91,
+            "wasted_spend_usd_llm": 3632.91,
+            "wasted_delta_usd_llm_minus_rule": 0.0,
+            "effective_view_rate_rule": 0.962,
+            "effective_view_rate_llm": 0.962,
+            "effective_view_rate_gap_pp": 0.0,
+            "note": "注入只改 G2.3 的分值来源，其余 24 条规则、阈值、结构约束、排序公式完全不变；候选池与选人变化主要来自 value(k) 里 fit_score 因子的变化，不是判定翻转。"
+          }
+        }
+      ],
+      "caveats": [
+        "注入反事实只是**离线对照**：正式 metrics.json / budget.json 里的 fit_score 仍是规则版，所以正式指标依旧'同一份代码 + 同一份数据 -> 逐字节相同'。",
+        "反事实的样本极小：真正被 LLM 打过分又在候选池里的只有 33 人（占 14.9%），金额差额不构成'LLM 更好/更差'的证据，只能说明'注入的影响主要不在判定翻转上'。",
+        "LLM 分本身没有 ground truth：数据集的 gt 里没有'语义适配'这一维，所以这里报的是两套分的一致性与注入后的下游影响，**不报 LLM 适配分的准确率**。",
+        "缓存的 _meta 里没有数据集指纹（dataset_sha256），只能靠 kox_id 是否存在于当前数据集来判断错配（见 n_scored_ids_not_in_dataset）。"
+      ]
+    }
   },
   "budget": {
     "constraint_policy": {
@@ -3298,6 +3648,7 @@
     "三分类整体准确率 0.6590、macro F1 0.6731；屏蔽 G2.2 的口径对照版为 0.7504 / 0.7397。",
     "factor 是判定阈值的整体缩放系数：对上尾规则放大=放松、对下尾规则放大=收紧，因此一次扫描同时覆盖两个方向。",
     "delta 为「变体 − 全量」：负值 = 关掉后指标下降（该规则有正向贡献），正值 = 关掉后指标上升（该规则拖累该指标），|delta| < 0.001 视为无影响。严口径 F1 上：6/7 条为正向贡献（-G1.1, -G1.2, -G1.3, -G1.4, -G1.5, -G1.7）。如实记录 1 条**负贡献**规则：-G1.6（ΔF1 +0.0149）——关掉后严口径 F1 反而上升，因此不属于「对 F1 有正向贡献」的规则；保留理由（软信号、只推 review、宽口径召回来源）写在 docs/03-evaluation.md 表 4 一节，不靠这条 note 一句话带过。没有 |ΔF1| < 0.001 的死规则（dead_rules 为空）。",
+    "A4 语义适配分：正式链路用的是规则版，不是 LLM 版。LLM 适配分覆盖候选池 14.9%（33/222 人）；离线注入后门禁判定只翻转 1 条，三个 campaign 合计少浪费 $735（gt 口径）。结论：方案 B：正式链路继续用规则版 fit_score，LLM 版只作为离线对照量化。（三条不予升格的判据见 table_6_llm_vs_rule.semantic_fit_llm_vs_rule.blockers）",
     "三臂价值归因（基线 → 只分散化不门禁 → KOXPilot）：相对基线共少浪费 $79,719，其中结构分散化少浪费 $56,223，门禁与质量排序少浪费 $23,496，有效曝光率 67.3% →（第三臂）86.5% →（KOXPilot）94.2%，分散化 +19.2pp、门禁与质量排序 +7.8pp；两段贡献按链式差分定义，可加，负值照实写。"
   ]
 }

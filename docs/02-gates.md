@@ -317,6 +317,8 @@ AUC 需要连续分。如果 `fraud_score` 用"命中了几条规则"来算，�
 | `rule:...` | 规则版打分（`g2.rule_fit_score`，按目标品类 / 相邻品类命中度构造） |
 | `injected:...` | 外部注入（LLM 打的分），越界会被 clamp |
 
+**注入这条路真实存在，但正式链路不走它**：`make budget` / `make eval` 的每一条 `GateResult` 的 `fit_source` 都是 `rule:` 或 `skipped:`，`injected:` 只出现在 `eval/llm_fit.py` 的离线对照里（覆盖率 14.9%、双算率 97.1%，不予升格的判据见 [05 §3.2](05-boundaries.md#32-这里有一个我必须点明的落差本轮已量化并给出不予升格的判据)）。`tests/test_llm_fit_audit.py::test_formal_chain_has_no_injected_fit_source` 把这句话钉成了测试：谁把 LLM 分接进正式链路而不同步改口径说明，立刻红。
+
 `FIT_SCORE_REVIEW_MAX = 0.5` 的含义是"规则版打分的中点"：目标品类完全不命中**且相邻品类也不命中**时才会低于 0.5，所以 0.5 = "连相邻品类都不沾"。
 
 **这里有一个语义边界必须点明**：`rule_fit_score` 在 `target_categories` 为空时返回 **1.0**，这是**正确**的——"没有品类要求"就不该扣适配分。错的是拿这个中性口径去报 campaign 级别的适配分布，那会得到"全是 1.0"的无意义数据。这个坑我真踩过，完整复盘在 [03 §2.3](03-evaluation.md#23-第三道网表-6-的语义适配分曾经恒等于-10)。
@@ -428,7 +430,7 @@ part ⊆ full   且   part == { full 中属于开启层的规则 }
 
 - 三个层分数**各自只受本层影响**（串味会让证据链解释不通）。
 - `evaluate` 是纯函数，不改入参；`evaluate_all` 的结果与记录顺序无关（排除跨记录状态）。
-- 注入的 fit 分按 `kox_id` 对齐，不许串号——串号会让"LLM vs 规则"的对比彻底失真。
+- 注入的 fit 分按 `kox_id` 对齐，不许串号——串号会让"LLM vs 规则"的对比彻底失真。缓存里出现数据集里不存在的 `kox_id` 时，`eval/llm_fit.py` 会把它计入 `n_scored_ids_not_in_dataset` 并如实报出来，而不是当成"覆盖了"。
 - `to_dict()` 的字段集合被精确锁定（这是前端 TS 的契约，见 [01 §双实现](01-architecture.md)）。
 - 空阈值表（组样本不足到什么都没标定）时不崩、不瞎判。
 - 信号缺失必须**静默跳过**，不能拿 0 冒充极低值去命中下尾规则（这会让缺数据的人被判成买粉）。

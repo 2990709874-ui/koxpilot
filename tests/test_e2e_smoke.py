@@ -250,11 +250,20 @@ class Sandbox:
             p.relative_to(self.root).as_posix() for p in self.root.rglob("*") if p.is_file()
         )
 
-    def bring_llm_bench(self) -> None:
-        """把 committed 的 `llm_bench.json` 拷进沙箱（只读拷贝，用于让表 6 走 ok 分支）。"""
+    def bring_llm_artifacts(self) -> None:
+        """把 committed 的 LLM 构建期产物拷进沙箱（只读拷贝）。
+
+        两份都要：``llm_bench.json`` 让表 6 的 LLM 列走 ok 分支，
+        ``llm_cache.json`` 让表 6 附的"A4 适配分口径对照"能真跑注入反事实。
+        少拷一份，沙箱产出的 metrics.json 就会和 committed 版本对不上——
+        那不是产物漂移，只是沙箱缺料，很容易把人引到错误的结论上。
+        """
         dst = self.path("output")
         dst.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(REAL_OUTPUT / "llm_bench.json", dst / "llm_bench.json")
+        for name in ("llm_bench.json", "llm_cache.json"):
+            src = REAL_OUTPUT / name
+            if src.exists():
+                shutil.copy2(src, dst / name)
 
 
 def make_sandbox(root: Path, mp: pytest.MonkeyPatch) -> Sandbox:
@@ -291,7 +300,7 @@ def official_run(tmp_path_factory: pytest.TempPathFactory) -> Iterator[OfficialR
     before = hash_fingerprint(REAL_DATA), hash_fingerprint(REAL_OUTPUT)
     with pytest.MonkeyPatch.context() as mp:
         box = make_sandbox(root, mp)
-        box.bring_llm_bench()  # 表 6 需要构建期真调产物，否则会走"降级"分支
+        box.bring_llm_artifacts()  # 表 6 与其附表需要构建期真调产物，否则会走"降级"分支
         run = box.run("all")  # 默认参数 = 官方 n / seed，正是 committed 产物的口径
         yield OfficialRun(sandbox=box, log=run.stdout, code=run.code)
     assert (hash_fingerprint(REAL_DATA), hash_fingerprint(REAL_OUTPUT)) == before, (

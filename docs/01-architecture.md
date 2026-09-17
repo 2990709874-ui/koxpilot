@@ -45,11 +45,19 @@
 | **A1 BriefAgent** | 自然语言 brief → `CampaignSpec` | `llm/runner.py::run_brief` + `llm/prompts.py` | **真实 LLM（构建期）** | `llm_cache.json.brief_specs` / `campaign_specs`；账在 `llm_bench.json` 的 `brief::ark` 3 calls、`brief::azure` 3 calls |
 | **A2 RecallAgent** | 定向筛选 + 候选召回 + 报价估算 | `budget/value.py::build_candidates` / `targeting_reason` | 确定性规则 | `budget.json` 的 `candidate_pool`（93 / 50 / 79） |
 | **A3 GateAgent** | G0/G1/G2/G3 四层门禁 | `gates/engine.py` + `g0..g3.py` + `thresholds.py` | 确定性规则 + 统计标定 | `thresholds.json` / `verdicts.json` / `gate_results_sample.json` |
-| **A4 FitAgent** | 语义适配打分 | `llm/runner.py::run_fit`（LLM）+ `gates/g2.py::rule_fit_score`（规则） | **真实 LLM（构建期，离线实验）+ 规则（正式链路）** | `llm_cache.json.fit_scores`（每 brief 260 条）；`fit::ark` 66 calls |
+| **A4 FitAgent** | 语义适配打分 | `llm/runner.py::run_fit`（LLM）+ `gates/g2.py::rule_fit_score`（规则）+ `eval/llm_fit.py`（两者的对照与注入反事实） | **真实 LLM（构建期，离线实验）+ 规则（正式链路）** | `llm_cache.json.fit_scores`（每 brief 260 条）；`fit::ark` 66 calls；`metrics.json.table_6_llm_vs_rule.semantic_fit_llm_vs_rule` |
 | **A5 BudgetAgent** | 预算分配 + 结构约束 + 基线对照 | `budget/planner.py` / `allocator.py` / `policy.py` | 确定性优化（启发式） | `budget.json` |
 | **A6 AuditAgent** | 反事实价值审计 + 成本审计 | `eval/audit.py` | 确定性计算（读 `gt` 当裁判） | `metrics.json.counterfactual_value_audit` / `cost_audit`；`audit.json` |
 
-**A4 有一处必须点明的落差**：`llm_cache.json` 里确实有 LLM 打的 260×3 条适配分，但当前 `make budget` / `make eval` 走的是 `rule_fit_score`，**没有把 LLM fit 注入正式指标链路**。原因是正式指标要求逐字节可复现，注入 LLM 结果就没这个担保了。LLM 那部分能力的量化落点是表 6（`table_6_llm_vs_rule`）。详见 [05 §3.2](05-boundaries.md#32-这里有一个我必须点明的落差)。
+**A4 有一处必须点明的落差（本轮已量化）**：`llm_cache.json` 里确实有 LLM 打的 260×3 条适配分，但 `make budget` / `make eval` 走的是 `rule_fit_score`，**没有把 LLM fit 注入正式指标链路**。
+
+以前这句话到"没注入"就结束了，属于无法验证的自述。现在 `eval/llm_fit.py` 把它做成了可审计的对照，产物在 `table_6_llm_vs_rule.semantic_fit_llm_vs_rule`，并且"要不要升格为正式口径"由三条现算判据决定，而不是由我写死：
+
+- **覆盖率 14.9%**（33/222 人）：注入会让 `fit_score` 变成 LLM/规则混合口径，产物里 `fit_source_mix_in_pool` 直接把混合比例写出来；
+- **双算 97.1%**：「LLM 判低而规则判高」的 517 人里，绝大多数早已被定向筛选 / G2.4 语言 / `audience_match` 乘子各扣过一次；
+- **单向偏置**：被覆盖的 33 人上 LLM 分只会更低、没有一个更高。
+
+三条判据全过时，产物里的 `decision` 会自动变成 `llm_fit_promotable`（`tests/test_llm_fit_audit.py` 用一份构造缓存钉住了这个翻转）。当前结论是**方案 B：正式链路继续用规则版**。注入的离线反事实也真跑了：判定只翻转 1 条、合计少浪费 $735，样本 33 人、方向在 campaign 间还翻转，所以这个数字**不作为任何招牌结论**。详见 [05 §3.2](05-boundaries.md#32-这里有一个我必须点明的落差本轮已量化并给出不予升格的判据)。
 
 ---
 
@@ -261,7 +269,7 @@ koxpilot/
 │   ├── datagen/            # ← 合成数据（config / generator / briefs / injections）
 │   ├── gates/              # ← A3：engine / g0..g3 / signals / thresholds / policy / humanize
 │   ├── budget/             # ← A2+A5：planner / allocator / value / policy
-│   ├── eval/               # ← A6：harness / metrics / audit / llm_compare / sensitivity
+│   ├── eval/               # ← A6：harness / metrics / audit / llm_compare / llm_fit / sensitivity
 │   └── llm/                # ← A1+A4：runner / promptbench / prompts / prompt_variants / provider
 ├── data/                   # 合成数据集 + 3 个 brief（产物，可由 make data 重建）
 ├── output/                 # 全部指标与判定产物（可由 make all 重建，逐字节可复现）

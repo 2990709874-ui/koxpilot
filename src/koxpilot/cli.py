@@ -239,6 +239,13 @@ def cmd_eval(args: argparse.Namespace) -> int:
         print(f"[eval] 三臂价值归因：{attribution['headline']}")
         for caveat in attribution["caveats"]:
             print(f"[eval]   注意：{caveat}")
+    fit_audit = metrics["table_6_llm_vs_rule"]["semantic_fit_llm_vs_rule"]
+    if fit_audit.get("status") == "ok":
+        print(f"[eval] A4 适配分口径：{fit_audit['headline']}")
+        for blocker in fit_audit["blockers"]:
+            print(f"[eval]   不予升格的判据：{blocker}")
+    else:
+        print(f"[eval] A4 适配分口径：{fit_audit.get('note')}")
     print("[eval] 弱项（如实呈现）：")
     for spot in metrics["weak_spots"][:3]:
         print(f"[eval]   - {spot['note']}")
