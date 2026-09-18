@@ -6,6 +6,7 @@
   "scripts": {
     "prepare-data": "node scripts/prepare-data.mjs",
     "verify": "node scripts/verify-parity.mjs",
+    "test:brief": "node scripts/test-brief-parse.mjs",
     "refresh": "npm run prepare-data && npm run verify && npm run build",
     "dev": "vite",
     "build": "tsc -b && vite build",

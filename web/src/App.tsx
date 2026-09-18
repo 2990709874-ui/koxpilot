@@ -1,14 +1,5 @@
 import React from 'react';
-import {
-  Activity,
-  BarChart3,
-  Coins,
-  Layers,
-  Loader2,
-  NotebookPen,
-  ShieldCheck,
-  Terminal,
-} from 'lucide-react';
+import { Loader2, ShieldCheck } from 'lucide-react';
 import { Badge, Hint } from './components/ui';
 import { ArchitectureTab } from './tabs/Architecture';
 import { ConsoleTab } from './tabs/Console';
@@ -22,41 +13,60 @@ import type { AblationRow, EvalReport, PipelineResult, SensitivityPoint, StageRe
 import { loadArtifacts, type Artifacts } from './lib/artifacts';
 import type { Kox } from './engine/types';
 import { ALL_GATES } from './engine/policy';
-import { int0, usd0 } from './lib/format';
-
-const TABS = [
-  { id: 'console', label: '决策台', icon: Terminal, desc: '真跑一遍 A1–A6' },
-  { id: 'decision', label: '决策与预算', icon: Coins, desc: '选谁、花多少、为什么' },
-  { id: 'eval', label: '评测', icon: BarChart3, desc: '好在哪、差在哪' },
-  { id: 'cost', label: '成本与价值', icon: Activity, desc: 'Prompt 迭代与 token 账' },
-  { id: 'arch', label: '架构', icon: Layers, desc: '编排与双实现一致性' },
-  { id: 'notes', label: '工程日志', icon: NotebookPen, desc: '我自己抓到的问题' },
-] as const;
-
-type TabId = (typeof TABS)[number]['id'];
+import { int0, pct1 } from './lib/format';
+import { Hero, HeroSlimBar, robustSaved } from './overview/Hero';
+import { SectionBlock } from './overview/SectionBlock';
+import { TabBar } from './overview/TabBar';
+import { DEFAULT_TAB, SECTION, resolveHash, type TabId } from './overview/nav';
 
 const frame = (): Promise<void> => new Promise((r) => setTimeout(r, 16));
 
-const isTabId = (v: string): v is TabId => TABS.some((t) => t.id === v);
-const tabFromHash = (): TabId => {
-  const raw = window.location.hash.replace(/^#\/?/, '').trim();
-  return isTabId(raw) ? raw : 'console';
+/** 滚到页内段落（承接旧 hash 的直达语义）。 */
+const scrollToAnchor = (anchor: string): void => {
+  window.requestAnimationFrame(() => {
+    window.setTimeout(() => {
+      document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+  });
 };
 
 export default function App(): React.ReactElement {
   const [art, setArt] = React.useState<Artifacts | null>(null);
   const [loadErr, setLoadErr] = React.useState<string | null>(null);
-  const [tab, setTab] = React.useState<TabId>(tabFromHash);
+  const [tab, setTab] = React.useState<TabId>(() => resolveHash(window.location.hash).tab);
+  /** 旧 hash（#console/#decision/#eval/#cost/#arch/#notes）落地时要滚到的段落 */
+  const [pendingAnchor, setPendingAnchor] = React.useState<string | null>(
+    () => resolveHash(window.location.hash).anchor ?? null,
+  );
 
+  // 旧 hash 重定向：README / PDF 里已经放出去的 6 个链接必须继续可用。
+  // 命中旧 hash 时改写成新页签 hash（用 replaceState，不污染前进后退），并滚到对应段落。
   React.useEffect(() => {
-    const onHash = (): void => setTab(tabFromHash());
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+    const apply = (): void => {
+      const r = resolveHash(window.location.hash);
+      setTab(r.tab);
+      setPendingAnchor(r.anchor ?? null);
+      if (r.legacy) {
+        window.history.replaceState(null, '', `#${r.tab}`);
+      }
+    };
+    apply();
+    window.addEventListener('hashchange', apply);
+    return () => window.removeEventListener('hashchange', apply);
   }, []);
 
-  const goTab = React.useCallback((id: TabId): void => {
-    window.location.hash = `#${id}`;
+  // 产物加载完、DOM 渲染出来之后再滚（否则目标段落还不存在）
+  React.useEffect(() => {
+    if (!art || !pendingAnchor) return;
+    scrollToAnchor(pendingAnchor);
+    setPendingAnchor(null);
+  }, [art, pendingAnchor]);
+
+  const goTab = React.useCallback((id: TabId, anchor?: string): void => {
+    window.history.replaceState(null, '', `#${id}`);
     setTab(id);
+    if (anchor) setPendingAnchor(anchor);
+    else window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const [briefIdx, setBriefIdx] = React.useState(0);
@@ -202,7 +212,10 @@ export default function App(): React.ReactElement {
 
   const c = art.consistency;
   const diffCount = c ? c.verdict.diff_count : null;
-  const savedTotal = (art.audit?.counterfactual_value_audit?.totals?.saved_usd ?? null) as number | null;
+  // 页头的「少浪费」一律用 12 种子稳健口径（21.5% ± 13.7%）。
+  // 原来挂的单次实测 $79,719（−32.5%）是 12 个种子里第 2 高的观测、落在均值 95% CI 之外，
+  // README 已明说它偏乐观约 50%，页头不该挂一个自己都不信的数字。
+  const savedRobust = robustSaved(art);
 
   return (
     <div className="min-h-screen">
@@ -248,9 +261,11 @@ export default function App(): React.ReactElement {
                   {int0(art.manifest.dataset.n)} 达人 · 合成数据
                 </Badge>
               </Hint>
-              {savedTotal !== null && (
-                <Hint text="以 ground truth 为裁判，对照「按粉丝量降序买」的反事实审计结果（三个 campaign 合计，其中 BRIEF-002 为负，未剔除）">
-                  <Badge className="border-live-200 bg-live-50 text-live-700">少浪费 {usd0(savedTotal)}</Badge>
+              {savedRobust && (
+                <Hint text={`以 ground truth 为裁判、对照「按粉丝量降序买」的反事实审计，跨 12 个种子聚合：少浪费占预算 mean ± std = ${pct1(savedRobust.mean)} ± ${pct1(savedRobust.std)}，95% CI 12.8%~30.2%，1/12 个种子跑输基线。定稿单种子的 −32.5%（$79,719）落在这个 CI 之外、偏乐观约 50%，所以页头不挂它。`}>
+                  <Badge className="border-live-200 bg-live-50 text-live-700">
+                    少浪费占预算 {pct1(savedRobust.mean)} ± {pct1(savedRobust.std)} · 12 种子
+                  </Badge>
                 </Hint>
               )}
               <Hint text="页面上任何数字要么来自 public/data 下的产物 JSON，要么由 TS 引擎在你的浏览器里现算，没有第三种来源。">
@@ -259,71 +274,70 @@ export default function App(): React.ReactElement {
             </div>
           </div>
 
-          {/* Tabs */}
-          <nav className="mt-2.5 flex gap-1 overflow-x-auto pb-0.5">
-            {TABS.map((t, i) => {
-              const Icon = t.icon;
-              const active = tab === t.id;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => goTab(t.id)}
-                  className={`group flex shrink-0 items-center gap-2 rounded-lg border px-3 py-1.5 transition-all ${
-                    active
-                      ? 'border-live-300 bg-live-50 text-live-700 shadow-lift'
-                      : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-800'
-                  }`}
-                >
-                  <span className="num text-[10px] opacity-60">{['①', '②', '③', '④', '⑤', '⑥'][i]}</span>
-                  <Icon size={13} />
-                  <span className="text-[12px] font-medium">{t.label}</span>
-                  <span className={`hidden text-[10px] xl:inline ${active ? 'text-live-700' : 'text-slate-500'}`}>
-                    {t.desc}
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
+          {/* Tabs：图标 + 名称 + 一句话说明，功能导向命名 */}
+          <TabBar tab={tab} onGo={goTab} />
         </div>
       </header>
 
       {/* ================= Body ================= */}
       <main className="mx-auto max-w-[1560px] px-4 py-4">
+        {/* Hero 只在默认页签占地方；切走后收成一条 slim bar */}
+        <div className="mb-3">
+          {tab === DEFAULT_TAB ? (
+            <Hero art={art} onGo={goTab} />
+          ) : (
+            <HeroSlimBar art={art} onBack={() => goTab(DEFAULT_TAB)} />
+          )}
+        </div>
         <div key={tab} className="animate-fade-up">
           {/* 页签级错误边界：渲染异常只退化成一张错误卡片，绝不把 root 清空成白屏。 */}
           <TabErrorBoundary tab={tab}>
-          {tab === 'console' && (
-            <ConsoleTab
-              briefs={art.briefs}
-              briefIdx={briefIdx}
-              onBrief={setBriefIdx}
-              result={result}
-              stages={stages}
-              running={running}
-              liveStage={liveStage}
-              koxById={koxById}
-              includeReview={includeReview}
-              onIncludeReview={setIncludeReview}
-              decay={decay}
-              onDecay={setDecay}
-              onRerun={() => setRunToken((x) => x + 1)}
-              datasetN={art.manifest.dataset.n}
-              loadMs={art.loadMs}
-              koxBytes={art.bytes.kox}
-            />
+          {tab === 'run' && (
+            <div className="space-y-6">
+              <SectionBlock
+                id={SECTION.briefInput}
+                step="第 1 步"
+                title="输入 brief，看它怎么一层层筛人"
+                question="一句话需求 → A1–A6 的执行轨迹，每一阶段都在你浏览器里现算"
+              >
+                <ConsoleTab
+                  briefs={art.briefs}
+                  briefIdx={briefIdx}
+                  onBrief={setBriefIdx}
+                  result={result}
+                  stages={stages}
+                  running={running}
+                  liveStage={liveStage}
+                  koxById={koxById}
+                  includeReview={includeReview}
+                  onIncludeReview={setIncludeReview}
+                  decay={decay}
+                  onDecay={setDecay}
+                  onRerun={() => setRunToken((x) => x + 1)}
+                  datasetN={art.manifest.dataset.n}
+                  loadMs={art.loadMs}
+                  koxBytes={art.bytes.kox}
+                />
+              </SectionBlock>
+              <SectionBlock
+                id={SECTION.roster}
+                step="第 2 步"
+                title="拿到名单与预算，并与「凭粉丝量选人」对照"
+                question="选谁、每人花多少、为什么；以及比行业朴素基线少浪费多少钱"
+              >
+                <DecisionTab
+                  result={result}
+                  koxById={koxById}
+                  budgetArtifact={art.budget}
+                  auditArtifact={art.audit}
+                  metricsArtifact={art.metrics}
+                  includeReview={includeReview}
+                  decay={decay}
+                />
+              </SectionBlock>
+            </div>
           )}
-          {tab === 'decision' && (
-            <DecisionTab
-              result={result}
-              koxById={koxById}
-              budgetArtifact={art.budget}
-              auditArtifact={art.audit}
-              metricsArtifact={art.metrics}
-              includeReview={includeReview}
-              decay={decay}
-            />
-          )}
-          {tab === 'eval' && (
+          {tab === 'proof' && (
             <EvaluationTab
               metrics={art.metrics}
               report={evalReport}
@@ -345,16 +359,30 @@ export default function App(): React.ReactElement {
               multiseed={art.multiseed}
             />
           )}
-          {tab === 'arch' && (
-            <ArchitectureTab
-              manifest={art.manifest}
-              consistency={art.consistency}
-              result={result}
-              thresholdsMeta={art.manifest.thresholds_meta}
-            />
-          )}
-          {tab === 'notes' && (
-            <NotesTab promptBench={art.promptBench} audit={art.audit} metrics={art.metrics} multiseed={art.multiseed} />
+          {tab === 'build' && (
+            <div className="space-y-6">
+              <SectionBlock
+                id={SECTION.arch}
+                step="怎么搭的"
+                title="六个 Agent 的编排与 Python / TS 双实现一致性"
+                question="谁调谁、阈值从哪来、两套实现如何逐条比对到 0 差异"
+              >
+                <ArchitectureTab
+                  manifest={art.manifest}
+                  consistency={art.consistency}
+                  result={result}
+                  thresholdsMeta={art.manifest.thresholds_meta}
+                />
+              </SectionBlock>
+              <SectionBlock
+                id={SECTION.notes}
+                step="踩过的坑"
+                title="我自己抓到并修掉的问题"
+                question="哪些结论被我自己的数据推翻了，哪些边界至今没解决"
+              >
+                <NotesTab promptBench={art.promptBench} audit={art.audit} metrics={art.metrics} multiseed={art.multiseed} />
+              </SectionBlock>
+            </div>
           )}
           </TabErrorBoundary>
         </div>

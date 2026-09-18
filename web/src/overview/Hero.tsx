@@ -1,0 +1,246 @@
+import React from 'react';
+import { ArrowRight, FileText, ListChecks, ShieldCheck, Sparkles } from 'lucide-react';
+import { TruthChip } from '../components/ui';
+import { fixed, int0 } from '../lib/format';
+import type { Artifacts } from '../lib/artifacts';
+import type { TabId } from './nav';
+import { SECTION } from './nav';
+
+/**
+ * 首屏「这是什么」区块。
+ *
+ * 为什么需要它：改版前落地页第一屏是 brief 选择器 + 6 张日志卡，
+ * 没有任何地方回答「这东西是干嘛的、输入什么、输出什么、凭什么可信」。
+ * 评审只有 3 分钟，第一屏必须自己把这四件事说完。
+ *
+ * 纪律：这里所有数字都从已加载的产物里取（multiseed / metrics / manifest / consistency），
+ * 不写死；取不到就显示「—」，绝不给占位数字。
+ * 「少浪费」一律用 **12 种子稳健区间**（21.5% ± 13.7%），
+ * 不用单次实测的 32.5%——README 明确说过单次值偏乐观。
+ */
+
+type Loose = Record<string, unknown>;
+
+function num(x: unknown): number | null {
+  return typeof x === 'number' && Number.isFinite(x) ? x : null;
+}
+
+/** 12 种子稳健区间：少浪费占预算 mean ± std。 */
+export function robustSaved(art: Artifacts): { mean: number; std: number } | null {
+  const a = (art.multiseed as Loose | null)?.['A_value_robustness'] as Loose | undefined;
+  const s = a?.['saved_share_of_budget'] as Loose | undefined;
+  const mean = num(s?.['mean']);
+  const std = num(s?.['std']);
+  if (mean === null || std === null) return null;
+  return { mean, std };
+}
+
+function Step({
+  n,
+  title,
+  body,
+  tone,
+}: {
+  n: string;
+  title: string;
+  body: string;
+  tone: 'in' | 'mid' | 'out';
+}) {
+  const cls =
+    tone === 'in'
+      ? 'border-slate-300 bg-white'
+      : tone === 'mid'
+        ? 'border-brand-200 bg-brand-50'
+        : 'border-emerald-200 bg-emerald-50';
+  return (
+    <div className={`flex-1 rounded-xl border px-3 py-2.5 ${cls}`}>
+      <div className="flex items-center gap-1.5">
+        <span className="num chip border-transparent bg-white/80 text-slate-500">{n}</span>
+        <span className="text-[13px] font-semibold text-slate-900">{title}</span>
+      </div>
+      <div className="muted mt-1 leading-snug">{body}</div>
+    </div>
+  );
+}
+
+function BigStat({
+  value,
+  unit,
+  label,
+  note,
+  tone = 'brand',
+}: {
+  value: string;
+  unit?: string;
+  label: string;
+  note?: string;
+  tone?: 'brand' | 'live' | 'emerald' | 'slate';
+}) {
+  const color =
+    tone === 'live'
+      ? 'text-live-700'
+      : tone === 'emerald'
+        ? 'text-emerald-600'
+        : tone === 'slate'
+          ? 'text-slate-900'
+          : 'text-brand-700';
+  return (
+    <div className="subcard px-3.5 py-3">
+      <div className={`num text-[36px] font-semibold leading-none ${color}`}>{value}</div>
+      {unit && <div className="num mt-1 text-[13px] font-medium text-slate-600">{unit}</div>}
+      <div className="mt-1.5 text-[12.5px] font-medium text-slate-800">{label}</div>
+      {note && <div className="muted mt-0.5 leading-snug">{note}</div>}
+    </div>
+  );
+}
+
+export function Hero({
+  art,
+  onGo,
+}: {
+  art: Artifacts;
+  onGo: (tab: TabId, anchor?: string) => void;
+}): React.ReactElement {
+  const saved = robustSaved(art);
+  const m = (art.metrics as Loose | null) ?? null;
+  const t1 = (m?.['table_1_fraud_detection'] as Loose | undefined) ?? undefined;
+  const strict = (t1?.['strict'] as Loose | undefined) ?? undefined;
+  const f1 = num(strict?.['f1']);
+  const auc = num(t1?.['auc']);
+  const diff = art.consistency ? art.consistency.verdict.diff_count : null;
+  const n = art.manifest.dataset.n;
+
+  const guides: Array<{ tab: TabId; anchor?: string; k: string; text: string }> = [
+    { tab: 'run', anchor: SECTION.briefInput, k: '先看这个', text: '投放决策：换个 brief，看名单和预算怎么变' },
+    { tab: 'proof', k: '再看这个', text: '效果验证：它准不准、弱在哪' },
+    { tab: 'build', anchor: SECTION.arch, k: '想抠实现', text: '工程实现：双实现一致性 + 13 条踩坑' },
+  ];
+
+  return (
+    <section className="card overflow-hidden">
+      <div className="flex flex-col gap-5 px-5 py-5 xl:flex-row xl:gap-7">
+        {/* 左：定位 + 三步 + 可信性 */}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="chip border-brand-200 bg-brand-50 text-brand-700">
+              <Sparkles size={11} /> 出海达人营销 · 投前决策智能体
+            </span>
+            <TruthChip kind="rule" />
+            <TruthChip kind="synthetic" />
+          </div>
+
+          <h2 className="mt-3 text-[24px] font-semibold leading-tight tracking-tight text-slate-900">
+            把<b className="text-brand-700">一句话投放 brief</b>，变成一份可执行、可追责、
+            <br className="hidden lg:block" />
+            带预算分配和风险证据链的<b className="text-brand-700">达人投放清单</b>。
+          </h2>
+          <p className="body-text mt-2 max-w-[62ch]">
+            并用可复现的实验说清：这份清单比「凭粉丝量选人」少浪费多少钱，以及这个结论有多稳。
+          </p>
+
+          {/* 三步：吃什么、做什么、吐什么 */}
+          <div className="mt-4 flex flex-col items-stretch gap-2 lg:flex-row lg:items-center">
+            <Step n="输入" title="一句话 brief" body="“$80k 投中东 3C，要 TikTok 微中腰”——自然语言，不填表单" tone="in" />
+            <ArrowRight size={16} className="mx-auto shrink-0 rotate-90 text-slate-400 lg:rotate-0" />
+            <Step n="处理" title="四层门禁筛人 + 预算分配" body="G0→G3 逐层拒绝 + 带硬约束的预算贪心分配" tone="mid" />
+            <ArrowRight size={16} className="mx-auto shrink-0 rotate-90 text-slate-400 lg:rotate-0" />
+            <Step n="输出" title="可追责的投放清单" body="每人一条：投多少钱、为什么能投 / 为什么被拒，证据可点开" tone="out" />
+          </div>
+
+          {/* 这不是录像 */}
+          <div className="mt-3.5 flex items-start gap-2 rounded-xl border border-live-200 bg-live-50 px-3 py-2.5">
+            <ShieldCheck size={15} className="mt-0.5 shrink-0 text-live-600" />
+            <p className="text-[12.5px] leading-relaxed text-slate-700">
+              <b className="text-live-800">这不是录像。</b>
+              四层门禁在你的浏览器里用 TypeScript 重算一遍，与 Python 实现读同一份阈值表、逐条比对
+              <b className="text-live-800"> {diff === null ? '—' : int0(diff)} 差异</b>
+              ；页面上任何数字要么来自产物 JSON，要么现算，没有第三种来源。
+            </p>
+          </div>
+        </div>
+
+        {/* 右：撑门面的四个数字 */}
+        <div className="shrink-0 xl:w-[430px]">
+          <div className="grid grid-cols-2 gap-2.5">
+            <BigStat
+              value={saved ? `−${(saved.mean * 100).toFixed(1)}%` : '—'}
+              unit={saved ? `± ${(saved.std * 100).toFixed(1)}%` : undefined}
+              label="少浪费占预算（12 种子稳健区间）"
+              note="不用单次实测的 32.5%：那一次偏乐观"
+              tone="brand"
+            />
+            <BigStat
+              value={f1 === null ? '—' : fixed(f1, 2)}
+              unit={auc === null ? undefined : `AUC ${fixed(auc, 2)}`}
+              label="水号识别 F1（严口径）"
+              note="以 ground truth 为裁判，非引擎自评"
+              tone="emerald"
+            />
+            <BigStat
+              value={int0(n)}
+              label="达人在浏览器内实时重算"
+              note="换参数即重跑，实测耗时用 performance.now()"
+              tone="live"
+            />
+            <BigStat
+              value={diff === null ? '—' : int0(diff)}
+              unit="条"
+              label="Python / TS 双实现一致性差异"
+              note="判定级 + 证据链 + 预算三层逐条比对"
+              tone="slate"
+            />
+          </div>
+
+        </div>
+      </div>
+      <div className="border-t border-slate-200 px-5 pb-4 pt-3.5">
+{/* 30 秒看懂：告诉读者点哪 */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2.5">
+            <div className="flex items-center gap-1.5">
+              <ListChecks size={13} className="text-brand-600" />
+              <span className="text-[12.5px] font-semibold text-slate-900">30 秒看懂：按这个顺序点</span>
+            </div>
+            <div className="mt-2 grid gap-1.5 lg:grid-cols-3">
+              {guides.map((g) => (
+                <button
+                  key={g.k + g.tab}
+                  onClick={() => onGo(g.tab, g.anchor)}
+                  className="focusable group flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left transition-colors hover:border-brand-300 hover:bg-brand-50"
+                >
+                  <span className="chip shrink-0 border-brand-200 bg-brand-50 text-brand-700">{g.k}</span>
+                  <span className="min-w-0 flex-1 truncate text-[12.5px] text-slate-700 group-hover:text-slate-900">
+                    {g.text}
+                  </span>
+                  <ArrowRight size={13} className="shrink-0 text-slate-400 group-hover:text-brand-600" />
+                </button>
+              ))}
+            </div>
+          </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * 切到非默认页签后的收窄版：保留「一句话定位 + 稳健口径数字」，
+ * 只占一行，避免 Hero 一直吃掉每个页签的第一屏。
+ */
+export function HeroSlimBar({ art, onBack }: { art: Artifacts; onBack: () => void }): React.ReactElement {
+  const saved = robustSaved(art);
+  return (
+    <div className="card flex flex-wrap items-center gap-x-4 gap-y-1.5 px-4 py-2">
+      <FileText size={13} className="text-brand-600" />
+      <span className="text-[12.5px] text-slate-700">
+        一句话 brief → 四层门禁筛人 + 预算分配 → 可追责的投放清单
+      </span>
+      {saved && (
+        <span className="chip border-brand-200 bg-brand-50 text-brand-700">
+          少浪费占预算 {(saved.mean * 100).toFixed(1)}% ± {(saved.std * 100).toFixed(1)}%（12 种子）
+        </span>
+      )}
+      <button onClick={onBack} className="focusable muted ml-auto underline decoration-dotted hover:text-brand-700">
+        回到「这是什么」
+      </button>
+    </div>
+  );
+}

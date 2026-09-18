@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckCircle2, Database, FileJson, GitCompare, Hash, ShieldCheck, XCircle } from 'lucide-react';
+import { Collapse, Verdict } from '../components/Collapse';
 import { Badge, Hint, KV, Note, Panel, Stat, TruthChip } from '../components/ui';
 import type { ConsistencyReport, Loose, Manifest } from '../lib/artifacts';
 import { compact, fixed, int0, ms, pct1 } from '../lib/format';
@@ -110,13 +111,29 @@ export function ArchitectureTab({
   const parityArms = c?.budget.arms ?? [];
   const armNames = [...new Set(parityArms.map((a) => ARM_LABEL[a.arm] ?? a.arm))];
   const summaryOnlyArms = [...new Set(parityArms.filter((a) => a.per_person_compared === false).map((a) => ARM_LABEL[a.arm] ?? a.arm))];
+  const missingArtifacts = manifest.artifacts.filter((a) => !a.present);
+  const fieldAudit = manifest.field_audit ?? [];
+  const fieldMissing = fieldAudit.filter((f) => !f.present).length;
 
   return (
     <div className="space-y-4">
-      {/* ---- 编排图 ---- */}
-      <Panel
-        title="六个 Agent 的编排与职责边界"
-        subtitle="每个 Agent 的耗时是本次运行的实测值；颜色代表真实性类别，不是装饰"
+      {/* ============ 本页结论 ============ */}
+      <Verdict
+        what="本页在证明：这套系统是怎么搭的，以及「它真的在算，不是放录像」"
+        conclusion={
+          <>
+            一句 brief 依次经过<b className="text-slate-900">六个 Agent</b>：读需求 → 拉候选 → 四层门禁筛人 → 语义适配打分 → 分预算 → 拿真值反过来审计自己，
+            每一步的耗时都是本次运行的实测值。同一套判定规则<b className="text-slate-900">用 Python 和 TypeScript 各写了一遍</b>，
+            对同一份 5,000 人数据逐字段比对（连中文理由都逐字符比）—— 差异 {c ? int0(c.verdict.diff_count) : '—'} 条。
+          </>
+        }
+        tone={c?.status === 'pass' ? 'good' : 'warn'}
+        stats={[
+          { label: 'Agent 编排', value: `${AGENTS.length} 个` },
+          { label: '双实现判定差异', value: c ? `${int0(c.verdict.diff_count)} 条` : '—', tone: c && c.verdict.diff_count === 0 ? 'good' : 'bad' },
+          { label: '逐条比对规模', value: c ? `${int0(c.verdict.matched)} / ${int0(c.verdict.total)}` : '—' },
+          { label: '阈值分组', value: `${int0(Number(thresholdsMeta.n_groups ?? 0))} 组` },
+        ]}
         right={
           <div className="flex flex-wrap items-center gap-1.5">
             <TruthChip kind="rule" />
@@ -124,6 +141,12 @@ export function ArchitectureTab({
             <TruthChip kind="audit" />
           </div>
         }
+      />
+
+      {/* ============ 视觉主体：六 Agent 编排图 ============ */}
+      <Panel
+        title="六个 Agent 的编排与职责边界"
+        subtitle="每个 Agent 的耗时是本次运行的实测值（performance.now()）；颜色代表真实性类别，不是装饰：蓝=纯规则真算，靛=构建期真调 LLM·结果固化，紫=以 gt 为裁判的审计"
       >
         <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
           {AGENTS.map((a, i) => (
@@ -132,13 +155,13 @@ export function ArchitectureTab({
                 <div className="flex items-center gap-1.5">
                   <span className="num text-[11px] font-semibold text-slate-900">{a.id}</span>
                   <span className="text-[11px] text-slate-700">{a.name}</span>
-                  <span className="num ml-auto text-[9.5px] text-slate-500">
+                  <span className="num ml-auto text-[10px] text-slate-500">
                     {stageMs.has(a.id) ? ms(stageMs.get(a.id) as number) : '—'}
                   </span>
                 </div>
                 <div className="mt-1.5 space-y-0.5">
                   {a.io.map((x) => (
-                    <div key={x} className="num text-[9.5px] text-slate-500">
+                    <div key={x} className="num text-[10px] text-slate-500">
                       {x}
                     </div>
                   ))}
@@ -151,35 +174,24 @@ export function ArchitectureTab({
             </div>
           ))}
         </div>
-
-        <div className="mt-3 rounded-xl border border-slate-200 bg-slate-100 p-3">
-          <div className="mb-2 text-[11px] text-slate-600">A3 内部：四层门禁按顺序执行，任一层给出 block 即短路</div>
-          <div className="grid gap-2 sm:grid-cols-4">
-            {[
-              ['G0', '数据完整性', '关键字段缺失 / 低置信度', 2, 'from-slate-100'],
-              ['G1', '真实性', '7 条统计信号识别水号', 7, 'from-rose-100'],
-              ['G2', '一致性', '品类 / 多源 / 语言 / 受众', 6, 'from-amber-100'],
-              ['G3', '品牌安全', '高危硬阻断 / 竞品 / 争议', 5, 'from-fuchsia-100'],
-            ].map(([g, name, desc, n, grad]) => (
-              <div key={String(g)} className={`rounded-lg border border-slate-200 bg-gradient-to-br ${grad} to-transparent px-2.5 py-2`}>
-                <div className="flex items-center gap-1.5">
-                  <span className="num text-[12px] font-semibold text-slate-900">{g}</span>
-                  <span className="text-[11px] text-slate-700">{name}</span>
-                  <span className="num ml-auto text-[10px] text-slate-500">{n} 条规则</span>
-                </div>
-                <div className="muted mt-1">{desc}</div>
-                {result && (
-                  <div className="num mt-1 text-[10px] text-live-700">
-                    本次命中 {int0(result.gateHits[String(g)] ?? 0)} 人
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {[
+            ['G0', '数据完整性', 2],
+            ['G1', '真实性', 7],
+            ['G2', '一致性', 6],
+            ['G3', '品牌安全', 5],
+          ].map(([g, name, n]) => (
+            <Badge key={String(g)} className="border-slate-300 text-slate-700">
+              <span className="num mr-1 font-semibold text-slate-900">{g}</span>
+              {name} · {n} 条
+              {result && <span className="num ml-1 text-live-700">命中 {int0(result.gateHits[String(g)] ?? 0)} 人</span>}
+            </Badge>
+          ))}
+          <span className="muted">A3 内部：四层按顺序执行，任一层给出 block 即短路（展开下面「四层门禁」看每层管什么）</span>
         </div>
       </Panel>
 
-      {/* ---- 一致性面板 ---- */}
+      {/* ============ 视觉主体：双实现一致性（留在上层） ============ */}
       <Panel
         title="双实现一致性：同一份阈值下，TS 与 Python 判定完全相同"
         subtitle={
@@ -244,12 +256,58 @@ export function ArchitectureTab({
                 }其余臂含 selected[] 逐条金额/posts/顺序、约束检查与 trace 中文措辞逐字符。`}
               />
             </div>
+            <Note tone="good">
+              <GitCompare size={11} className="mr-1 inline" />
+              为什么要做双实现？因为"前端把后端算过的结果画出来"证明不了引擎正确。TS 侧只读 Python 落盘的 thresholds.json、
+              不做任何再标定，然后对 5,000 条数据逐字段（含中文 human_text 逐字符）比对 —— 任何一处口径写歪都会立刻变成非零差异。
+            </Note>
+          </>
+        ) : (
+          <Note tone="warn">consistency.json 缺失：请运行 npm run verify 生成。本板块不显示任何替代数字。</Note>
+        )}
+      </Panel>
 
-            <div className="mt-3 grid gap-3 lg:grid-cols-[1.1fr_1fr]">
-              <div>
-                <div className="muted mb-1.5">
-                  {int0((c.budget.arms ?? []).length)} 个分配臂逐项核对（读 consistency.json 的 arms 数组）
+      {/* ============ 明细全部折叠 ============ */}
+      <Panel title="工程明细（可逐项核对，默认收起）" subtitle="四层门禁、逐臂核对、数据流与真值边界、产物 sha256 清单、字段自检、性能账" bodyClass="space-y-2">
+        <Collapse
+          flag="detail"
+          count={4}
+          title="A3 四层门禁分别管什么：G0 数据完整性 2 条 / G1 真实性 7 条 / G2 一致性 6 条 / G3 品牌安全 5 条，任一层 block 即短路"
+          hint="本次运行每层命中人数由浏览器现算"
+        >
+          <div className="grid gap-2 sm:grid-cols-4">
+            {[
+              ['G0', '数据完整性', '关键字段缺失 / 低置信度', 2, 'from-slate-100'],
+              ['G1', '真实性', '7 条统计信号识别水号', 7, 'from-rose-100'],
+              ['G2', '一致性', '品类 / 多源 / 语言 / 受众', 6, 'from-amber-100'],
+              ['G3', '品牌安全', '高危硬阻断 / 竞品 / 争议', 5, 'from-fuchsia-100'],
+            ].map(([g, name, desc, n, grad]) => (
+              <div key={String(g)} className={`rounded-lg border border-slate-200 bg-gradient-to-br ${grad} to-transparent px-2.5 py-2`}>
+                <div className="flex items-center gap-1.5">
+                  <span className="num text-[12px] font-semibold text-slate-900">{g}</span>
+                  <span className="text-[11px] text-slate-700">{name}</span>
+                  <span className="num ml-auto text-[10px] text-slate-500">{n} 条规则</span>
                 </div>
+                <div className="muted mt-1">{desc}</div>
+                {result && (
+                  <div className="num mt-1 text-[10px] text-live-700">
+                    本次命中 {int0(result.gateHits[String(g)] ?? 0)} 人
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </Collapse>
+
+        {c && (
+          <Collapse
+            flag="evidence"
+            count={(c.budget.arms ?? []).length}
+            title={`${int0((c.budget.arms ?? []).length)} 个分配臂逐项核对：人数/条数、花费、CPM 全部逐字段比对，外加阈值文件版本与数据集 sha256`}
+            hint="读 consistency.json 的 arms 数组；含 Python 侧只落摘要的臂的说明与产物自带的诚实声明"
+          >
+            <div className="grid gap-3 lg:grid-cols-[1.1fr_1fr]">
+              <div>
                 <table className="w-full">
                   <thead>
                     <tr>
@@ -268,7 +326,7 @@ export function ArchitectureTab({
                         <td className="td text-[11px] text-slate-600">
                           {ARM_LABEL[a.arm] ?? a.arm}
                           {a.per_person_compared === false && (
-                            <span className="ml-1 text-[10px] text-amber-600/90" title="Python 侧只落摘要（无逐人明细），本臂只比摘要标量、约束检查与 trace">
+                            <span className="ml-1 text-[10px] text-amber-700" title="Python 侧只落摘要（无逐人明细），本臂只比摘要标量、约束检查与 trace">
                               仅摘要
                             </span>
                           )}
@@ -309,21 +367,15 @@ export function ArchitectureTab({
                 </div>
               </div>
             </div>
-
-            <Note tone="good">
-              <GitCompare size={11} className="mr-1 inline" />
-              为什么要做双实现？因为"前端把后端算过的结果画出来"证明不了引擎正确。TS 侧只读 Python 落盘的 thresholds.json、
-              不做任何再标定，然后对 5,000 条数据逐字段（含中文 human_text 逐字符）比对 —— 任何一处口径写歪都会立刻变成非零差异。
-            </Note>
-          </>
-        ) : (
-          <Note tone="warn">consistency.json 缺失：请运行 npm run verify 生成。本板块不显示任何替代数字。</Note>
+          </Collapse>
         )}
-      </Panel>
 
-      {/* ---- 数据流 & 产物清单 ---- */}
-      <div className="grid gap-3 lg:grid-cols-[1fr_1.15fr]">
-        <Panel title="数据流与真值边界" subtitle="谁能读 gt、谁不能，在架构上就分开了">
+        <Collapse
+          flag="evidence"
+          count={6}
+          title="数据流与真值边界：谁能读 gt、谁不能，在架构上就分开了（门禁/预算/LLM 三层由一条 AST 静态扫描测试守着，一次 gt 访问都不许有）"
+          hint="datagen → Python 标定 → Python 判定/预算/审计 → 构建期 LLM runner → prepare-data → 浏览器 TS 引擎"
+        >
           <div className="space-y-2">
             {[
               ['datagen（固定种子）', 'data/kox_5000.json', '合成 5,000 达人 + gt 块；问题注入只改可观测信号的统计偏移', 'border-slate-200'],
@@ -335,8 +387,8 @@ export function ArchitectureTab({
             ].map(([stage, out, desc, border]) => (
               <div key={String(stage)} className={`rounded-lg border ${border} bg-slate-50 px-2.5 py-2`}>
                 <div className="flex flex-wrap items-baseline gap-1.5">
-                  <span className="text-[11.5px] font-medium text-slate-800">{stage}</span>
-                  <span className="num text-[10px] text-live-600">→ {out}</span>
+                  <span className="text-[12px] font-medium text-slate-800">{stage}</span>
+                  <span className="num text-[11px] text-live-600">→ {out}</span>
                 </div>
                 <div className="muted mt-0.5">{desc}</div>
               </div>
@@ -347,17 +399,17 @@ export function ArchitectureTab({
             门禁 / 预算 / LLM 三层源码里不允许出现对 gt、true_categories、is_fraud 的任何访问，由一条 AST 静态扫描测试守着。
             只有评测与审计可以读 gt，且必须用它当裁判而不是当特征。
           </Note>
-        </Panel>
+        </Collapse>
 
-        <Panel
-          title="前端消费的产物清单"
-          subtitle="每个产物都记录了来源文件、字节数与 sha256，可逐个核对"
-          right={<Badge className="border-slate-300 text-slate-600"><Hash size={10} className="mr-1" />manifest.json</Badge>}
-          bodyClass="px-0 py-0"
+        <Collapse
+          flag="detail"
+          count={manifest.artifacts.length}
+          title={`前端消费的产物清单：${manifest.artifacts.length} 个产物逐个记录来源文件、源/上线字节数与 sha256${missingArtifacts.length > 0 ? `，其中 ${missingArtifacts.length} 个未生成（照实标黄，不用占位数字冒充）` : '，全部在位'}`}
+          hint="manifest.json 由 prepare-data.mjs 生成；上线数据合计体积见下面的数据集元信息"
         >
           <div className="max-h-[420px] overflow-auto">
             <table className="w-full">
-              <thead className="sticky top-0 bg-white backdrop-blur">
+              <thead className="sticky top-0 bg-white">
                 <tr className="hairline">
                   <th className="th">产物</th>
                   <th className="th">来源</th>
@@ -373,17 +425,17 @@ export function ArchitectureTab({
                       {a.key}
                       {a.note && (
                         <Hint text={a.note}>
-                          <span className="ml-1 text-[9px] text-live-600">ⓘ</span>
+                          <span className="ml-1 text-[10px] text-live-600">ⓘ</span>
                         </Hint>
                       )}
                     </td>
-                    <td className="td num text-[10px] text-slate-500">{a.source}</td>
-                    <td className="td num text-right text-[10.5px]">
+                    <td className="td num text-[11px] text-slate-500">{a.source}</td>
+                    <td className="td num text-right text-[11px]">
                       {a.source_bytes ? `${(a.source_bytes / 1024).toFixed(0)}K` : '—'}
                       <span className="mx-1 text-slate-500">→</span>
                       {a.shipped_bytes ? `${(a.shipped_bytes / 1024).toFixed(0)}K` : '—'}
                     </td>
-                    <td className="td num text-[10px] text-slate-500" title={a.source_sha256 ?? ''}>
+                    <td className="td num text-[11px] text-slate-500" title={a.source_sha256 ?? ''}>
                       {(a.source_sha256 ?? '').slice(0, 10) || '—'}
                     </td>
                     <td className="td text-center">
@@ -400,38 +452,8 @@ export function ArchitectureTab({
               </tbody>
             </table>
           </div>
-          {(manifest.field_audit ?? []).length > 0 && (
-            <div className="border-t border-slate-300 px-4 py-2.5">
-              <div className="muted mb-1.5">
-                关键字段在位自检（prepare-data 对可选产物<b className="text-slate-600">整份原样搬运、不做字段白名单</b>，
-                所以 Python 侧新增字段会自动到前端；这里只核对页面上重口径结论依赖的字段是否真的在）
-              </div>
-              <div className="grid gap-1 lg:grid-cols-2">
-                {(manifest.field_audit ?? []).map((f) => (
-                  <div
-                    key={`${f.artifact}.${f.path}`}
-                    className={`flex items-start gap-1.5 rounded-lg border px-2 py-1.5 ${
-                      f.present ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'
-                    }`}
-                  >
-                    {f.present ? (
-                      <CheckCircle2 size={11} className="mt-[2px] shrink-0 text-emerald-600" />
-                    ) : (
-                      <XCircle size={11} className="mt-[2px] shrink-0 text-rose-600" />
-                    )}
-                    <div className="min-w-0">
-                      <div className="num truncate text-[10px] text-slate-600">
-                        {f.artifact}.{f.path}
-                      </div>
-                      <div className="muted">{f.what}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
           {(manifest.warnings ?? []).length > 0 && (
-            <div className="border-t border-slate-300 px-4 py-2">
+            <div className="mt-2 space-y-1.5">
               {(manifest.warnings ?? []).map((w) => (
                 <Note key={w} tone="warn">
                   {w}
@@ -439,75 +461,121 @@ export function ArchitectureTab({
               ))}
             </div>
           )}
-        </Panel>
-      </div>
+        {fieldAudit.length > 0 && (
+          <>
+            <div className="mt-3 text-[12px] font-medium text-slate-800">
+              关键字段在位自检：{fieldAudit.length} 个字段
+              {fieldMissing > 0 ? `，其中 ${fieldMissing} 个缺失` : '，全部在位'}
+            </div>
+            <div className="muted mb-1.5">
+              prepare-data 对可选产物<b className="text-slate-600">整份原样搬运、不做字段白名单</b>，
+              所以 Python 侧新增字段会自动到前端；这里只核对页面上重口径结论依赖的字段是否真的在。
+            </div>
+            <div className="grid gap-1 lg:grid-cols-2">
+              {fieldAudit.map((f) => (
+                <div
+                  key={`${f.artifact}.${f.path}`}
+                  className={`flex items-start gap-1.5 rounded-lg border px-2 py-1.5 ${
+                    f.present ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'
+                  }`}
+                >
+                  {f.present ? (
+                    <CheckCircle2 size={11} className="mt-[2px] shrink-0 text-emerald-600" />
+                  ) : (
+                    <XCircle size={11} className="mt-[2px] shrink-0 text-rose-600" />
+                  )}
+                  <div className="min-w-0">
+                    <div className="num truncate text-[11px] text-slate-600">
+                      {f.artifact}.{f.path}
+                    </div>
+                    <div className="muted">{f.what}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        </Collapse>
 
-      {/* ---- 数据集与阈值元信息 ---- */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat
-          label="数据集"
-          value={`${int0(manifest.dataset.n)} 人`}
-          hint={`版本 ${manifest.dataset.version} · 种子 ${manifest.dataset.seed} · sha256 ${manifest.dataset.sha256.slice(0, 10)}…`}
-          icon={<Database size={11} />}
-        />
-        <Stat
-          label="gt 判定分布"
-          value={`${manifest.dataset.gt_verdict_counts.pass} / ${manifest.dataset.gt_verdict_counts.review} / ${manifest.dataset.gt_verdict_counts.reject}`}
-          hint="pass / review / reject（库级判定，与门禁输出对比见评测页）"
-        />
-        <Stat
-          label="阈值分组"
-          value={`${int0(Number(thresholdsMeta.n_groups ?? 0))} 组`}
-          hint={`platform × follower_bucket；样本不足的格子回退 ${int0(Number(thresholdsMeta.n_fallback_cells ?? 0))} 个（platform → global）`}
-          icon={<FileJson size={11} />}
-        />
-        <Stat
-          label="上线数据体积"
-          value={`${(manifest.artifacts.reduce((a, x) => a + (x.shipped_bytes ?? 0), 0) / 1048576).toFixed(2)} MB`}
-          hint="全部产物合计（含 5,000 条达人明细）；前端把它们全量读进内存后现算"
-          tone="accent"
-        />
-      </div>
-
-      <Panel title="注入率核对：数据生成器声明 vs 实际落盘" subtitle="连「注入了多少」都不靠记忆，直接读 manifest">
-        <div className="flex flex-wrap gap-1.5">
-          {Object.entries(manifest.dataset.injection_actual_rates).map(([k, v]) => (
-            <Badge key={k} className="border-slate-300 text-slate-700">
-              {k}
-              <span className="num ml-1 text-slate-900">{pct1(Number(v), 1)}</span>
-            </Badge>
-          ))}
-        </div>
-        <Note>
-          水号相关注入合计 {pct1(
-            ['bought_followers', 'engagement_pod', 'bot_comments', 'view_inflation'].reduce(
-              (a, k) => a + Number(manifest.dataset.injection_actual_rates[k] ?? 0),
-              0,
-            ),
-          )}
-          ，与评测页的 gt 水号占比一致；标签错配 {pct1(Number(manifest.dataset.injection_actual_rates.tag_mismatch ?? 0))}、
-          多源冲突 {pct1(Number(manifest.dataset.injection_actual_rates.source_conflict ?? 0))} 是 G2 的主要压力来源。
-        </Note>
-      </Panel>
-
-      {result && (
-        <Panel title="本次运行的性能账" subtitle="全部为 performance.now() 实测，不是估算">
-          <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
-            {result.stages.map((s) => (
-              <div key={s.id} className="card px-2.5 py-2">
-                <div className="num text-[10px] text-slate-500">{s.id}</div>
-                <div className="num text-[15px] text-slate-900">{ms(s.elapsedMs)}</div>
-                <div className="muted">{int0(s.items)} 条</div>
-              </div>
+        <Collapse
+          flag="detail"
+          count={Object.keys(manifest.dataset.injection_actual_rates).length}
+          title={`数据集与阈值元信息 + 注入率核对：连「注入了多少水号」都不靠记忆，直接读 manifest（数据集 ${int0(manifest.dataset.n)} 人 · 种子 ${manifest.dataset.seed} · sha256 ${manifest.dataset.sha256.slice(0, 10)}…）`}
+          hint="声明注入率 vs 实际落盘比率逐类对照；阈值分组与回退格子数同页"
+        >
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <Stat
+              label="数据集"
+              value={`${int0(manifest.dataset.n)} 人`}
+              hint={`版本 ${manifest.dataset.version} · 种子 ${manifest.dataset.seed} · sha256 ${manifest.dataset.sha256.slice(0, 10)}…`}
+              icon={<Database size={11} />}
+            />
+            <Stat
+              label="gt 判定分布"
+              value={`${manifest.dataset.gt_verdict_counts.pass} / ${manifest.dataset.gt_verdict_counts.review} / ${manifest.dataset.gt_verdict_counts.reject}`}
+              hint="pass / review / reject（库级判定，与门禁输出对比见评测页）"
+            />
+            <Stat
+              label="阈值分组"
+              value={`${int0(Number(thresholdsMeta.n_groups ?? 0))} 组`}
+              hint={`platform × follower_bucket；样本不足的格子回退 ${int0(Number(thresholdsMeta.n_fallback_cells ?? 0))} 个（platform → global）`}
+              icon={<FileJson size={11} />}
+            />
+            <Stat
+              label="上线数据体积"
+              value={`${(manifest.artifacts.reduce((a, x) => a + (x.shipped_bytes ?? 0), 0) / 1048576).toFixed(2)} MB`}
+              hint="全部产物合计（含 5,000 条达人明细）；前端把它们全量读进内存后现算"
+              tone="accent"
+            />
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {Object.entries(manifest.dataset.injection_actual_rates).map(([k, v]) => (
+              <Badge key={k} className="border-slate-300 text-slate-700">
+                {k}
+                <span className="num ml-1 text-slate-900">{pct1(Number(v), 1)}</span>
+              </Badge>
             ))}
+            <Badge className="border-slate-300 text-slate-600">
+              <Hash size={10} className="mr-1" />
+              manifest.json
+            </Badge>
           </div>
           <Note>
-            端到端 {ms(result.totalMs)}：其中门禁 {ms(result.stages.find((s) => s.id === 'A3')?.elapsedMs ?? 0)}（
-            {int0(result.pool.length)} 人 × 20 条规则），预算分配 {ms(result.stages.find((s) => s.id === 'A5')?.elapsedMs ?? 0)}
-            （含两臂 + 约束修正）。整份数据集 {compact(manifest.dataset.n)} 条全量在浏览器内存里，没有分页请求后端。
+            水号相关注入合计 {pct1(
+              ['bought_followers', 'engagement_pod', 'bot_comments', 'view_inflation'].reduce(
+                (a, k) => a + Number(manifest.dataset.injection_actual_rates[k] ?? 0),
+                0,
+              ),
+            )}
+            ，与评测页的 gt 水号占比一致；标签错配 {pct1(Number(manifest.dataset.injection_actual_rates.tag_mismatch ?? 0))}、
+            多源冲突 {pct1(Number(manifest.dataset.injection_actual_rates.source_conflict ?? 0))} 是 G2 的主要压力来源。
           </Note>
-        </Panel>
-      )}
+        </Collapse>
+
+        {result && (
+          <Collapse
+            flag="evidence"
+            count={result.stages.length}
+            title={`本次运行的性能账：端到端 ${ms(result.totalMs)}，六个阶段逐个计时（performance.now() 实测，不是估算）`}
+            hint={`整份数据集 ${compact(manifest.dataset.n)} 条全量在浏览器内存里，没有分页请求后端`}
+          >
+            <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+              {result.stages.map((s) => (
+                <div key={s.id} className="card px-2.5 py-2">
+                  <div className="num text-[11px] text-slate-500">{s.id}</div>
+                  <div className="num text-[15px] text-slate-900">{ms(s.elapsedMs)}</div>
+                  <div className="muted">{int0(s.items)} 条</div>
+                </div>
+              ))}
+            </div>
+            <Note>
+              端到端 {ms(result.totalMs)}：其中门禁 {ms(result.stages.find((s) => s.id === 'A3')?.elapsedMs ?? 0)}（
+              {int0(result.pool.length)} 人 × 20 条规则），预算分配 {ms(result.stages.find((s) => s.id === 'A5')?.elapsedMs ?? 0)}
+              （含两臂 + 约束修正）。整份数据集 {compact(manifest.dataset.n)} 条全量在浏览器内存里，没有分页请求后端。
+            </Note>
+          </Collapse>
+        )}
+      </Panel>
     </div>
   );
 }

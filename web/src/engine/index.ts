@@ -17,3 +17,5 @@ export * from './g1.ts';
 export * from './g2.ts';
 export * from './g3.ts';
 export * from './engine.ts';
+/** 线上自由输入 brief 的纯规则解析器（额外能力，不参与双实现一致性校验）。 */
+export * from './briefParse.ts';

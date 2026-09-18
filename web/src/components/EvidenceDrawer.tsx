@@ -6,6 +6,7 @@ import type { GateResult, Kox, Reason } from '../engine/types';
 import { CATEGORY_ZH, PLATFORM_LABEL } from '../engine/taxonomy';
 import { ruleLabel } from '../lib/pipeline';
 import { BUCKET_LABEL, VERDICT_COLOR, VERDICT_LABEL, fixed, int0, pct1, usd0 } from '../lib/format';
+import { SERIES } from './palette';
 
 const SEVERITY_LABEL: Record<string, string> = { hard: '硬信号', soft: '软信号', block: '硬阻断' };
 const SEVERITY_CLS: Record<string, string> = {
@@ -36,7 +37,7 @@ function ReasonRow({ r, rank }: { r: Reason; rank: number | null }): React.React
           {SEVERITY_LABEL[r.severity] ?? r.severity}
         </Badge>
         <span className="text-[12px] text-slate-800">{ruleLabel(r.rule_id)}</span>
-        <span className="num ml-auto text-[10px] text-slate-500">
+        <span className="num ml-auto text-[12px] text-slate-600">
           权重 {fixed(r.weight, 2)} · 越界深度 {fixed(r.depth, 3)}
         </span>
       </div>
@@ -51,8 +52,8 @@ function ReasonRow({ r, rank }: { r: Reason; rank: number | null }): React.React
             direction={directionOf(r.signal)}
           />
         ) : (
-          <div className="flex items-baseline justify-between text-[10px]">
-            <span className="text-slate-500">{r.signal}</span>
+          <div className="flex items-baseline justify-between text-[12px]">
+            <span className="text-slate-600">{r.signal}</span>
             <span className="num text-slate-700">
               实际 {typeof r.actual === 'number' ? fixed(r.actual, 4) : (r.actual ?? '—')}
               <span className="mx-1 text-slate-500">vs</span>
@@ -101,12 +102,12 @@ export function EvidenceBody({
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {scoreRows.map(([label, v, hint]) => (
           <div key={label} className="card px-2.5 py-2" title={hint}>
-            <div className="text-[10px] text-slate-500">{label}</div>
+            <div className="text-[12px] text-slate-600">{label}</div>
             <div className="num mt-0.5 text-[15px] text-slate-900">{fixed(v, 4)}</div>
             <div className="mt-1 h-1 overflow-hidden rounded-full bg-slate-100">
               <div
                 className="h-full rounded-full"
-                style={{ width: `${Math.max(0, Math.min(1, v)) * 100}%`, background: '#22d3ee' }}
+                style={{ width: `${Math.max(0, Math.min(1, v)) * 100}%`, background: SERIES.primary }}
               />
             </div>
           </div>
@@ -127,7 +128,7 @@ export function EvidenceBody({
       <div>
         <h4 className="section-title mb-2">
           证据链 · 共 {result.reasons.length} 条规则命中
-          {result.reasons.length === 0 && <span className="ml-2 text-[11px] font-normal text-emerald-600">四层全部无命中</span>}
+          {result.reasons.length === 0 && <span className="ml-2 text-[12px] font-normal text-emerald-700">四层全部无命中</span>}
         </h4>
         <div className="space-y-3">
           {['G0', 'G1', 'G2', 'G3'].map((gate) => {
@@ -135,8 +136,8 @@ export function EvidenceBody({
             return (
               <div key={gate}>
                 <div className="mb-1.5 flex items-center gap-2">
-                  <span className="text-[11px] font-medium text-slate-700">{GATE_TITLE[gate]}</span>
-                  <span className={`num text-[10px] ${rows.length ? 'text-rose-600' : 'text-emerald-600'}`}>
+                  <span className="text-[12.5px] font-medium text-slate-800">{GATE_TITLE[gate]}</span>
+                  <span className={`num text-[12px] ${rows.length ? 'text-rose-700' : 'text-emerald-700'}`}>
                     {rows.length ? `${rows.length} 条命中` : '无命中'}
                   </span>
                 </div>
@@ -182,7 +183,7 @@ export function EvidenceBody({
         </div>
         {kox.audience_geo && (
           <div className="mt-2">
-            <div className="text-[10px] text-slate-500">受众地域</div>
+            <div className="text-[12px] text-slate-600">受众地域</div>
             <div className="mt-1 flex flex-wrap gap-1">
               {Object.entries(kox.audience_geo)
                 .sort((a, b) => b[1] - a[1])
@@ -197,7 +198,7 @@ export function EvidenceBody({
         )}
         {(kox.content_flags ?? []).length > 0 && (
           <div className="mt-2">
-            <div className="text-[10px] text-slate-500">内容风险标记</div>
+            <div className="text-[12px] text-slate-600">内容风险标记</div>
             <div className="mt-1 flex flex-wrap gap-1">
               {(kox.content_flags ?? []).map((f) => (
                 <Badge key={`${f.type}-${f.severity}`} className="border-rose-200 bg-rose-50 text-rose-700">
@@ -209,7 +210,7 @@ export function EvidenceBody({
         )}
         {(kox.past_collabs ?? []).length > 0 && (
           <div className="mt-2">
-            <div className="text-[10px] text-slate-500">历史合作</div>
+            <div className="text-[12px] text-slate-600">历史合作</div>
             <div className="mt-1 flex flex-wrap gap-1">
               {(kox.past_collabs ?? []).map((c) => (
                 <Badge key={`${c.brand}-${c.months_ago}`} className="border-slate-300 text-slate-700">

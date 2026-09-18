@@ -6,31 +6,53 @@
     <title>KOXPilot · 出海达人营销投前决策智能体</title>
     <meta
       name="description"
-      content="浏览器内实时运行四层质量门禁与预算分配：5,000 达人的判定、证据链、预算方案、评测指标与反事实价值审计，全部真算，可逐条复核。"
+      content="把一句话投放 brief 变成可执行、可追责的达人投放清单：四层质量门禁与预算分配在浏览器内对 5,000 达人实时重算，与 Python 实现逐条比对 0 差异。"
     />
+    <meta name="theme-color" content="#f6f8fc" />
     <style>
+      /*
+        注意：这里的底色必须和 src/index.css 里的 body 底色保持一致。
+        踩过的坑：改亮色主题时只改了 index.css 的 `html, body`，
+        漏了这里的 `#root`——而 #root 有 height:100%，
+        结果首屏一整屏仍然是旧的暗色 #05070d，只有滚过一屏才露出亮底。
+      */
       html,
       body,
       #root {
         height: 100%;
         margin: 0;
-        background: #05070d;
+        background: #f6f8fc;
       }
-      /* 首屏骨架：JS 加载期间也不是白屏 */
+      /* 首屏骨架：JS 加载期间也不是空白，且配色要和亮色主题一致 */
       .boot {
         display: flex;
         height: 100%;
         align-items: center;
         justify-content: center;
-        color: #67e8f9;
+        gap: 10px;
+        color: #64748b;
         font-family: system-ui, -apple-system, 'PingFang SC', sans-serif;
-        letter-spacing: 0.18em;
+        letter-spacing: 0.14em;
         font-size: 13px;
+      }
+      .boot i {
+        display: block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid #c7d2fe;
+        border-top-color: #4f46e5;
+        border-radius: 999px;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
     </style>
   </head>
   <body>
-    <div id="root"><div class="boot">KOXPILOT · 加载引擎与数据集…</div></div>
+    <div id="root"><div class="boot"><i></i>KOXPILOT · 加载引擎与数据集…</div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

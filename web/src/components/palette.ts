@@ -113,3 +113,91 @@ export function textOn(bgHexOrRgb: string): string {
   const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return lum > 0.6 ? '#0f172a' : '#ffffff';
 }
+
+/* ------------------------------------------------------------------ */
+/* 亮色改版追加的色位（只追加，不改上面已有的导出名与值）              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 图表骨架的补充色位。
+ * 为什么需要：暗色版里「白色游标 + 白色斜纹 + 白描边」都靠白色做前景，
+ * 亮色下白色变成背景色，这几处必须换成深色/灰色前景。
+ */
+export const CHROME = {
+  /** 压在浅色渐变条上的游标：白底不可见，改深靛蓝 */
+  cursor: '#1e293b',
+  /** 危险/慎用区的斜纹填充线（原为白色半透明） */
+  hatch: 'rgba(100,116,139,0.55)',
+  /** 非激活柱的描边：淡灰而不是淡白 */
+  separatorMuted: 'rgba(148,163,184,0.55)',
+  /** 条形轨道底（原 bg-white/[0.07]） */
+  track: '#e2e8f0',
+} as const;
+
+/**
+ * RankStrip 的三段分位渐变（好→注意→异常）。
+ * 亮色下用各色系 100 档实色，不用蒙版，避免脏。
+ */
+export const RANK_GRADIENT = ['rgba(5,150,105,0.16)', 'rgba(217,119,6,0.18)', 'rgba(225,29,72,0.20)'] as const;
+
+/** 警示角标（! 圆点）：底 + 上面的字。 */
+export const WARN_BADGE = { bg: '#d97706', fg: '#ffffff' } as const;
+
+/**
+ * 暗色遗留色 → 亮色等价色的映射。
+ *
+ * 为什么需要：颜色不只写在 charts.tsx 里，各 tab 也以 props 传入了一批
+ * 暗色主题的霓虹值（`#22d3ee`、`#34d399`、`#fbbf24`、`#f87171` …）。
+ * 这些值在白底上对比度普遍不足（cyan 尤其），但 tab 文件本轮由他人并行改动，
+ * 不能在那边动手。所以在图表入口统一做一次「主题适配」：
+ * 遇到已知的暗色遗留值就换成语义等价的亮色值，未知值原样透传。
+ * 这样既不改数据与语义，也不会在图表里出现读不清的霓虹色。
+ */
+const LIGHT_EQUIV: Record<string, string> = {
+  '#22d3ee': SERIES.secondary, // cyan-400 → live-500
+  '#38bdf8': SERIES.secondary,
+  '#67e8f9': SERIES.secondary,
+  '#34d399': VERDICT.pass,
+  '#4ade80': VERDICT.pass,
+  '#fbbf24': VERDICT.review,
+  '#fcd34d': VERDICT.review,
+  '#f87171': VERDICT.reject,
+  '#fb7185': VERDICT.reject,
+  '#f472b6': '#db2777',
+  '#818cf8': TOKEN.completion,
+  '#c084fc': TOKEN.reasoning,
+  '#a78bfa': TOKEN.reasoning,
+  '#64748b': SERIES.baseline,
+  '#94a3b8': SERIES.baseline,
+  '#e2e8f0': AXIS.axis,
+  '#fff': AXIS.focus,
+  '#ffffff': AXIS.focus,
+};
+
+/** 把可能来自暗色主题的颜色值适配到亮色。未知值原样返回。 */
+export function onLight(color: string | undefined | null): string {
+  if (!color) return SERIES.primary;
+  return LIGHT_EQUIV[color.trim().toLowerCase()] ?? color;
+}
+
+/**
+ * 文字用色的可读性兜底。
+ *
+ * 为什么需要：参考线/图例的文字沿用线条颜色，而线条色里有 slate-400 这类
+ * 在白底上对比度不足（约 2.1:1）的浅色。图形上浅一点没问题，文字不行。
+ * 这里把已知的过浅色替换成同色系深两档的值，其余原样返回。
+ */
+const TEXT_DARKEN: Record<string, string> = {
+  '#94a3b8': '#475569',
+  '#cbd5e1': '#475569',
+  '#bae6fd': '#0369a1',
+  '#7dd3fc': '#0369a1',
+  '#38bdf8': '#0284c7',
+  '#a1a1aa': '#52525b',
+};
+
+/** 取一个在白底上读得清的文字色（先做亮色适配，再做过浅兜底）。 */
+export function readableText(color: string | undefined | null): string {
+  const c = onLight(color);
+  return TEXT_DARKEN[c.trim().toLowerCase()] ?? c;
+}

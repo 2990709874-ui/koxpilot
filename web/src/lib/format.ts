@@ -41,11 +41,12 @@ export const ms = (x: number | null | undefined): string =>
 
 export const VERDICT_LABEL: Record<string, string> = { pass: '直接可投', review: '待人核', reject: '拒绝' };
 export const VERDICT_COLOR: Record<string, string> = {
-  pass: 'text-emerald-600 border-emerald-200 bg-emerald-50',
-  review: 'text-amber-600 border-amber-200 bg-amber-50',
-  reject: 'text-rose-600 border-rose-200 bg-rose-50',
+  pass: 'text-emerald-700 border-emerald-300 bg-emerald-50',
+  review: 'text-amber-700 border-amber-300 bg-amber-50',
+  reject: 'text-rose-700 border-rose-300 bg-rose-50',
 };
-export const VERDICT_HEX: Record<string, string> = { pass: '#34d399', review: '#fbbf24', reject: '#f87171' };
+/** 判定色的 hex 版（图表用）。亮色改版后与 palette.VERDICT 保持一致，白底上对比度足够。 */
+export const VERDICT_HEX: Record<string, string> = { pass: '#059669', review: '#d97706', reject: '#e11d48' };
 
 export const BUCKET_LABEL: Record<string, string> = {
   nano: 'nano 1K–10K',
@@ -80,6 +81,6 @@ export function hashHue(key: string): number {
   return h;
 }
 
-export function catColor(key: string, sat = 62, light = 58): string {
+export function catColor(key: string, sat = 55, light = 58): string {
   return `hsl(${hashHue(key)} ${sat}% ${light}%)`;
 }

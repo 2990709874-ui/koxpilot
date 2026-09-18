@@ -1,8 +1,10 @@
 import React from 'react';
 import { AlertTriangle, Check, Coins, TrendingUp, X } from 'lucide-react';
 import { DuoBars, MixBar } from '../components/charts';
+import { Collapse, Verdict } from '../components/Collapse';
 import { EvidenceBody } from '../components/EvidenceDrawer';
 import { Badge, CountUp, Drawer, Hint, Note, Panel, Segmented, Stat, TruthChip } from '../components/ui';
+import { useLiveRun } from './Console';
 import { BUCKET_ORDER, PLATFORM_LABEL } from '../engine/taxonomy';
 import type { Kox } from '../engine/types';
 import type { Allocation, BudgetPlan } from '../budget/allocator';
@@ -64,8 +66,48 @@ function ConstraintList({ plan }: { plan: BudgetPlan }): React.ReactElement {
   );
 }
 
+/**
+ * 12 种子稳健区间（读 multiseed.json 的 A_value_robustness.saved_share_of_budget）。
+ *
+ * 为什么在这里懒加载：Decision 的 props 签名不能改（App.tsx 由他人并行改动），
+ * 但「少浪费 $xx」这个单次实测值旁边**必须**标清楚它只是一个种子的观测 ——
+ * 12 种子的均值 ± 标准差与 95% CI 才是可对外说的口径。宁可多一次 fetch，
+ * 也不把区间数字写死在组件里。
+ */
+function useRobustSaved(): { mean: number; std: number; low: number; high: number; n: number } | null | 'missing' {
+  const [v, setV] = React.useState<{ mean: number; std: number; low: number; high: number; n: number } | null | 'missing'>(null);
+  React.useEffect(() => {
+    let alive = true;
+    void (async () => {
+      try {
+        const res = await fetch(`${import.meta.env.BASE_URL}data/multiseed.json`, { cache: 'force-cache' });
+        if (!res.ok) throw new Error(String(res.status));
+        const j = (await res.json()) as Loose;
+        const s = j?.A_value_robustness?.saved_share_of_budget as Loose | undefined;
+        if (!s || !alive) {
+          if (alive) setV('missing');
+          return;
+        }
+        setV({
+          mean: Number(s.mean),
+          std: Number(s.std),
+          low: Number(s.ci95_low),
+          high: Number(s.ci95_high),
+          n: Number(s.n),
+        });
+      } catch {
+        if (alive) setV('missing');
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return v;
+}
+
 export function DecisionTab({
-  result,
+  result: appResult,
   koxById,
   budgetArtifact,
   auditArtifact,
@@ -84,6 +126,16 @@ export function DecisionTab({
   const [arm, setArm] = React.useState<'koxpilot' | 'baseline'>('koxpilot');
   const [sort, setSort] = React.useState<'amount' | 'efficiency' | 'value' | 'views'>('amount');
   const [openId, setOpenId] = React.useState<string | null>(null);
+  const robust = useRobustSaved();
+
+  /**
+   * 读者在上半页自己敲的那条 brief 跑出来的结果优先。
+   * 合并后的「投放决策」tab 上下同页，如果这里还显示预置 brief 的名单，
+   * 就会出现「上面换了 brief、下面没动」的假联动观感 —— 那是最不该犯的错。
+   */
+  const live = useLiveRun();
+  const result = live?.result ?? appResult;
+  const isCustom = Boolean(live);
 
   const plan = result ? (arm === 'koxpilot' ? result.plan : result.baseline) : null;
 
@@ -147,9 +199,10 @@ export function DecisionTab({
   const armAudit = arm === 'koxpilot' ? audit.koxpilot : audit.baseline;
 
   // 产物口径下（不含 review、衰减 0.7）可以和 Python 产物直接对数；参数一改就不可比，如实说明
-  const comparable = !includeReview && decay === 0.7;
+  // 自定义 brief 不在 Python 产物里，天然不可比 —— 这一点必须显式排除，否则会拿别的 campaign 的数对上去
+  const comparable = !includeReview && decay === 0.7 && !isCustom;
   /** 分层标记只有在参数与产物口径一致（不纳入 review、decay = 参照档）时才敢往行上打。 */
-  const tierComparable = !includeReview && referenceDecay !== null && Math.abs(decay - referenceDecay) < 1e-9;
+  const tierComparable = !isCustom && !includeReview && referenceDecay !== null && Math.abs(decay - referenceDecay) < 1e-9;
   const pyPlan = ((budgetArtifact?.plans ?? []) as Loose[]).find((p) => p.campaign_id === result.spec.campaign_id) ?? null;
   const pyArm = pyPlan ? (pyPlan[arm === 'koxpilot' ? 'koxpilot' : 'baseline_followers'] as Loose | undefined) : undefined;
   const parityRows: Array<[string, string, string, boolean]> = [];
@@ -171,7 +224,44 @@ export function DecisionTab({
   const cfLosers = cfPer.filter((c) => Number(c.saved_usd) < 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
+      {/* ---- 本页结论 ---- */}
+      <Verdict
+        what="第二步：同预算下「看门禁」比「看粉丝量」省了多少"
+        tone={audit.saved_usd >= 0 ? 'good' : 'warn'}
+        conclusion={
+          <>
+            {isCustom ? '你自己敲的那条 brief' : result.spec.campaign_id} 的 {usd0(result.plan.budget_usd)} 预算落到{' '}
+            <b>{int0(result.plan.n_selected)}</b> 人 / {int0(result.plan.n_posts)} 条；与「按粉丝量降序买」的基线相比，
+            这一次<b>{audit.saved_usd >= 0 ? '少' : '多'}浪费 {usd0(Math.abs(audit.saved_usd))}</b>
+            （占预算 {signedPct1(audit.saved_share_of_budget)}）。
+            {robust && robust !== 'missing' ? (
+              <>
+                {' '}
+                但这是<b>单种子观测</b>：{robust.n} 种子的稳健口径是 {signedPct1(robust.mean)} ± {pct1(robust.std)}，95% CI{' '}
+                [{signedPct1(robust.low)}, {signedPct1(robust.high)}]。
+              </>
+            ) : (
+              ' 这是单种子观测，跨种子区间见下方说明。'
+            )}
+          </>
+        }
+        stats={[
+          { label: '花费 / 预算', value: `${usd0(plan.spent_usd)}`, tone: 'good' },
+          { label: '选中', value: `${int0(plan.n_selected)} 人` },
+          {
+            label: '浪费占花费（gt）',
+            value: pct1(armAudit.wasted_spend_share),
+            tone: armAudit.wasted_spend_share > 0.2 ? 'bad' : 'good',
+          },
+          {
+            label: '有效曝光提升',
+            value: signedPct1(audit.effective_view_uplift),
+            tone: audit.effective_view_uplift >= 0 ? 'good' : 'bad',
+          },
+        ]}
+      />
+
       <div className="flex flex-wrap items-center gap-2">
         <Segmented
           value={arm}
@@ -182,6 +272,11 @@ export function DecisionTab({
           ]}
         />
         <TruthChip kind="rule" />
+        {isCustom && (
+          <Badge className="border-live-300 bg-live-50 text-live-700">
+            当前是你自己敲的 brief（campaign_id = {result.spec.campaign_id}），与 Python 产物不可比
+          </Badge>
+        )}
         <span className="muted">
           切换后下面所有数字由浏览器重算（两臂共用同一份定向筛选与报价/估价口径，唯一差异是选人依据）
         </span>
@@ -241,22 +336,35 @@ export function DecisionTab({
           />
           <div className="mt-3 grid grid-cols-3 gap-2">
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
-              <div className="text-[10px] text-slate-500">少浪费</div>
+              <div className="text-[11px] text-slate-600">少浪费（本次单种子实测）</div>
               <div className={`num text-[16px] ${audit.saved_usd >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {audit.saved_usd >= 0 ? '' : '−'}
                 {usd0(Math.abs(audit.saved_usd))}
               </div>
-              <div className="muted">占预算 {signedPct1(audit.saved_share_of_budget)}</div>
+              <div className="muted">
+                占预算 {signedPct1(audit.saved_share_of_budget)} ——{' '}
+                {robust === 'missing'
+                  ? 'multiseed.json 未生成，跨种子区间无法给出，这里只敢说这是一次观测'
+                  : robust
+                    ? `单次观测；${robust.n} 种子稳健口径 ${signedPct1(robust.mean)} ± ${pct1(robust.std)}，95% CI [${signedPct1(
+                        robust.low,
+                      )}, ${signedPct1(robust.high)}]${
+                        audit.saved_share_of_budget < robust.low || audit.saved_share_of_budget > robust.high
+                          ? '，本次值落在 CI 之外，属于偏乐观的一次抽样'
+                          : ''
+                      }`
+                    : '正在读 multiseed.json…'}
+              </div>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
-              <div className="text-[10px] text-slate-500">有效曝光提升</div>
+              <div className="text-[11px] text-slate-600">有效曝光提升</div>
               <div className={`num text-[16px] ${audit.effective_view_uplift >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {signedPct1(audit.effective_view_uplift)}
               </div>
               <div className="muted">宽松口径 {signedPct1(audit.effective_view_uplift_lenient)}</div>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
-              <div className="text-[10px] text-slate-500">每千美元有效曝光</div>
+              <div className="text-[11px] text-slate-600">每千美元有效曝光</div>
               <div className="num text-[16px] text-live-700">{compact(audit.effective_views_per_1k_usd.koxpilot)}</div>
               <div className="muted">基线 {compact(audit.effective_views_per_1k_usd.baseline)}</div>
             </div>
@@ -270,7 +378,31 @@ export function DecisionTab({
         </Panel>
 
         <Panel title={`结构约束校验 · ${arm === 'koxpilot' ? 'KOXPilot 臂' : '基线臂'}`} subtitle="约束在分配过程中强制生效，不是事后检查">
-          <ConstraintList plan={plan} />
+          <div
+            className={`rounded-lg border px-2.5 py-1.5 text-[12px] ${
+              plan.constraints.all_enforced_satisfied
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                : 'border-rose-200 bg-rose-50 text-rose-700'
+            }`}
+          >
+            {plan.constraints.all_enforced_satisfied
+              ? `强制约束全部满足（${plan.constraints.checks.length} 项校验）`
+              : `未满足：${plan.constraints.violations.join('、')}`}
+            <span className="ml-2 text-slate-700">
+              预算利用率 {pct1(plan.constraints.utilization)}
+              {plan.constraints.utilization_ok ? '（达标）' : '（低于目标）'}
+            </span>
+          </div>
+          <div className="mt-2">
+            <Collapse
+              flag="detail"
+              count={plan.constraints.checks.length}
+              title="展开：逐条约束的实际值 / 上限，以及基线臂为什么只做记录不强制"
+              hint="头部金额占比 ≤45%、长尾 ≥25%、单一国家 ≤60% 这些配额在贪心过程中就生效"
+            >
+              <ConstraintList plan={plan} />
+            </Collapse>
+          </div>
           <div className="mt-3 space-y-3">
             <div>
               <div className="muted mb-1">层级分布（按金额）</div>
@@ -299,7 +431,12 @@ export function DecisionTab({
         </Panel>
       </div>
 
-      <Panel title="分配过程日志（trace）" subtitle="这些中文说明由分配器在运行时生成，双实现一致性校验会逐字比对它们">
+      <Collapse
+        flag="evidence"
+        count={plan.trace.length}
+        title={`展开：分配过程日志 —— ${plan.trace.length} 步中文 trace，由分配器运行时生成，双实现一致性校验逐字比对`}
+        hint="它证明的是「这些中文说明不是写在页面里的文案，而是算出来的」：Python 与 TS 两套实现要逐字一致"
+      >
         <ol className="space-y-1.5">
           {plan.trace.map((t, i) => (
             <li key={t} className="flex gap-2 text-[12px] leading-relaxed text-slate-700">
@@ -324,12 +461,15 @@ export function DecisionTab({
             </ol>
           </details>
         )}
-      </Panel>
+      </Collapse>
 
-      <Panel
-        title={`选中清单 · ${plan.n_selected} 人 / ${plan.n_posts} 条`}
-        subtitle="value = 平均播放 × 真实性折扣 × 适配 × 受众匹配 × KPI 权重；效率 = 边际 value / 报价"
-        right={
+      <Collapse
+        flag="detail"
+        count={plan.n_selected}
+        title={`展开：这一臂到底买了谁 —— ${plan.n_selected} 人 / ${plan.n_posts} 条的逐人金额、性价比、交付分层与 gt 对照`}
+        hint="value = 平均播放 × 真实性折扣 × 适配 × 受众匹配 × KPI 权重；效率 = 边际 value / 报价。gt 一列只用于事后审计，分配过程读不到它"
+      >
+        <div className="mb-2 flex justify-end">
           <Segmented
             size="sm"
             value={sort}
@@ -341,10 +481,8 @@ export function DecisionTab({
               { value: 'views', label: '按曝光' },
             ]}
           />
-        }
-        bodyClass="px-0 py-0"
-      >
-        <div className="max-h-[480px] overflow-auto">
+        </div>
+        <div className="max-h-[420px] overflow-auto">
           <table className="w-full border-collapse">
             <thead className="sticky top-0 z-10 bg-white backdrop-blur">
               <tr className="hairline">
@@ -436,7 +574,7 @@ export function DecisionTab({
             </tbody>
           </table>
         </div>
-        <div className="border-t border-slate-300 px-4 py-2">
+        <div className="mt-2 border-t border-slate-300 pt-2">
           {tierComparable && arm === 'koxpilot' && tierByKox.size > 0 && (
             <div className="mb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
               <span className="text-slate-600">
@@ -458,25 +596,25 @@ export function DecisionTab({
             gt 一列只用于事后审计展示 —— 分配过程完全读不到它。基线臂里那些标红的人，就是「按粉丝量买」实际会把钱交给谁。
           </span>
         </div>
-      </Panel>
+      </Collapse>
 
-      <div className="grid gap-3 lg:grid-cols-[1fr_1.1fr]">
-        <Panel
-          title="浏览器现算 vs Python 产物"
-          subtitle={
+      <div className="grid gap-2 lg:grid-cols-[1fr_1.1fr]">
+        <Collapse
+          flag="evidence"
+          count={parityRows.length}
+          title={
             comparable
-              ? '当前参数与产物口径一致（不含 review、衰减 0.7），因此可以直接对数'
-              : '你改过参数（纳入 review 或改了衰减系数），与产物口径不可比 —— 这里如实标注，不做假对齐'
+              ? `展开：同一份预算，浏览器 TS 现算 vs Python 产物逐项对数（${allParity ? '5 项全部一致' : '存在差异'}）`
+              : isCustom
+                ? '展开：为什么自定义 brief 没法和 Python 产物对数（口径澄清）'
+                : '展开：为什么你改过参数后这张对数表不可比（口径澄清，不做假对齐）'
           }
-          tone={comparable && allParity ? 'accent' : 'default'}
-          right={
-            comparable ? (
-              <Badge className={allParity ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'}>
-                {allParity ? '逐项一致' : '存在差异'}
-              </Badge>
-            ) : (
-              <Badge className="border-amber-200 bg-amber-50 text-amber-700">参数已改，不可比</Badge>
-            )
+          hint={
+            comparable
+              ? '当前参数与产物口径一致（不含 review、衰减 0.7），所以敢把两套实现的数摆在一起'
+              : isCustom
+                ? '你自己敲的 brief 不在 Python 产物里，没有对应的离线结果可对 —— 这里如实标注，不拿别的 campaign 顶上'
+                : '你改过参数（纳入 review 或改了衰减系数），与产物口径不可比'
           }
         >
           {comparable && parityRows.length > 0 ? (
@@ -508,27 +646,31 @@ export function DecisionTab({
               全量一致性校验结果见「架构」页，那里读的是 verify 脚本生成的 consistency.json。
             </Note>
           )}
-        </Panel>
+        </Collapse>
 
-        <Panel
-          title="三个 campaign 的反事实价值汇总"
-          subtitle="来自 audit.json（Python 全量产物）；单个 campaign 可能为负，照实列出"
-          right={<TruthChip kind="python" />}
+        <Collapse
+          flag="evidence"
+          count={cfPer.length}
+          title={`展开：${cfPer.length} 个 campaign 的反事实价值汇总，含为负的那一个（Python 全量产物）`}
+          hint="单个 campaign 的少浪费可能是负的 —— 哪一个为负由 audit.json 现算，不写死，也不挑好看的展示"
         >
+          <div className="mb-2">
+            <TruthChip kind="python" />
+          </div>
           {cfTotals ? (
             <>
               <div className="mb-2 grid grid-cols-3 gap-2">
                 <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
-                  <div className="text-[10px] text-slate-500">合计预算</div>
+                  <div className="text-[11px] text-slate-600">合计预算</div>
                   <div className="num text-[15px] text-slate-900">{usd0(Number(cfTotals.budget_usd))}</div>
                 </div>
                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-2">
-                  <div className="text-[10px] text-slate-500">合计少浪费</div>
+                  <div className="text-[11px] text-slate-600">合计少浪费</div>
                   <div className="num text-[15px] text-emerald-600">{usd0(Number(cfTotals.saved_usd))}</div>
                   <div className="muted">占预算 {pct1(Number(cfTotals.saved_share_of_budget))}</div>
                 </div>
                 <div className="rounded-lg border border-live-200 bg-live-50 px-2.5 py-2">
-                  <div className="text-[10px] text-slate-500">有效曝光提升</div>
+                  <div className="text-[11px] text-slate-600">有效曝光提升</div>
                   <div className="num text-[15px] text-live-700">{signedPct1(Number(cfTotals.effective_view_uplift))}</div>
                   <div className="muted">
                     {compact(Number(cfTotals.effective_views_baseline))} → {compact(Number(cfTotals.effective_views_koxpilot))}
@@ -588,7 +730,7 @@ export function DecisionTab({
           ) : (
             <Note tone="warn">audit.json 未生成，本板块留空。</Note>
           )}
-        </Panel>
+        </Collapse>
       </div>
 
       <Note>
