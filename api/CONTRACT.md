@@ -151,6 +151,9 @@
 - `gate_hits[].gate_label` / `signal_label` 必须是**中文人话**，不允许出现代码标识符。
 - `reason_human` 直接复用 Python 侧 `gates/humanize.py` 的输出，保证与 CLI `explain` 一致。
 - `fit_source` 取 `cached_llm` | `rule_fallback`，如实反映这条的语义适配分从哪来。
+- `brief.source` 取 `free_text` | `preset`；`brief.parse_path` 取 `llm` | `rule` | `preset`
+  （`preset` 表示这条 brief 的投放规格是构建期真调模型产出、固化在 `data/briefs.json` 里的，
+  服务读取而不重新解析——这样它与前端读的那份 spec 逐字段相同）。
 - `brief.notes`：字符串数组，可为空。装两类话——解析时发现的歧义与硬性要求，以及
   **A1 这次走的是模型还是规则、以及为什么**（没凭据 / 超时 / 报错都会写在这里）。
   前端可以不显示它，但服务端不允许把这句话吞掉：`parse_path` 说的是结果，`notes` 说的是原因。

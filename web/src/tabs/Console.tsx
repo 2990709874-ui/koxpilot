@@ -718,7 +718,19 @@ export function ConsoleTab({
                 note={
                   <>
                     服务侧 A1–A6 合计 {ms(serviceTotalMs)} · 数据集 {int0(sd.meta.kox_count)} 条 ·{' '}
-                    {sd.meta.llm_runtime.available ? `A1 走模型解析（${sd.meta.llm_runtime.provider ?? '—'}）` : 'A1 走规则解析'}
+                    {/* 说的是这一次真正走了哪条路（配了凭据但调用失败时也会落回规则），
+                        而不是「服务端有没有凭据」—— 后者说明不了本次结果怎么来的 */}
+                    {sd.brief.parse_path === 'llm'
+                      ? `A1 走模型解析（${sd.meta.llm_runtime.provider ?? '—'}）`
+                      : sd.brief.parse_path === 'preset'
+                        ? 'A1 用预置固化规格'
+                        : 'A1 走规则解析'}
+                    {sd.brief.parse_path === 'llm' && (
+                      <span className="ml-1 text-slate-500">
+                        （本次服务端用模型解析 brief，浏览器侧用的是规则解析，两侧投放规格可能不同；
+                        此时差异条数里可能混着规格差异，不全是引擎差异）
+                      </span>
+                    )}
                   </>
                 }
               />
