@@ -3,10 +3,8 @@ import { Loader2, ShieldCheck } from 'lucide-react';
 import { Badge, Hint } from './components/ui';
 import { ArchitectureTab } from './tabs/Architecture';
 import { ConsoleTab } from './tabs/Console';
-import { CostValueTab } from './tabs/CostValue';
 import { DecisionTab } from './tabs/Decision';
 import { EvaluationTab } from './tabs/Evaluation';
-import { NotesTab } from './tabs/Notes';
 import { TabErrorBoundary } from './components/TabErrorBoundary';
 import { GATE_ROLES, ablationVariant, evaluateDataset, runPipeline, sensitivityScan } from './lib/pipeline';
 import type { AblationRow, EvalReport, PipelineResult, SensitivityPoint, StageReport } from './lib/pipeline';
@@ -34,12 +32,12 @@ export default function App(): React.ReactElement {
   const [art, setArt] = React.useState<Artifacts | null>(null);
   const [loadErr, setLoadErr] = React.useState<string | null>(null);
   const [tab, setTab] = React.useState<TabId>(() => resolveHash(window.location.hash).tab);
-  /** 旧 hash（#console/#decision/#eval/#cost/#arch/#notes）落地时要滚到的段落 */
+  /** 旧 hash 落地时要滚到的段落 */
   const [pendingAnchor, setPendingAnchor] = React.useState<string | null>(
     () => resolveHash(window.location.hash).anchor ?? null,
   );
 
-  // 旧 hash 重定向：README / PDF 里已经放出去的 6 个链接必须继续可用。
+  // 旧 hash 重定向：README / PDF 里放出过的链接必须继续可用。
   // 命中旧 hash 时改写成新页签 hash（用 replaceState，不污染前进后退），并滚到对应段落。
   React.useEffect(() => {
     const apply = (): void => {
@@ -205,16 +203,14 @@ export default function App(): React.ReactElement {
       <div className="flex min-h-screen flex-col items-center justify-center gap-3">
         <Loader2 size={20} className="animate-spin text-live-600" />
         <div className="num text-[12px] tracking-[0.2em] text-live-700">加载 5,000 条达人数据与阈值表…</div>
-        <div className="muted">加载完成后引擎会在你的浏览器里真跑一遍，不是播放录像</div>
+        <div className="muted">加载完成后引擎将在浏览器内实时执行一次完整流程</div>
       </div>
     );
   }
 
   const c = art.consistency;
   const diffCount = c ? c.verdict.diff_count : null;
-  // 页头的「少浪费」一律用 12 种子稳健口径（21.5% ± 13.7%）。
-  // 原来挂的单次实测 $79,719（−32.5%）是 12 个种子里第 2 高的观测、落在均值 95% CI 之外，
-  // README 已明说它偏乐观约 50%，页头不该挂一个自己都不信的数字。
+  // 页头的「少浪费」采用 12 种子稳健口径（mean ± std）。
   const savedRobust = robustSaved(art);
 
   return (
@@ -242,7 +238,7 @@ export default function App(): React.ReactElement {
               <Hint
                 text={
                   c
-                    ? `verify-parity.mjs 于每次 npm run refresh 时重新生成 consistency.json：判定级 ${int0(c.verdict.matched)}/${int0(c.verdict.total)} 一致，证据链 ${int0(c.evidence.compared_records ?? 0)} 条记录 / ${int0(c.evidence.compared_reason_rows ?? 0)} 行 reason 一致，预算与审计 ${int0(c.budget.matched_arms ?? 0)}/${int0(c.budget.compared_arms ?? 0)} 臂一致。`
+                    ? `判定级 ${int0(c.verdict.matched)}/${int0(c.verdict.total)} 一致，证据链 ${int0(c.evidence.compared_records ?? 0)} 条记录 / ${int0(c.evidence.compared_reason_rows ?? 0)} 行理由一致，预算与审计 ${int0(c.budget.matched_arms ?? 0)}/${int0(c.budget.compared_arms ?? 0)} 臂一致。`
                     : 'consistency.json 未生成'
                 }
               >
@@ -268,9 +264,6 @@ export default function App(): React.ReactElement {
                   </Badge>
                 </Hint>
               )}
-              <Hint text="页面上任何数字要么来自 public/data 下的产物 JSON，要么由 TS 引擎在你的浏览器里现算，没有第三种来源。">
-                <Badge className="border-indigo-200 bg-indigo-50 text-indigo-700">无硬编码指标</Badge>
-              </Hint>
             </div>
           </div>
 
@@ -290,7 +283,7 @@ export default function App(): React.ReactElement {
           )}
         </div>
         <div key={tab} className="animate-fade-up">
-          {/* 页签级错误边界：渲染异常只退化成一张错误卡片，绝不把 root 清空成白屏。 */}
+          {/* 页签级错误边界：渲染异常退化成一张错误卡片，不影响其余页面。 */}
           <TabErrorBoundary tab={tab}>
           {tab === 'run' && (
             <div className="space-y-6">
@@ -298,7 +291,7 @@ export default function App(): React.ReactElement {
                 id={SECTION.briefInput}
                 step="第 1 步"
                 title="输入 brief，看它怎么一层层筛人"
-                question="一句话需求 → A1–A6 的执行轨迹，每一阶段都在你浏览器里现算"
+                question="一句话需求 → A1–A6 执行轨迹，逐阶段在浏览器内实时计算"
               >
                 <ConsoleTab
                   briefs={art.briefs}
@@ -323,7 +316,7 @@ export default function App(): React.ReactElement {
                 id={SECTION.roster}
                 step="第 2 步"
                 title="拿到名单与预算，并与「凭粉丝量选人」对照"
-                question="选谁、每人花多少、为什么；以及比行业朴素基线少浪费多少钱"
+                question="选谁、每人预算多少、依据是什么；以及相比粉丝量基线少浪费多少预算"
               >
                 <DecisionTab
                   result={result}
@@ -349,23 +342,13 @@ export default function App(): React.ReactElement {
               onSens={runSens}
             />
           )}
-          {tab === 'cost' && (
-            <CostValueTab
-              promptBench={art.promptBench}
-              llmBench={art.llmBench}
-              llmCompare={art.llmCompare}
-              audit={art.audit}
-              metrics={art.metrics}
-              multiseed={art.multiseed}
-            />
-          )}
           {tab === 'build' && (
             <div className="space-y-6">
               <SectionBlock
                 id={SECTION.arch}
-                step="怎么搭的"
+                step="技术实现"
                 title="六个 Agent 的编排与 Python / TS 双实现一致性"
-                question="谁调谁、阈值从哪来、两套实现如何逐条比对到 0 差异"
+                question="谁调谁、阈值来自哪张表、两套实现的逐条比对结果"
               >
                 <ArchitectureTab
                   manifest={art.manifest}
@@ -373,14 +356,6 @@ export default function App(): React.ReactElement {
                   result={result}
                   thresholdsMeta={art.manifest.thresholds_meta}
                 />
-              </SectionBlock>
-              <SectionBlock
-                id={SECTION.notes}
-                step="踩过的坑"
-                title="我自己抓到并修掉的问题"
-                question="哪些结论被我自己的数据推翻了，哪些边界至今没解决"
-              >
-                <NotesTab promptBench={art.promptBench} audit={art.audit} metrics={art.metrics} multiseed={art.multiseed} />
               </SectionBlock>
             </div>
           )}

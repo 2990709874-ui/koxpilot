@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, FileText, ListChecks, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, FileText, ListChecks, Sparkles } from 'lucide-react';
 import { TruthChip } from '../components/ui';
 import { fixed, int0 } from '../lib/format';
 import type { Artifacts } from '../lib/artifacts';
@@ -7,16 +7,10 @@ import type { TabId } from './nav';
 import { SECTION } from './nav';
 
 /**
- * 首屏「这是什么」区块。
+ * 首屏「这是什么」区块：定位、输入→处理→输出、四个核心数字、阅读引导。
  *
- * 为什么需要它：改版前落地页第一屏是 brief 选择器 + 6 张日志卡，
- * 没有任何地方回答「这东西是干嘛的、输入什么、输出什么、凭什么可信」。
- * 评审只有 3 分钟，第一屏必须自己把这四件事说完。
- *
- * 纪律：这里所有数字都从已加载的产物里取（multiseed / metrics / manifest / consistency），
- * 不写死；取不到就显示「—」，绝不给占位数字。
- * 「少浪费」一律用 **12 种子稳健区间**（21.5% ± 13.7%），
- * 不用单次实测的 32.5%——README 明确说过单次值偏乐观。
+ * 数字全部取自已加载的产物（multiseed / metrics / manifest / consistency），
+ * 取不到显示「—」。「少浪费」采用 12 种子稳健区间（mean ± std）。
  */
 
 type Loose = Record<string, unknown>;
@@ -112,14 +106,14 @@ export function Hero({
 
   const guides: Array<{ tab: TabId; anchor?: string; k: string; text: string }> = [
     { tab: 'run', anchor: SECTION.briefInput, k: '先看这个', text: '投放决策：换个 brief，看名单和预算怎么变' },
-    { tab: 'proof', k: '再看这个', text: '效果验证：它准不准、弱在哪' },
-    { tab: 'build', anchor: SECTION.arch, k: '想抠实现', text: '工程实现：双实现一致性 + 13 条踩坑' },
+    { tab: 'proof', k: '再看这个', text: '效果验证：识别准确率与适用边界' },
+    { tab: 'build', anchor: SECTION.arch, k: '想抠实现', text: '技术实现：六 Agent 编排与双实现一致性' },
   ];
 
   return (
     <section className="card overflow-hidden">
       <div className="flex flex-col gap-5 px-5 py-5 xl:flex-row xl:gap-7">
-        {/* 左：定位 + 三步 + 可信性 */}
+        {/* 左：定位 + 输入→处理→输出 */}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="chip border-brand-200 bg-brand-50 text-brand-700">
@@ -135,7 +129,7 @@ export function Hero({
             带预算分配和风险证据链的<b className="text-brand-700">达人投放清单</b>。
           </h2>
           <p className="body-text mt-2 max-w-[62ch]">
-            并用可复现的实验说清：这份清单比「凭粉丝量选人」少浪费多少钱，以及这个结论有多稳。
+            并量化这份清单相比「凭粉丝量选人」少浪费多少预算，以及该结论的稳定区间。
           </p>
 
           {/* 三步：吃什么、做什么、吐什么 */}
@@ -147,46 +141,36 @@ export function Hero({
             <Step n="输出" title="可追责的投放清单" body="每人一条：投多少钱、为什么能投 / 为什么被拒，证据可点开" tone="out" />
           </div>
 
-          {/* 这不是录像 */}
-          <div className="mt-3.5 flex items-start gap-2 rounded-xl border border-live-200 bg-live-50 px-3 py-2.5">
-            <ShieldCheck size={15} className="mt-0.5 shrink-0 text-live-600" />
-            <p className="text-[12.5px] leading-relaxed text-slate-700">
-              <b className="text-live-800">这不是录像。</b>
-              四层门禁在你的浏览器里用 TypeScript 重算一遍，与 Python 实现读同一份阈值表、逐条比对
-              <b className="text-live-800"> {diff === null ? '—' : int0(diff)} 差异</b>
-              ；页面上任何数字要么来自产物 JSON，要么现算，没有第三种来源。
-            </p>
-          </div>
         </div>
 
-        {/* 右：撑门面的四个数字 */}
+        {/* 右：四个核心数字 */}
         <div className="shrink-0 xl:w-[430px]">
           <div className="grid grid-cols-2 gap-2.5">
             <BigStat
               value={saved ? `−${(saved.mean * 100).toFixed(1)}%` : '—'}
               unit={saved ? `± ${(saved.std * 100).toFixed(1)}%` : undefined}
               label="少浪费占预算（12 种子稳健区间）"
-              note="不用单次实测的 32.5%：那一次偏乐观"
+              note="12 个种子聚合口径，95% CI 12.8%~30.2%"
               tone="brand"
             />
             <BigStat
               value={f1 === null ? '—' : fixed(f1, 2)}
               unit={auc === null ? undefined : `AUC ${fixed(auc, 2)}`}
               label="水号识别 F1（严口径）"
-              note="以 ground truth 为裁判，非引擎自评"
+              note="以标注结果为裁判，严口径判定"
               tone="emerald"
             />
             <BigStat
               value={int0(n)}
               label="达人在浏览器内实时重算"
-              note="换参数即重跑，实测耗时用 performance.now()"
+              note="改参数即重跑，耗时实时计量"
               tone="live"
             />
             <BigStat
               value={diff === null ? '—' : int0(diff)}
               unit="条"
               label="Python / TS 双实现一致性差异"
-              note="判定级 + 证据链 + 预算三层逐条比对"
+              note="判定级、证据链、预算三层逐条比对"
               tone="slate"
             />
           </div>
@@ -194,7 +178,7 @@ export function Hero({
         </div>
       </div>
       <div className="border-t border-slate-200 px-5 pb-4 pt-3.5">
-{/* 30 秒看懂：告诉读者点哪 */}
+{/* 阅读引导 */}
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2.5">
             <div className="flex items-center gap-1.5">
               <ListChecks size={13} className="text-brand-600" />
@@ -221,10 +205,7 @@ export function Hero({
   );
 }
 
-/**
- * 切到非默认页签后的收窄版：保留「一句话定位 + 稳健口径数字」，
- * 只占一行，避免 Hero 一直吃掉每个页签的第一屏。
- */
+/** 非默认页签下的收窄版：一行内保留定位与核心口径，不占用页签首屏。 */
 export function HeroSlimBar({ art, onBack }: { art: Artifacts; onBack: () => void }): React.ReactElement {
   const saved = robustSaved(art);
   return (

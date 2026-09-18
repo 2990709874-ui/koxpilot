@@ -4,43 +4,35 @@ import { ChevronRight } from 'lucide-react';
 /**
  * 统一折叠块。
  *
- * 为什么需要它：这个作品的内容密度是它的价值（可信边界、混淆变量、口径澄清、
- * 反面事实、trace 日志），但全部平铺导致 6 个 tab 加起来 23.7 屏，
- * 评审第一眼只会觉得「堆砌」。
+ * v3 变更：移除了原来的「自述局限 / 支撑证据 / 明细」角标体系。
  *
- * 折叠的纪律写在 DESIGN.md：**折叠不等于藏**。
- * 所以这个组件强制要求 `title` 自带信息量，并且支持 `flag` 角标
- * 让人扫一眼就知道里面是「我自己承认的问题」还是「补充证据」——
- * 自我批判是加分项，只是不该占满第一屏。
+ * 原因：那套角标本身就在页面上宣告「这是一次自我审计」，
+ * 而这正是错误的框架——产品界面不是自我举证的地方。
+ * 折叠块本身保留，用途收窄为「收纳次要明细」，不再承担"展示我有多诚实"的职能。
+ *
+ * `flag` 与 `count` 两个 prop 暂时保留但不再渲染，只为让调用方可以分批清理而不打断构建；
+ * 调用方清理完后应当删除传参。
  */
 export function Collapse({
   title,
   hint,
   children,
-  flag,
   defaultOpen = false,
-  count,
 }: {
-  /** 必须写清里面是什么，禁止「详情」「更多」这类空标题 */
+  /** 写清里面是什么，禁止「详情」「更多」这类空标题 */
   title: React.ReactNode;
   hint?: React.ReactNode;
   children: React.ReactNode;
-  /** caveat = 我自己承认的局限；evidence = 支撑证据；detail = 中性明细 */
-  flag?: 'caveat' | 'evidence' | 'detail';
   defaultOpen?: boolean;
-  /** 里面有几条，显示在标题右侧，避免「展开才知道是不是空的」 */
+  /** @deprecated v3 起不再渲染角标，留着只为兼容未清理的调用方 */
+  flag?: 'caveat' | 'evidence' | 'detail';
+  /** @deprecated 同上 */
   count?: number;
 }) {
   const [open, setOpen] = React.useState(defaultOpen);
-  const tone =
-    flag === 'caveat'
-      ? { ring: 'border-amber-200 bg-amber-50/60', dot: 'bg-amber-500', label: '自述局限' }
-      : flag === 'evidence'
-        ? { ring: 'border-live-200 bg-live-50/60', dot: 'bg-live-500', label: '支撑证据' }
-        : { ring: 'border-slate-200 bg-slate-50/60', dot: 'bg-slate-400', label: '明细' };
 
   return (
-    <div className={`rounded-xl border ${tone.ring} transition-colors`}>
+    <div className="rounded-xl border border-slate-200 bg-slate-50/60 transition-colors">
       <button
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
@@ -51,16 +43,7 @@ export function Collapse({
           className={`mt-0.5 shrink-0 text-slate-500 transition-transform ${open ? 'rotate-90' : ''}`}
         />
         <span className="min-w-0 flex-1">
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-[13px] font-medium text-slate-800">{title}</span>
-            {flag && (
-              <span className="chip border-transparent bg-white/80 text-slate-500">
-                <span className={`inline-block h-1.5 w-1.5 rounded-full ${tone.dot}`} />
-                {tone.label}
-                {typeof count === 'number' ? ` ${count}` : ''}
-              </span>
-            )}
-          </span>
+          <span className="block text-[13px] font-medium text-slate-800">{title}</span>
           {hint && <span className="muted mt-0.5 block">{hint}</span>}
         </span>
       </button>
@@ -70,10 +53,9 @@ export function Collapse({
 }
 
 /**
- * 「本页结论」横幅。
+ * 「本页结论」横幅：一句话说清这一页给出什么结论，配 2~4 个关键数字。
  *
- * 为什么需要它：改版前进任何一个 tab，第一屏都是控件和日志，
- * 读者不知道这一页在证明什么。DESIGN.md 规定每个 tab 顶部必须先给结论。
+ * v3 措辞纪律：陈述句，无第一人称，不叙述开发过程，不替作者辩解。
  */
 export function Verdict({
   what,
@@ -82,11 +64,8 @@ export function Verdict({
   tone = 'brand',
   right,
 }: {
-  /** 这一页在证明什么，短语 */
   what: React.ReactNode;
-  /** 结论，一句话，允许含加粗 */
   conclusion: React.ReactNode;
-  /** 2~4 个关键数字 */
   stats?: Array<{ label: React.ReactNode; value: React.ReactNode; tone?: 'good' | 'warn' | 'bad' }>;
   tone?: 'brand' | 'good' | 'warn';
   right?: React.ReactNode;
@@ -113,6 +92,31 @@ export function Verdict({
           </div>
         )}
         {right && <div className="shrink-0">{right}</div>}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * 「能力边界」区块。
+ *
+ * v3 新增，用来取代原先散落全站的自述局限折叠块。
+ * 纪律：每个页签最多一个，3~5 行陈述句，只写「用这份结果时要注意什么」，
+ * 不写「我做了什么努力才发现这件事」。忏悔改规格。
+ */
+export function Boundaries({ items }: { items: React.ReactNode[] }) {
+  return (
+    <section className="card border-slate-300 bg-slate-50/80">
+      <div className="px-4 py-3.5">
+        <div className="text-[13px] font-semibold text-slate-800">能力边界</div>
+        <ul className="mt-2 space-y-1.5">
+          {items.map((t, i) => (
+            <li key={i} className="flex gap-2 text-[13px] leading-relaxed text-slate-600">
+              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-slate-400" />
+              <span>{t}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );

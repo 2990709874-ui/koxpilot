@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, Check, Coins, TrendingUp, X } from 'lucide-react';
+import { AlertTriangle, Check, Coins, X } from 'lucide-react';
 import { DuoBars, MixBar } from '../components/charts';
 import { Collapse, Verdict } from '../components/Collapse';
 import { EvidenceBody } from '../components/EvidenceDrawer';
@@ -24,6 +24,9 @@ import {
 } from '../lib/format';
 import type { PipelineResult } from '../lib/pipeline';
 
+/** 清单默认只展开前 N 行，其余按需展开（避免整页被一张长表撑开）。 */
+const TOP_N = 15;
+
 function ConstraintList({ plan }: { plan: BudgetPlan }): React.ReactElement {
   return (
     <div className="space-y-1.5">
@@ -36,7 +39,7 @@ function ConstraintList({ plan }: { plan: BudgetPlan }): React.ReactElement {
           )}
           <span className="text-[11px] text-slate-700">{c.desc}</span>
           {!c.enforced && (
-            <Hint text="基线臂刻意不施加结构约束（那就是行业最朴素做法），所以这些检查只做记录、不强制。这样两臂的差异才来自选人依据本身。">
+            <Hint text="基线臂不施加结构约束（对应行业最朴素做法），这些检查仅作记录，不参与强制。">
               <Badge className="border-slate-200 bg-slate-50 text-slate-600">仅记录</Badge>
             </Hint>
           )}
@@ -126,6 +129,7 @@ export function DecisionTab({
   const [arm, setArm] = React.useState<'koxpilot' | 'baseline'>('koxpilot');
   const [sort, setSort] = React.useState<'amount' | 'efficiency' | 'value' | 'views'>('amount');
   const [openId, setOpenId] = React.useState<string | null>(null);
+  const [showAll, setShowAll] = React.useState(false);
   const robust = useRobustSaved();
 
   /**
@@ -194,6 +198,7 @@ export function DecisionTab({
     }
   }
 
+  const shown = showAll ? sorted : sorted.slice(0, TOP_N);
   const other = arm === 'koxpilot' ? result.baseline : result.plan;
   const audit = result.audit;
   const armAudit = arm === 'koxpilot' ? audit.koxpilot : audit.baseline;
@@ -238,19 +243,16 @@ export function DecisionTab({
             {robust && robust !== 'missing' ? (
               <>
                 {' '}
-                但这是<b>单种子观测</b>：{robust.n} 种子的稳健口径是 {signedPct1(robust.mean)} ± {pct1(robust.std)}，95% CI{' '}
-                [{signedPct1(robust.low)}, {signedPct1(robust.high)}]。
+                跨 {robust.n} 组数据的稳健口径为 {signedPct1(robust.mean)} ± {pct1(robust.std)}。
               </>
-            ) : (
-              ' 这是单种子观测，跨种子区间见下方说明。'
-            )}
+            ) : null}
           </>
         }
         stats={[
           { label: '花费 / 预算', value: `${usd0(plan.spent_usd)}`, tone: 'good' },
           { label: '选中', value: `${int0(plan.n_selected)} 人` },
           {
-            label: '浪费占花费（gt）',
+            label: '浪费占花费',
             value: pct1(armAudit.wasted_spend_share),
             tone: armAudit.wasted_spend_share > 0.2 ? 'bad' : 'good',
           },
@@ -277,9 +279,7 @@ export function DecisionTab({
             当前是你自己敲的 brief（campaign_id = {result.spec.campaign_id}），与 Python 产物不可比
           </Badge>
         )}
-        <span className="muted">
-          切换后下面所有数字由浏览器重算（两臂共用同一份定向筛选与报价/估价口径，唯一差异是选人依据）
-        </span>
+        <span className="muted">两臂共用同一份定向筛选与报价口径，唯一差异是选人依据</span>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
@@ -300,16 +300,16 @@ export function DecisionTab({
           }
           hint={`候选池 ${int0(plan.candidate_pool)} 人；单人最多 ${plan.purchase_model.max_posts_per_kox} 条，第 n 条边际按 ${plan.purchase_model.post_marginal_decay}^(n−1) 衰减`}
         />
-        <Stat label="预估 CPM" value={usd2(plan.est_cpm_usd)} hint="按方案自身预估曝光算（不含 gt 修正）" />
+        <Stat label="预估 CPM" value={usd2(plan.est_cpm_usd)} hint="按方案自身预估曝光计算" />
         <Stat label="预估 CPE" value={usd2(plan.est_cpe_usd)} hint="按互动量算的单次互动成本" />
         <Stat
-          label="有效曝光（gt 裁判）"
+          label="有效曝光（真实标注结算）"
           value={compact(armAudit.effective_views_gt)}
           hint={`名义曝光 ${int0(armAudit.nominal_views)}；水号曝光按 0 计（宽松口径按 50% 计为 ${compact(armAudit.effective_views_gt_lenient)}）`}
           tone={arm === 'koxpilot' ? 'good' : 'bad'}
         />
         <Stat
-          label="浪费金额（gt 裁判）"
+          label="浪费金额（真实标注结算）"
           value={usd0(armAudit.wasted_spend_usd)}
           hint={`占花费 ${pct1(armAudit.wasted_spend_share)}；买中真水号 ${armAudit.n_fraud_selected} 人、高危 ${armAudit.n_high_risk_selected} 人`}
           tone={armAudit.wasted_spend_share > 0.2 ? 'bad' : 'good'}
@@ -319,7 +319,7 @@ export function DecisionTab({
       <div className="grid gap-3 lg:grid-cols-[1.05fr_1fr]">
         <Panel
           title="两臂对照：同预算、同候选口径，只换选人依据"
-          subtitle="浪费金额与有效曝光一律按 ground truth 计算，不使用引擎自身分数（防自证）"
+          subtitle="浪费金额与有效曝光按真实标注结算，不使用引擎自身给出的分数"
           right={<TruthChip kind="audit" />}
         >
           <DuoBars
@@ -329,31 +329,23 @@ export function DecisionTab({
               { label: '选中达人数', left: result.baseline.n_selected, right: result.plan.n_selected, note: '基线把预算堆在少数头部达人身上' },
               { label: '花费（美元）', left: result.baseline.spent_usd, right: result.plan.spent_usd },
               { label: '名义曝光', left: audit.baseline.nominal_views, right: audit.koxpilot.nominal_views, note: '名义曝光基线并不吃亏 —— 差距全在「有多少是真的」' },
-              { label: '有效曝光（gt）', left: audit.baseline.effective_views_gt, right: audit.koxpilot.effective_views_gt },
-              { label: '浪费金额（gt）', left: audit.baseline.wasted_spend_usd, right: audit.koxpilot.wasted_spend_usd },
+              { label: '有效曝光（真实标注）', left: audit.baseline.effective_views_gt, right: audit.koxpilot.effective_views_gt },
+              { label: '浪费金额（真实标注）', left: audit.baseline.wasted_spend_usd, right: audit.koxpilot.wasted_spend_usd },
             ]}
             fmt={(x) => (x > 1e5 ? compact(x) : int0(x))}
           />
           <div className="mt-3 grid grid-cols-3 gap-2">
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
-              <div className="text-[11px] text-slate-600">少浪费（本次单种子实测）</div>
+              <div className="text-[11px] text-slate-600">少浪费</div>
               <div className={`num text-[16px] ${audit.saved_usd >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {audit.saved_usd >= 0 ? '' : '−'}
                 {usd0(Math.abs(audit.saved_usd))}
               </div>
               <div className="muted">
-                占预算 {signedPct1(audit.saved_share_of_budget)} ——{' '}
-                {robust === 'missing'
-                  ? 'multiseed.json 未生成，跨种子区间无法给出，这里只敢说这是一次观测'
-                  : robust
-                    ? `单次观测；${robust.n} 种子稳健口径 ${signedPct1(robust.mean)} ± ${pct1(robust.std)}，95% CI [${signedPct1(
-                        robust.low,
-                      )}, ${signedPct1(robust.high)}]${
-                        audit.saved_share_of_budget < robust.low || audit.saved_share_of_budget > robust.high
-                          ? '，本次值落在 CI 之外，属于偏乐观的一次抽样'
-                          : ''
-                      }`
-                    : '正在读 multiseed.json…'}
+                占预算 {signedPct1(audit.saved_share_of_budget)}
+                {robust && robust !== 'missing'
+                  ? ` · 稳健区间 [${signedPct1(robust.low)}, ${signedPct1(robust.high)}]`
+                  : ''}
               </div>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
@@ -372,12 +364,12 @@ export function DecisionTab({
           {audit.saved_usd < 0 && (
             <Note tone="warn">
               本 campaign 的对照结果是<b className="text-amber-700">负的</b>：KOXPilot 反而多花了浪费钱。原因是这个候选池里基线恰好没买到多少水号，
-              而 KOXPilot 为了满足长尾配额买入了更多中小达人。三个 campaign 合计仍然是正收益，但单个 campaign 的失败案例照实展示，不挑好看的看板。
+              而 KOXPilot 为了满足长尾配额买入了更多中小达人。全部 campaign 合计仍为正收益。
             </Note>
           )}
         </Panel>
 
-        <Panel title={`结构约束校验 · ${arm === 'koxpilot' ? 'KOXPilot 臂' : '基线臂'}`} subtitle="约束在分配过程中强制生效，不是事后检查">
+        <Panel title={`结构约束校验 · ${arm === 'koxpilot' ? 'KOXPilot 臂' : '基线臂'}`} subtitle="配额约束在分配过程中强制生效">
           <div
             className={`rounded-lg border px-2.5 py-1.5 text-[12px] ${
               plan.constraints.all_enforced_satisfied
@@ -395,10 +387,8 @@ export function DecisionTab({
           </div>
           <div className="mt-2">
             <Collapse
-              flag="detail"
-              count={plan.constraints.checks.length}
-              title="展开：逐条约束的实际值 / 上限，以及基线臂为什么只做记录不强制"
-              hint="头部金额占比 ≤45%、长尾 ≥25%、单一国家 ≤60% 这些配额在贪心过程中就生效"
+              title="逐条约束的实际值 / 上限"
+              hint="头部金额占比 ≤45%、长尾 ≥25%、单一国家 ≤60%，这些配额在分配过程中即生效"
             >
               <ConstraintList plan={plan} />
             </Collapse>
@@ -432,10 +422,8 @@ export function DecisionTab({
       </div>
 
       <Collapse
-        flag="evidence"
-        count={plan.trace.length}
-        title={`展开：分配过程日志 —— ${plan.trace.length} 步中文 trace，由分配器运行时生成，双实现一致性校验逐字比对`}
-        hint="它证明的是「这些中文说明不是写在页面里的文案，而是算出来的」：Python 与 TS 两套实现要逐字一致"
+        title={`分配过程：${plan.trace.length} 步决策日志（每一步为什么加人、为什么修正配额）`}
+        hint="由分配器在本次运行中生成"
       >
         <ol className="space-y-1.5">
           {plan.trace.map((t, i) => (
@@ -464,10 +452,8 @@ export function DecisionTab({
       </Collapse>
 
       <Collapse
-        flag="detail"
-        count={plan.n_selected}
-        title={`展开：这一臂到底买了谁 —— ${plan.n_selected} 人 / ${plan.n_posts} 条的逐人金额、性价比、交付分层与 gt 对照`}
-        hint="value = 平均播放 × 真实性折扣 × 适配 × 受众匹配 × KPI 权重；效率 = 边际 value / 报价。gt 一列只用于事后审计，分配过程读不到它"
+        title={`达人清单：${plan.n_selected} 人 / ${plan.n_posts} 条的逐人金额、性价比与交付分层`}
+        hint="价值分 = 平均播放 × 真实性折扣 × 内容适配 × 受众匹配 × KPI 权重；性价比 = 边际价值 / 报价。点任意一行查看该达人的门禁证据链与淘汰理由"
       >
         <div className="mb-2 flex justify-end">
           <Segmented
@@ -482,7 +468,7 @@ export function DecisionTab({
             ]}
           />
         </div>
-        <div className="max-h-[420px] overflow-auto">
+        <div className="max-h-[360px] overflow-auto">
           <table className="w-full border-collapse">
             <thead className="sticky top-0 z-10 bg-white backdrop-blur">
               <tr className="hairline">
@@ -496,11 +482,11 @@ export function DecisionTab({
                 <th className="th">入选方式</th>
                 <th className="th">交付分层</th>
                 <th className="th">门禁</th>
-                <th className="th">gt</th>
+                <th className="th">真实标注</th>
               </tr>
             </thead>
             <tbody>
-              {sorted.map((a) => {
+              {shown.map((a) => {
                 const gt = koxById.get(a.kox_id)?.gt;
                 return (
                   <tr
@@ -520,7 +506,7 @@ export function DecisionTab({
                     <td className="td num text-right text-live-700">
                       {usd0(a.amount_usd)}
                       {a.price_estimated && (
-                        <Hint text="该达人未给报价，按同组 avg_cpm 的 P50 估算，产物里用 price_estimated 标注，不假装是真实报价">
+                        <Hint text="该达人未提供报价，按同组 CPM 中位数估算">
                           <span className="ml-1 text-[9px] text-amber-600">估</span>
                         </Hint>
                       )}
@@ -538,7 +524,7 @@ export function DecisionTab({
                         const t = tierByKox.get(a.kox_id);
                         if (!tierComparable) {
                           return (
-                            <Hint text={`分层来自 metrics.json 的 decay 三档扫描，产物口径是「不纳入 review、decay = ${referenceDecay ?? '?'}」。当前参数与该口径不一致，标记会误导，所以这里不显示。`}>
+                            <Hint text={`分层依据「不纳入待复核、重复触达折扣 = ${referenceDecay ?? '?'}」这一档口径计算，当前参数与之不一致，故不展示。`}>
                               <span className="text-[10px] text-slate-500">口径不符</span>
                             </Hint>
                           );
@@ -546,11 +532,11 @@ export function DecisionTab({
                         if (arm !== 'koxpilot') return <span className="text-[10px] text-slate-500">—</span>;
                         if (!t) return <span className="text-[10px] text-slate-500">未在扫描内</span>;
                         return t.tier === 'core' ? (
-                          <Hint text={`三档 decay（${((decaySens?.scan ?? []) as number[]).join(' / ')}）都选中这个人，入选不依赖该假设，可直接下单。金额区间 $${Math.round(t.min)} ~ $${Math.round(t.max)}。`}>
+                          <Hint text={`重复触达折扣取三档（${((decaySens?.scan ?? []) as number[]).join(' / ')}）时均入选，可直接下单。金额区间 $${Math.round(t.min)} ~ $${Math.round(t.max)}。`}>
                             <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700">核心</Badge>
                           </Hint>
                         ) : (
-                          <Hint text={`只在 decay = ${t.decays.map((d) => d.toFixed(1)).join(' / ')} 时被选中，换档会掉出名单；金额区间 $${Math.round(t.min)} ~ $${Math.round(t.max)}（min = 0 表示某一档整个没选它）。按分层交付规则：标记「重复触达折扣假设敏感」，转人工确认或改按单条采购，不自动执行。`}>
+                          <Hint text={`仅在重复触达折扣 = ${t.decays.map((d) => d.toFixed(1)).join(' / ')} 时入选，换档会掉出名单；金额区间 $${Math.round(t.min)} ~ $${Math.round(t.max)}。需人工复核或改按单条采购。`}>
                             <Badge className="border-amber-300 bg-amber-50 text-amber-700">假设敏感</Badge>
                           </Hint>
                         );
@@ -574,12 +560,20 @@ export function DecisionTab({
             </tbody>
           </table>
         </div>
+        {sorted.length > TOP_N && (
+          <div className="mt-2 flex justify-center">
+            <button
+              onClick={() => setShowAll((v) => !v)}
+              className="focusable rounded-lg border border-slate-300 px-3 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
+            >
+              {showAll ? `收起（只看金额前 ${TOP_N} 人）` : `展开全部 ${sorted.length} 人`}
+            </button>
+          </div>
+        )}
         <div className="mt-2 border-t border-slate-300 pt-2">
           {tierComparable && arm === 'koxpilot' && tierByKox.size > 0 && (
             <div className="mb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
-              <span className="text-slate-600">
-                本 campaign 交付分层（读 metrics.json → budget_decay_sensitivity.per_campaign[*].delivery_tiers）：
-              </span>
+              <span className="text-slate-600">交付分层：</span>
               <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700">
                 核心 {int0(tierRowStats.core)} 人 · {usd0(tierRowStats.coreUsd)}
               </Badge>
@@ -587,34 +581,28 @@ export function DecisionTab({
                 假设敏感 {int0(tierRowStats.sensitive)} 人 · {usd0(tierRowStats.sensitiveUsd)}
                 {plan.spent_usd > 0 && <>（{pct1(tierRowStats.sensitiveUsd / plan.spent_usd)} 支出）</>}
               </Badge>
-              <span className="muted">
-                敏感层不自动执行：转人工确认或改按单条采购 —— 换一档"重复触达折扣"假设，这些人就会掉出名单。
-              </span>
+              <span className="muted">敏感层需人工复核后下单，不自动执行。</span>
             </div>
           )}
-          <span className="muted">
-            gt 一列只用于事后审计展示 —— 分配过程完全读不到它。基线臂里那些标红的人，就是「按粉丝量买」实际会把钱交给谁。
-          </span>
+          <span className="muted">「真实标注」一列仅用于事后审计展示，分配过程不读取。</span>
         </div>
       </Collapse>
 
       <div className="grid gap-2 lg:grid-cols-[1fr_1.1fr]">
         <Collapse
-          flag="evidence"
-          count={parityRows.length}
           title={
             comparable
-              ? `展开：同一份预算，浏览器 TS 现算 vs Python 产物逐项对数（${allParity ? '5 项全部一致' : '存在差异'}）`
+              ? `与 Python 离线结果逐项对数（${allParity ? `${parityRows.length} 项全部一致` : '存在差异'}）`
               : isCustom
-                ? '展开：为什么自定义 brief 没法和 Python 产物对数（口径澄清）'
-                : '展开：为什么你改过参数后这张对数表不可比（口径澄清，不做假对齐）'
+                ? '自定义 brief 与 Python 离线结果不可比（口径说明）'
+                : '当前参数与离线结果口径不同，暂不可比（口径说明）'
           }
           hint={
             comparable
-              ? '当前参数与产物口径一致（不含 review、衰减 0.7），所以敢把两套实现的数摆在一起'
+              ? '当前参数与离线结果口径一致：不纳入待复核、边际衰减 0.7'
               : isCustom
-                ? '你自己敲的 brief 不在 Python 产物里，没有对应的离线结果可对 —— 这里如实标注，不拿别的 campaign 顶上'
-                : '你改过参数（纳入 review 或改了衰减系数），与产物口径不可比'
+                ? '自定义 brief 没有对应的离线结果可对照'
+                : '已修改参数（纳入待复核或调整了边际衰减），与离线结果口径不同'
           }
         >
           {comparable && parityRows.length > 0 ? (
@@ -649,10 +637,8 @@ export function DecisionTab({
         </Collapse>
 
         <Collapse
-          flag="evidence"
-          count={cfPer.length}
-          title={`展开：${cfPer.length} 个 campaign 的反事实价值汇总，含为负的那一个（Python 全量产物）`}
-          hint="单个 campaign 的少浪费可能是负的 —— 哪一个为负由 audit.json 现算，不写死，也不挑好看的展示"
+          title={`全部 ${cfPer.length} 个 campaign 的价值汇总（Python 离线全量结果）`}
+          hint="单个 campaign 的少浪费可能为负，取决于该候选池里是否真的存在刷量账号"
         >
           <div className="mb-2">
             <TruthChip kind="python" />
@@ -732,12 +718,6 @@ export function DecisionTab({
           )}
         </Collapse>
       </div>
-
-      <Note>
-        <TrendingUp size={11} className="mr-1 inline text-live-600" />
-        采购模型：按内容条数买，单达人最多 3 条，第 n 条的边际有效曝光按 {plan.purchase_model.post_marginal_decay}^(n−1) 衰减 ——
-        这样"把钱堆在一个人身上"会自然失去性价比，而不是靠一条硬规则拍死。
-      </Note>
 
       <Drawer
         open={Boolean(openId)}

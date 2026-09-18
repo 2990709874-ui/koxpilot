@@ -5,14 +5,7 @@ import { Collapse, Verdict } from '../components/Collapse';
 import { EvidenceBody } from '../components/EvidenceDrawer';
 import { Badge, CountUp, Drawer, Hint, Note, Panel, Segmented, Toggle, TruthChip } from '../components/ui';
 import { CATEGORY_ZH, PLATFORM_LABEL } from '../engine/taxonomy';
-import {
-  EXAMPLE_BRIEFS,
-  diffSpec,
-  diffSummary,
-  parseBrief,
-  type BriefParseResult,
-  type SpecDiffRow,
-} from '../engine/briefParse';
+import { EXAMPLE_BRIEFS, parseBrief, type BriefParseResult } from '../engine/briefParse';
 import { Thresholds, type ThresholdsPayload } from '../engine/thresholds';
 import type { CampaignSpec, GateResult, Kox } from '../engine/types';
 import type { BriefEntry } from '../lib/artifacts';
@@ -81,15 +74,13 @@ const KIND_ICON: Record<StageReport['kind'], React.ReactElement> = {
 };
 
 /**
- * 单个 Agent 的执行轨迹卡。
- *
- * 改版要点：耗时 / 真实性标签 / 逐层筛掉多少人这三样是「真在算」的核心证据，留在卡面上；
- * 原来平铺的 3~5 行小灰字明细收进折叠，折叠标题写明里面是什么、有几条。
+ * 单个 Agent 的执行轨迹（紧凑行卡）。
+ * 卡面只留三样：这一步做了什么、结果、耗时；逐项数字统一收进本板块底部的一个折叠。
  */
 function StageCard({ s, index, live }: { s: StageReport; index: number; live: boolean }): React.ReactElement {
   return (
     <div
-      className={`card relative overflow-hidden px-3.5 py-3 ${live ? 'border-live-300' : ''}`}
+      className={`card relative overflow-hidden px-3 py-1.5 ${live ? 'border-live-300' : ''}`}
       style={{ animation: `fade-up .35s ease-out ${index * 0.05}s both` }}
     >
       {live && (
@@ -97,46 +88,16 @@ function StageCard({ s, index, live }: { s: StageReport; index: number; live: bo
           <div className="h-full w-1/3 animate-sweep bg-gradient-to-r from-transparent via-live-100 to-transparent" />
         </div>
       )}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         {KIND_ICON[s.kind]}
-        <span className="text-[12.5px] font-semibold text-slate-900">{s.agent}</span>
-        <span className="num ml-auto text-[11px] text-slate-600">{ms(s.elapsedMs)}</span>
-      </div>
-      <div className="muted mt-0.5 truncate" title={s.title}>
-        {s.title}
-      </div>
-      <div className="num mt-1.5 text-[13px] font-medium text-live-700">{s.headline}</div>
-      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-        <TruthChip kind={s.kind} />
-        {s.kind === 'llm-offline' && (
-          <Hint text={s.tokenNote ?? ''}>
-            <Badge className="border-indigo-200 bg-indigo-50 text-indigo-700">
-              {s.tokens === null ? 'token 账未生成' : `${int0(s.tokens)} token`}
-            </Badge>
-          </Hint>
-        )}
-        <span className="num text-[11px] text-slate-600">
-          {int0(s.items)} 条输入 · {(s.elapsedMs / Math.max(s.items, 1)).toFixed(4)} ms/条
+        <span className="truncate text-[12px] font-semibold text-slate-900" title={s.title}>
+          {s.agent}
         </span>
+        <span className="num ml-auto shrink-0 text-[11px] text-slate-600">{ms(s.elapsedMs)}</span>
       </div>
-      {s.detail.length > 0 && (
-        <div className="mt-2">
-          <Collapse
-            flag="detail"
-            count={s.detail.length}
-            title={`展开：${s.id} 这一步的口径与逐项数字`}
-          >
-            <ul className="space-y-1">
-              {s.detail.map((d) => (
-                <li key={d} className="flex gap-1.5 text-[12px] leading-relaxed text-slate-600">
-                  <span className="mt-[6px] inline-block h-1 w-1 shrink-0 rounded-full bg-slate-400" />
-                  <span>{d}</span>
-                </li>
-              ))}
-            </ul>
-          </Collapse>
-        </div>
-      )}
+      <div className="num mt-1 truncate text-[12px] font-medium text-live-700" title={s.headline}>
+        {s.headline}
+      </div>
     </div>
   );
 }
@@ -151,6 +112,25 @@ const STATUS_STYLE: Record<string, { label: string; cls: string }> = {
   default: { label: '未识别·用默认值', cls: 'border-amber-300 bg-amber-50 text-amber-700' },
 };
 
+/** 词表/常量名等代码标识符 → 业务说法：证据表里只出现人话。 */
+const IDENT_ZH: Array<[RegExp, string]> = [
+  [/CATEGORY_ADJACENCY/g, '相邻品类表'],
+  [/COUNTRY_LANG/g, '国家语言表'],
+  [/AGE_BUCKETS/g, '年龄分桶'],
+  [/COMPETITOR_GROUPS/g, '竞品品牌库'],
+  [/taxonomy/gi, '品类体系'],
+];
+
+function humanRule(text: string): string {
+  let out = text;
+  for (const [re, zh] of IDENT_ZH) out = out.replace(re, zh);
+  return out.replace(/\b[A-Z][A-Z0-9_]{3,}\b/g, '内置词表');
+}
+
+function truncate(text: string, n: number): string {
+  return text.length > n ? `${text.slice(0, n)}…` : text;
+}
+
 function EvidenceTable({ parse }: { parse: BriefParseResult }): React.ReactElement {
   return (
     <table className="w-full">
@@ -159,7 +139,7 @@ function EvidenceTable({ parse }: { parse: BriefParseResult }): React.ReactEleme
           <th className="th">字段</th>
           <th className="th">来源</th>
           <th className="th">命中原文片段</th>
-          <th className="th">规则</th>
+          <th className="th">识别方式</th>
           <th className="th">解析值</th>
         </tr>
       </thead>
@@ -174,12 +154,14 @@ function EvidenceTable({ parse }: { parse: BriefParseResult }): React.ReactEleme
               {e.matched ? (
                 <span className="rounded bg-live-50 px-1 py-0.5">{e.matched}</span>
               ) : (
-                <span className="text-slate-500">—（不来自原文）</span>
+                <span className="text-slate-500">—</span>
               )}
             </td>
             <td className="td">
-              <Hint text={e.ruleText}>
-                <span className="num text-[11px] text-slate-600 underline decoration-dotted">{e.rule}</span>
+              <Hint text={humanRule(e.ruleText)}>
+                <span className="text-[11.5px] text-slate-600 underline decoration-dotted">
+                  {truncate(humanRule(e.ruleText), 22)}
+                </span>
               </Hint>
             </td>
             <td className="td num text-slate-800">{e.value}</td>
@@ -225,38 +207,6 @@ function SpecChips({ spec }: { spec: CampaignSpec }): React.ReactElement {
         <Badge className="border-amber-300 bg-amber-50 text-amber-700">受管制口径 {spec.regulated_category}</Badge>
       )}
     </div>
-  );
-}
-
-/** 「构建期 LLM 解析 vs 线上规则解析」逐字段对照表。 */
-function DiffTable({ rows }: { rows: SpecDiffRow[] }): React.ReactElement {
-  return (
-    <table className="w-full">
-      <thead>
-        <tr>
-          <th className="th">字段</th>
-          <th className="th">构建期 LLM 解析（固化产物）</th>
-          <th className="th">线上规则解析（现在算的）</th>
-          <th className="th">一致</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => (
-          <tr key={String(r.field)} className="hairline">
-            <td className="td text-slate-700">{r.label}</td>
-            <td className="td num text-slate-700">{r.llm}</td>
-            <td className="td num text-live-700">{r.rule}</td>
-            <td className="td">
-              {r.same ? (
-                <span className="text-[12px] text-emerald-600">一致</span>
-              ) : (
-                <span className="text-[12px] text-rose-600">{r.note}</span>
-              )}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
   );
 }
 
@@ -327,7 +277,7 @@ export function ConsoleTab({
     setCustomRunning(true);
     setCustomErr(null);
     try {
-      const parse = parseBrief(text, { campaignId: 'CUSTOM', name: '自定义 brief（线上规则解析）' });
+      const parse = parseBrief(text, { campaignId: 'CUSTOM', name: '自定义 brief' });
       if (!thrRef.current) {
         const res = await fetch(`${import.meta.env.BASE_URL}data/thresholds.json`, { cache: 'force-cache' });
         if (!res.ok) throw new Error(`thresholds.json 加载失败：HTTP ${res.status}`);
@@ -336,35 +286,34 @@ export function ConsoleTab({
       const r = await runPipeline(records, parse.spec, thrRef.current, {
         includeReview,
         decay,
-        // 线上这一跑没有任何 LLM 调用，所以不传 llm_bench 的 token 账 —— 见下面对 A1 卡的重写
+        // 自定义运行不附带预置 brief 的 token 账
         llmPerTask: null,
         primaryModelKey: null,
       });
-      // A1 在自定义模式下**不是**构建期 LLM 产物，而是刚刚跑完的规则解析：如实改写这张卡
+      // 自定义模式下 A1 的输出即刚跑完的规则解析结果
       const hit = parse.evidence.filter((e) => e.status === 'hit').length;
       const derived = parse.evidence.filter((e) => e.status === 'derived').length;
       const fallback = parse.evidence.filter((e) => e.status === 'default').length;
       r.stages[0] = {
         ...r.stages[0],
-        agent: 'A1 BriefAgent（线上规则版）',
-        title: '自由输入原文 → CampaignSpec（briefParse.ts，纯规则）',
+        agent: 'A1 BriefAgent',
+        title: '自由输入原文 → 投放需求结构（规则解析）',
         kind: 'rule',
         elapsedMs: parse.elapsedMs,
         items: Math.max(text.length, 1),
         headline: `${hit} 字段原文命中 / ${derived} 规则推导 / ${fallback} 降级默认`,
         detail: [
-          '线上这一步是规则解析，不是 LLM：正则 + 词表匹配，全部在你的浏览器里跑',
-          `解析耗时 ${parse.elapsedMs.toFixed(3)} ms（performance.now() 实测），输入 ${text.length} 字`,
+          '解析方式：正则与词表匹配，在浏览器内完成',
+          `解析耗时 ${parse.elapsedMs.toFixed(3)} ms，输入 ${text.length} 字`,
           ...parse.warnings,
         ],
         tokens: 0,
         tokenNote: undefined,
       };
-      // A4 的 token 账只在预置 brief 下有意义（llm_bench.json 记的是那三条 brief 的构建期调用）；
-      // 自定义运行不附带 token 账，措辞要说清是「本次没附带」，不能让人以为产物缺失
+      // token 账只随预置 brief 提供；自定义运行如实标注为「本次不附带」
       for (const st of r.stages) {
         if (st.kind === 'llm-offline' && st.tokens === null) {
-          st.tokenNote = '自定义 brief 的这次运行不附带构建期 token 账：llm_bench.json 记录的是三条预置 brief 的真实调用，切回预置即可看到账目';
+          st.tokenNote = '本次自定义运行不附带 token 账；切回预置 brief 可查看模型调用账目';
         }
       }
       const run: LiveRun = { result: r, parse, text };
@@ -384,21 +333,11 @@ export function ConsoleTab({
   const running = custom ? customRunning : appRunning;
   const isCustom = Boolean(custom);
 
-  /** 预置 brief 的自比对：同一条原文，构建期 LLM 解析 vs 线上规则解析。 */
-  const selfCompare = React.useMemo(
-    () =>
-      briefs.map((b) => {
-        const parsed = parseBrief(b.raw_text, { campaignId: b.spec.campaign_id, name: b.name });
-        const rows = diffSpec(b.spec, parsed.spec);
-        return { brief: b, parsed, rows, sum: diffSummary(rows) };
-      }),
-    [briefs],
-  );
-  const compareTotal = selfCompare.reduce(
-    (acc, x) => ({ same: acc.same + x.sum.same, total: acc.total + x.sum.total }),
-    { same: 0, total: 0 },
-  );
-  const currentCompare = selfCompare[briefIdx] ?? null;
+  /** 预置 brief 的字段解析证据（与自定义运行同一套解析器）。 */
+  const presetParse = React.useMemo(() => {
+    const b = briefs[briefIdx];
+    return b ? parseBrief(b.raw_text, { campaignId: b.spec.campaign_id, name: b.name }) : null;
+  }, [briefs, briefIdx]);
 
   const rows = React.useMemo(() => {
     if (!result) return [];
@@ -426,20 +365,19 @@ export function ConsoleTab({
     result && result.pool.length > 0
       ? (result.stages.find((s) => s.id === 'A3')?.elapsedMs ?? 0) / result.pool.length
       : null;
-  const activeParse = custom?.parse ?? currentCompare?.parsed ?? null;
+  const activeParse = custom?.parse ?? presetParse;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* ---- 本页结论 ---- */}
       <Verdict
         what="第一步：一句话需求 → 可投名单与预算"
         conclusion={
           result ? (
             <>
-              {isCustom ? '你刚敲的这条 brief' : `预置 ${brief?.brief_id ?? ''}`} 已在浏览器内跑完 A1–A6：全库{' '}
-              <b>{int0(datasetN)}</b> 条 → 定向召回 <b>{int0(result.pool.length)}</b> 人 → 四层门禁判可投{' '}
-              <b>{int0(result.verdictCounts.pass)}</b> 人 → 预算落到 <b>{int0(result.plan.n_selected)}</b> 人 /{' '}
-              {int0(result.plan.n_posts)} 条。A2–A6 全部现算；A1 线上是<b>规则解析</b>，不是 LLM（下方明说）。
+              {isCustom ? '你刚敲的这条 brief' : `预置 ${brief?.brief_id ?? ''}`}：全库 <b>{int0(datasetN)}</b> 条 → 召回{' '}
+              <b>{int0(result.pool.length)}</b> 人 → 判可投 <b>{int0(result.verdictCounts.pass)}</b> 人 → 预算落到{' '}
+              <b>{int0(result.plan.n_selected)}</b> 人 / {int0(result.plan.n_posts)} 条，全链路浏览器内实时计算。
             </>
           ) : (
             '流水线正在运行…'
@@ -457,7 +395,7 @@ export function ConsoleTab({
       {/* ---- ① 投放需求：预置 + 自由输入 ---- */}
       <Panel
         title="① 投放需求（brief）：可以改预置原文，也可以自己写一条"
-        subtitle="敲完点「解析并重跑」→ 规则解析出 CampaignSpec → A2~A6 在你的浏览器里重算一遍"
+        subtitle="敲完点「解析并重跑」→ 浏览器内规则解析出投放需求 → A2–A6 实时重算；原文未写明的竞品品牌不会被补全"
         right={
           <div className="flex items-center gap-2">
             <button
@@ -479,7 +417,7 @@ export function ConsoleTab({
           </div>
         }
       >
-        <div className="grid gap-3 lg:grid-cols-[1.05fr_1fr]">
+        <div className="grid gap-2 lg:grid-cols-[1.05fr_1fr]">
           <div>
             <div className="flex flex-wrap items-center gap-1.5">
               {briefs.map((b, i) => (
@@ -500,7 +438,7 @@ export function ConsoleTab({
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
-              rows={4}
+              rows={2}
               spellCheck={false}
               placeholder="例：彩妆新品投巴西和墨西哥，预算 5 万美元，Instagram 为主，目标 18-24 岁女性，看互动。"
               className="focusable mt-2 w-full resize-y rounded-xl border border-slate-300 bg-white px-3 py-2 text-[13px] leading-relaxed text-slate-800 outline-none placeholder:text-slate-500 focus:border-brand-400"
@@ -521,7 +459,7 @@ export function ConsoleTab({
             {customErr && (
               <Note tone="warn">
                 <AlertTriangle size={11} className="mr-1 inline" />
-                这次自定义运行失败了：{customErr}。页面保留上一次的预置结果，不用假数字顶上。
+                这条 brief 运行失败：{customErr}。页面保留上一次的结果。
               </Note>
             )}
             {custom && custom.parse.warnings.length > 0 && (
@@ -533,8 +471,7 @@ export function ConsoleTab({
             )}
             {custom && custom.result.pool.length === 0 && (
               <Note tone="warn">
-                这条 brief 的候选池是 <b>0 人</b>：平台 / 品类 / 市场三条硬筛选把全库筛空了，所以下游名单与预算都是空的
-                —— 这是真实结果，不是报错。放宽市场或去掉平台限定再试。
+                这条 brief 的候选池是 <b>0 人</b>：平台 / 品类 / 市场三条定向条件把全库筛空，下游名单与预算随之为空。放宽市场或去掉平台限定再试。
               </Note>
             )}
           </div>
@@ -542,13 +479,11 @@ export function ConsoleTab({
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[12.5px] font-medium text-slate-800">
-                {isCustom ? '线上规则解析出的 CampaignSpec' : `${brief?.brief_id ?? ''} 的 CampaignSpec（构建期 LLM 固化）`}
+                {isCustom ? '解析出的投放需求' : `${brief?.brief_id ?? ''} 的投放需求`}
               </span>
-              {isCustom ? (
-                <Badge className="border-live-300 bg-live-50 text-live-700">规则解析 · 刚刚现算</Badge>
-              ) : (
-                <TruthChip kind="llm-offline" />
-              )}
+              <Badge className="border-live-300 bg-live-50 text-live-700">
+                {isCustom ? '刚刚解析' : '预置产物'}
+              </Badge>
             </div>
             <div className="mt-2">
               <SpecChips spec={(result?.spec ?? brief?.spec) as CampaignSpec} />
@@ -577,66 +512,30 @@ export function ConsoleTab({
           </div>
         </div>
 
-        {/* ---- 诚实性：线上是规则，不是 LLM ---- */}
-        <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5">
-          <div className="text-[13px] font-medium text-amber-900">
-            说明：线上这个 brief 解析器是<b>规则实现</b>，不是大模型。
-          </div>
-          <p className="body-text mt-1">
-            你敲进去的 brief 由 <code className="num text-[12px] text-slate-800">src/engine/briefParse.ts</code>
-            （正则 + 词表）在你的浏览器里解析，<b>本页不向任何模型 endpoint 发一个请求</b>。
-            A1 的 LLM 版在<b>构建期真调过</b>，真实 token usage 落在{' '}
-            <code className="num text-[12px] text-slate-800">output/llm_bench.json</code> 里、账目展示在 Cost &amp; Value 页；
-            线上不调的原因是三条工程约束：静态部署没有服务端、不把 API key 打进前端包、要让任何人任何时刻打开都能复现同一组数字。
-            两套实现的差距不含糊过去 —— 就在下面这张对照表里逐字段量化。
-          </p>
-        </div>
-
-        {/* ---- 解析证据 + LLM/规则对照 ---- */}
-        <div className="mt-2 grid gap-2 lg:grid-cols-2">
+        {/* ---- 字段解析证据 ---- */}
+        <div className="mt-2">
           {activeParse && (
             <Collapse
-              flag="evidence"
-              count={activeParse.evidence.length}
-              title={`展开：这 ${activeParse.evidence.length} 个字段各自命中了原文的哪个片段、用的哪条规则`}
+              title={`展开：${activeParse.evidence.length} 个字段各自命中了原文的哪个片段、以什么方式识别`}
               hint={`原文命中 ${activeParse.evidence.filter((e) => e.status === 'hit').length} · 规则推导 ${
                 activeParse.evidence.filter((e) => e.status === 'derived').length
-              } · 未识别降级 ${activeParse.evidence.filter((e) => e.status === 'default').length}（降级项如实标注，不假装识别到）`}
+              } · 未识别用默认值 ${activeParse.evidence.filter((e) => e.status === 'default').length}`}
             >
               <EvidenceTable parse={activeParse} />
-            </Collapse>
-          )}
-          {currentCompare && (
-            <Collapse
-              flag="evidence"
-              count={currentCompare.rows.filter((r) => !r.same).length}
-              title={`展开：同一条 ${currentCompare.brief.brief_id}，构建期 LLM 解析 vs 线上规则解析差在哪（${currentCompare.sum.same}/${currentCompare.sum.total} 字段一致）`}
-              hint={`3 条预置 brief 合计 ${compareTotal.same}/${compareTotal.total} 字段一致（${pct1(
-                compareTotal.same / Math.max(compareTotal.total, 1),
-              )}）；差异全部集中在竞品回避一格 —— LLM 会按品类常识补出原文没写的竞品，规则版只认原文出现过的品牌，补不出来，如实认。`}
-            >
-              <DiffTable rows={currentCompare.rows} />
-              <div className="mt-2 space-y-1">
-                {selfCompare.map((x) => (
-                  <div key={x.brief.brief_id} className="flex items-baseline justify-between gap-2">
-                    <span className="text-[12px] text-slate-600">
-                      {x.brief.brief_id} {x.brief.name}
-                    </span>
-                    <span className="num text-[12px] text-slate-800">
-                      {x.sum.same}/{x.sum.total} 一致（{pct1(x.sum.rate)}）
-                    </span>
-                  </div>
-                ))}
-              </div>
             </Collapse>
           )}
         </div>
       </Panel>
 
-      {/* ---- ② 六个 Agent 的真实执行轨迹 ---- */}
+      {/* ---- ② 执行轨迹 + 逐层筛人结果（合并成一块，控制信息密度） ---- */}
       <Panel
-        title="② 六个 Agent 的真实执行轨迹"
-        subtitle="耗时是 performance.now() 实测值；带「浏览器内真算」标签的阶段就在你的机器上跑。逐项明细收在每张卡的折叠里"
+        title="② 六个 Agent 的执行轨迹与逐层筛人结果"
+        subtitle={
+          result
+            ? `耗时为实测值；全库 ${int0(datasetN)} 条 → 候选 ${int0(result.pool.length)} 人 → 四层门禁判定分布`
+            : '耗时为实测值；每一步都在当前浏览器内计算'
+        }
+        bodyClass="space-y-2"
         right={
           result && (
             <span className="num text-[12px] text-slate-600">
@@ -646,218 +545,237 @@ export function ConsoleTab({
           )
         }
       >
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {stages.map((s, i) => (
             <StageCard key={s.id} s={s} index={i} live={running && !isCustom && i === liveStage} />
           ))}
           {running &&
             Array.from({ length: Math.max(0, 6 - stages.length) }).map((_, i) => (
-              <div key={`ph-${i}`} className="card flex h-[132px] items-center justify-center px-3.5 py-3">
-                <span className="num text-[12px] text-slate-600">等待前序阶段…</span>
+              <div key={`ph-${i}`} className="card flex h-[58px] items-center justify-center px-3 py-2">
+                <span className="num text-[11px] text-slate-600">等待前序阶段…</span>
               </div>
             ))}
         </div>
-      </Panel>
-
-      {/* ---- ③④⑤ 逐层筛掉多少人 ---- */}
-      {result && (
-        <div className="grid gap-2 lg:grid-cols-3">
-          <Panel title="③ 从全库到可投的漏斗" subtitle="每层数字 =「到这一层为止一条规则都没触发」的人数">
-            <Funnel steps={result.funnel} />
-            <div className="mt-2">
-              <Collapse
-                flag="detail"
-                count={Object.keys(result.skipCounts).length}
-                title="展开：A2 定向筛人的原因分布（平台 / 品类 / 市场各筛掉多少）"
-              >
-                <div className="space-y-1">
-                  {Object.entries(result.skipCounts)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([k, v]) => (
-                      <div key={k} className="flex items-baseline justify-between gap-2">
-                        <span className="text-[12px] text-slate-600">{SKIP_REASON_LABEL[k] ?? k}</span>
-                        <span className="num text-[12px] text-slate-800">{int0(v)}</span>
-                      </div>
-                    ))}
-                  {Object.keys(result.skipCounts).length === 0 && (
-                    <div className="muted">本次没有人被定向筛掉（spec 没有平台 / 品类 / 市场限定）。</div>
-                  )}
-                </div>
-              </Collapse>
-            </div>
-          </Panel>
-
-          <Panel title="④ 候选池判定分布" subtitle={`候选 ${int0(result.pool.length)} 人（不是全库 ${int0(datasetN)} 人）`}>
-            <DonutRing
-              segments={(['pass', 'review', 'reject'] as const).map((v) => ({
-                key: v,
-                label: VERDICT_LABEL[v],
-                value: result.verdictCounts[v],
-                color: VERDICT_HEX[v],
-              }))}
-              center={<CountUp value={result.pool.length} format={(v) => int0(v)} />}
-              sub="候选人数"
-            />
-            <div className="mt-2 grid grid-cols-4 gap-1.5">
-              {(['G0', 'G1', 'G2', 'G3'] as const).map((g) => (
-                <div key={g} className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5">
-                  <div className="text-[11px] text-slate-600">{g} 命中</div>
-                  <div className="num text-[14px] text-slate-900">{int0(result.gateHits[g] ?? 0)}</div>
-                </div>
-              ))}
-            </div>
-          </Panel>
-
-          <Panel title="⑤ 规则命中排行" subtitle="一个人可能同时命中多条规则">
-            <SparkBars items={result.ruleHits.map((r) => ({ key: r.rule_id, label: `${r.rule_id} ${r.label}`, value: r.n }))} />
-            <div className="mt-2">
-              <Collapse
-                flag="detail"
-                count={result.ruleHits.length}
-                title="展开：20 条规则里哪几条真的在拦人（逐条命中人数）"
-              >
-                <div className="max-h-[220px] space-y-1 overflow-y-auto pr-1">
-                  {result.ruleHits.map((r) => (
-                    <div key={r.rule_id} className="flex items-center gap-2">
-                      <span className="num w-9 shrink-0 text-[11px] text-live-700">{r.rule_id}</span>
-                      <span className="truncate text-[12px] text-slate-600">{r.label}</span>
-                      <span className="num ml-auto text-[12px] text-slate-800">{int0(r.n)}</span>
+        {result && (
+          <>
+            <div className="grid gap-3 lg:grid-cols-[1fr_0.85fr_1fr]">
+              <Funnel steps={result.funnel} />
+              <div>
+                <DonutRing
+                  segments={(['pass', 'review', 'reject'] as const).map((v) => ({
+                    key: v,
+                    label: VERDICT_LABEL[v],
+                    value: result.verdictCounts[v],
+                    color: VERDICT_HEX[v],
+                  }))}
+                  size={96}
+                  center={<CountUp value={result.pool.length} format={(v) => int0(v)} />}
+                  sub="候选人数"
+                />
+              </div>
+              <div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {(
+                    [
+                      ['G0', '资料完整性'],
+                      ['G1', '真实性信号'],
+                      ['G2', '匹配一致性'],
+                      ['G3', '内容合规'],
+                    ] as const
+                  ).map(([g, zh]) => (
+                    <div key={g} className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1">
+                      <div className="text-[11px] text-slate-600">{zh}命中</div>
+                      <div className="num text-[14px] text-slate-900">{int0(result.gateHits[g] ?? 0)}</div>
                     </div>
                   ))}
-                  {result.ruleHits.length === 0 && <div className="muted">本候选池没有任何规则命中。</div>}
                 </div>
-              </Collapse>
+                <div className="mt-1.5">
+                  <SparkBars items={result.ruleHits.slice(0, 6).map((r) => ({ key: r.rule_id, label: r.label, value: r.n }))} />
+                </div>
+              </div>
             </div>
-          </Panel>
-        </div>
-      )}
-
-      {/* ---- ⑥ 候选清单（折叠，接住下半页的名单与预算） ---- */}
-      {result && (
-        <Collapse
-          flag="detail"
-          count={result.pool.length}
-          title={`展开：${int0(result.pool.length)} 人的逐人判定表与证据链（点任意一行看信号、实际值、阈值、同组分位、阈值来源）`}
-          hint="下半页「名单与预算」只列被买下的人；这张表是他们被判成什么、为什么的完整底稿"
-        >
-          <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-            <div className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-1">
-              <Search size={11} className="text-slate-500" />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="搜 handle / ID"
-                className="focusable w-28 bg-transparent text-[12px] text-slate-800 outline-none placeholder:text-slate-500"
-              />
-            </div>
-            <Segmented
-              size="sm"
-              value={verdictFilter}
-              onChange={setVerdictFilter}
-              options={[
-                { value: 'all', label: `全部 ${result.pool.length}` },
-                { value: 'pass', label: `可投 ${result.verdictCounts.pass}` },
-                { value: 'review', label: `人核 ${result.verdictCounts.review}` },
-                { value: 'reject', label: `拒绝 ${result.verdictCounts.reject}` },
-              ]}
-            />
-          </div>
-          <div className="max-h-[420px] overflow-auto">
-            <table className="w-full border-collapse">
-              <thead className="sticky top-0 z-10 bg-white">
-                <tr className="hairline">
-                  <th className="th">达人</th>
-                  <th className="th">平台 / 地区</th>
-                  <th className="th text-right">粉丝</th>
-                  <th className="th text-right">平均播放</th>
-                  <th className="th text-right">真实性</th>
-                  <th className="th text-right">异常分</th>
-                  <th className="th text-right">适配</th>
-                  <th className="th">判定</th>
-                  <th className="th">命中</th>
-                  <th className="th text-right">分配</th>
-                  <th className="th" />
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(({ kox, r }) => {
-                  const alloc = allocById.get(r.kox_id);
-                  return (
-                    <tr
-                      key={r.kox_id}
-                      onClick={() => setOpenId(r.kox_id)}
-                      className="hairline cursor-pointer transition-colors hover:bg-live-50"
-                    >
-                      <td className="td">
-                        <div className="font-medium text-slate-800">{kox.handle}</div>
-                        <div className="num text-[10px] text-slate-500">{r.kox_id}</div>
-                      </td>
-                      <td className="td text-[12px] text-slate-600">
-                        {PLATFORM_LABEL[String(kox.platform)] ?? kox.platform}
-                        <span className="mx-1 text-slate-500">/</span>
-                        {kox.country}
-                      </td>
-                      <td className="td num text-right">{compact(kox.followers ?? null)}</td>
-                      <td className="td num text-right">{compact(kox.avg_views ?? null)}</td>
-                      <td className="td num text-right">{fixed(r.authenticity_score, 3)}</td>
-                      <td className="td num text-right">
-                        <span className={r.fraud_score > 0.4 ? 'text-rose-600' : r.fraud_score > 0.2 ? 'text-amber-600' : 'text-slate-600'}>
-                          {fixed(r.fraud_score, 3)}
-                        </span>
-                      </td>
-                      <td className="td num text-right">{fixed(r.fit_score, 2)}</td>
-                      <td className="td">
-                        <Badge className={VERDICT_COLOR[r.verdict]}>{VERDICT_LABEL[r.verdict]}</Badge>
-                      </td>
-                      <td className="td">
-                        <div className="flex flex-wrap gap-1">
-                          {r.reasons.length === 0 && <span className="text-[11px] text-emerald-600">无</span>}
-                          {[...new Set(r.reasons.map((x) => x.rule_id))].slice(0, 4).map((id) => (
-                            <span key={id} className="num rounded border border-slate-200 bg-slate-50 px-1 text-[10px] text-slate-600">
-                              {id}
-                            </span>
-                          ))}
-                          {r.reasons.length > 4 && <span className="text-[10px] text-slate-500">+{r.reasons.length - 4}</span>}
-                        </div>
-                      </td>
-                      <td className="td num text-right">
-                        {alloc ? (
-                          <span className="text-live-700">
-                            {usd0(alloc.amount_usd)}
-                            <span className="ml-1 text-[10px] text-slate-500">{alloc.posts} 条</span>
+          </>
+        )}
+        <Collapse title="展开：六个 Agent 的计算口径与逐项数字、定向筛选原因分布、风控规则逐条命中人数">
+          <div className="space-y-3">
+            <div className="grid gap-2.5 lg:grid-cols-2">
+                    {stages.map((st) => (
+                      <div key={st.id} className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
+                        <div className="flex items-center gap-1.5 text-[12px] font-medium text-slate-800">
+                          {st.agent}
+                          <span className="num ml-auto text-[11px] text-slate-600">
+                            {int0(st.items)} 条输入 · {(st.elapsedMs / Math.max(st.items, 1)).toFixed(4)} ms/条
                           </span>
-                        ) : (
-                          <span className="text-slate-500">—</span>
-                        )}
-                      </td>
-                      <td className="td text-right">
-                        <ChevronRight size={13} className="text-slate-500" />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            {rows.length === 0 && (
-              <div className="px-4 py-6 text-center text-[12px] text-slate-600">
-                <Filter size={14} className="mx-auto mb-1.5 opacity-60" />
-                没有符合筛选条件的达人
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <TruthChip kind={st.kind} />
+                          {st.kind === 'llm-offline' && (
+                            <Hint text={st.tokenNote ?? ''}>
+                              <Badge className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                                {st.tokens === null ? 'token 账本次未附带' : `${int0(st.tokens)} token`}
+                              </Badge>
+                            </Hint>
+                          )}
+                        </div>
+                        <ul className="mt-1 space-y-0.5">
+                          {st.detail.map((d) => (
+                            <li key={d} className="flex gap-1.5 text-[12px] leading-relaxed text-slate-600">
+                              <span className="mt-[6px] inline-block h-1 w-1 shrink-0 rounded-full bg-slate-400" />
+                              <span>{d}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+            </div>
+            {result && (
+              <div className="grid gap-3 lg:grid-cols-2">
+                  <div>
+                    <div className="muted mb-1">定向筛选（平台 / 品类 / 市场）</div>
+                    <div className="space-y-1">
+                      {Object.entries(result.skipCounts)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([k, v]) => (
+                          <div key={k} className="flex items-baseline justify-between gap-2">
+                            <span className="text-[12px] text-slate-600">{SKIP_REASON_LABEL[k] ?? k}</span>
+                            <span className="num text-[12px] text-slate-800">{int0(v)}</span>
+                          </div>
+                        ))}
+                      {Object.keys(result.skipCounts).length === 0 && (
+                        <div className="muted">本次没有人被定向筛掉（需求中没有平台 / 品类 / 市场限定）。</div>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="muted mb-1">风控规则命中人数</div>
+                    <div className="max-h-[200px] space-y-1 overflow-y-auto pr-1">
+                      {result.ruleHits.map((r) => (
+                        <div key={r.rule_id} className="flex items-center gap-2">
+                          <span className="truncate text-[12px] text-slate-600">{r.label}</span>
+                          <span className="num ml-auto text-[12px] text-slate-800">{int0(r.n)}</span>
+                        </div>
+                      ))}
+                      {result.ruleHits.length === 0 && <div className="muted">本候选池没有任何规则命中。</div>}
+                    </div>
+                  </div>
               </div>
             )}
           </div>
         </Collapse>
-      )}
-
-      {/* ---- 接上下半页的叙事 ---- */}
-      {result && (
-        <div className="card px-3.5 py-2.5">
-          <p className="body-text">
-            这条链路的产出是 <b>{int0(result.verdictCounts.pass)}</b> 个可投达人。下面「名单与预算」把{' '}
-            {usd0(result.plan.budget_usd)} 真的分配到人头上，再和「按粉丝量买」的基线做两臂对照 ——
-            同一次运行、同一份候选池，唯一差异是选人依据。
-          </p>
-        </div>
-      )}
+        {/* ---- ⑥ 候选清单（折叠，接住下半页的名单与预算） ---- */}
+        {result && (
+          <Collapse
+            title={`展开：${int0(result.pool.length)} 人的逐人判定表与证据链（点任意一行看信号、实际值、阈值、同组分位）`}
+            hint="下半页「名单与预算」只列被买下的人；这张表是他们被判成什么、为什么的完整底稿"
+          >
+            <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
+              <div className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-1">
+                <Search size={11} className="text-slate-500" />
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="搜 handle / ID"
+                  className="focusable w-28 bg-transparent text-[12px] text-slate-800 outline-none placeholder:text-slate-500"
+                />
+              </div>
+              <Segmented
+                size="sm"
+                value={verdictFilter}
+                onChange={setVerdictFilter}
+                options={[
+                  { value: 'all', label: `全部 ${result.pool.length}` },
+                  { value: 'pass', label: `可投 ${result.verdictCounts.pass}` },
+                  { value: 'review', label: `人核 ${result.verdictCounts.review}` },
+                  { value: 'reject', label: `拒绝 ${result.verdictCounts.reject}` },
+                ]}
+              />
+            </div>
+            <div className="max-h-[420px] overflow-auto">
+              <table className="w-full border-collapse">
+                <thead className="sticky top-0 z-10 bg-white">
+                  <tr className="hairline">
+                    <th className="th">达人</th>
+                    <th className="th">平台 / 地区</th>
+                    <th className="th text-right">粉丝</th>
+                    <th className="th text-right">平均播放</th>
+                    <th className="th text-right">真实性</th>
+                    <th className="th text-right">异常分</th>
+                    <th className="th text-right">适配</th>
+                    <th className="th">判定</th>
+                    <th className="th">命中</th>
+                    <th className="th text-right">分配</th>
+                    <th className="th" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map(({ kox, r }) => {
+                    const alloc = allocById.get(r.kox_id);
+                    return (
+                      <tr
+                        key={r.kox_id}
+                        onClick={() => setOpenId(r.kox_id)}
+                        className="hairline cursor-pointer transition-colors hover:bg-live-50"
+                      >
+                        <td className="td">
+                          <div className="font-medium text-slate-800">{kox.handle}</div>
+                          <div className="num text-[10px] text-slate-500">{r.kox_id}</div>
+                        </td>
+                        <td className="td text-[12px] text-slate-600">
+                          {PLATFORM_LABEL[String(kox.platform)] ?? kox.platform}
+                          <span className="mx-1 text-slate-500">/</span>
+                          {kox.country}
+                        </td>
+                        <td className="td num text-right">{compact(kox.followers ?? null)}</td>
+                        <td className="td num text-right">{compact(kox.avg_views ?? null)}</td>
+                        <td className="td num text-right">{fixed(r.authenticity_score, 3)}</td>
+                        <td className="td num text-right">
+                          <span className={r.fraud_score > 0.4 ? 'text-rose-600' : r.fraud_score > 0.2 ? 'text-amber-600' : 'text-slate-600'}>
+                            {fixed(r.fraud_score, 3)}
+                          </span>
+                        </td>
+                        <td className="td num text-right">{fixed(r.fit_score, 2)}</td>
+                        <td className="td">
+                          <Badge className={VERDICT_COLOR[r.verdict]}>{VERDICT_LABEL[r.verdict]}</Badge>
+                        </td>
+                        <td className="td">
+                          <div className="flex flex-wrap gap-1">
+                            {r.reasons.length === 0 && <span className="text-[11px] text-emerald-600">无</span>}
+                            {[...new Set(r.reasons.map((x) => x.rule_id))].slice(0, 4).map((id) => (
+                              <span key={id} className="num rounded border border-slate-200 bg-slate-50 px-1 text-[10px] text-slate-600">
+                                {id}
+                              </span>
+                            ))}
+                            {r.reasons.length > 4 && <span className="text-[10px] text-slate-500">+{r.reasons.length - 4}</span>}
+                          </div>
+                        </td>
+                        <td className="td num text-right">
+                          {alloc ? (
+                            <span className="text-live-700">
+                              {usd0(alloc.amount_usd)}
+                              <span className="ml-1 text-[10px] text-slate-500">{alloc.posts} 条</span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-500">—</span>
+                          )}
+                        </td>
+                        <td className="td text-right">
+                          <ChevronRight size={13} className="text-slate-500" />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {rows.length === 0 && (
+                <div className="px-4 py-6 text-center text-[12px] text-slate-600">
+                  <Filter size={14} className="mx-auto mb-1.5 opacity-60" />
+                  没有符合筛选条件的达人
+                </div>
+              )}
+            </div>
+          </Collapse>
+        )}
+      </Panel>
 
       <Drawer
         open={Boolean(open && openResult)}

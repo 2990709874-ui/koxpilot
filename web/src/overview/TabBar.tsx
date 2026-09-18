@@ -2,16 +2,12 @@ import React from 'react';
 import { TABS, type TabId } from './nav';
 
 /**
- * 页签栏。
- *
- * 为什么需要它：改版前 6 个页签挤成一行、副标题 10px 看不清，
- * 读者根本不知道每个页签能干什么。这里改成
- *「图标 + 名称 + 一句话说明」的卡片式页签，选中态用 brand 主色，
- * 未选中态文字也保持 slate-600/700，白底上仍然读得清。
+ * 页签栏：「图标 + 名称 + 一句话说明」的卡片式页签。
+ * 选中态用 brand 主色，未选中态文字保持 slate-600/700，白底上读得清。
  */
 export function TabBar({ tab, onGo }: { tab: TabId; onGo: (id: TabId) => void }): React.ReactElement {
   return (
-    <nav className="mt-2.5 grid grid-cols-2 gap-1.5 lg:grid-cols-4" aria-label="功能页签">
+    <nav className="mt-2.5 grid grid-cols-1 gap-1.5 sm:grid-cols-3" aria-label="功能页签">
       {TABS.map((t, i) => {
         const Icon = t.icon;
         const active = tab === t.id;
