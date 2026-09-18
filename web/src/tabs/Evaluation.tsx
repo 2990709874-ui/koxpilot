@@ -20,10 +20,10 @@ const FRAUD_TYPE_LABEL: Record<string, string> = {
  * 刻意不用"✓ / —"两态：那正是被修掉的那个 bug（abs(delta) 不看符号，把负贡献规则也标成有贡献）。
  */
 const CONTRIB_STYLE: Record<string, { label: string; short: string; kind: string; cls: string }> = {
-  positive: { label: '正向贡献', short: '正向', kind: 'positive', cls: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200' },
-  negative: { label: '负贡献 · 拖累该指标', short: '负贡献', kind: 'negative', cls: 'border-amber-400/40 bg-amber-400/15 text-amber-100' },
-  negligible: { label: '近乎无影响', short: '无影响', kind: 'negligible', cls: 'border-white/15 text-slate-400' },
-  unknown: { label: '未判定', short: '未判定', kind: 'unknown', cls: 'border-white/15 text-slate-500' },
+  positive: { label: '正向贡献', short: '正向', kind: 'positive', cls: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
+  negative: { label: '负贡献 · 拖累该指标', short: '负贡献', kind: 'negative', cls: 'border-amber-300 bg-amber-100 text-amber-800' },
+  negligible: { label: '近乎无影响', short: '无影响', kind: 'negligible', cls: 'border-slate-300 text-slate-600' },
+  unknown: { label: '未判定', short: '未判定', kind: 'unknown', cls: 'border-slate-300 text-slate-500' },
 };
 
 /** 带符号的定点数：+0.0764 / −0.0014，避免把"更高"写成裸数字看不出方向。 */
@@ -39,9 +39,9 @@ function ParityRow({ label, ts, py, digits = 4 }: { label: string; ts: number; p
   return (
     <tr className="hairline">
       <td className="td">{label}</td>
-      <td className="td num text-right text-cyan-100">{fixed(ts, digits)}</td>
-      <td className="td num text-right text-slate-400">{fixed(py, digits)}</td>
-      <td className={`td num text-right ${same ? 'text-emerald-300' : 'text-rose-300'}`}>
+      <td className="td num text-right text-live-700">{fixed(ts, digits)}</td>
+      <td className="td num text-right text-slate-600">{fixed(py, digits)}</td>
+      <td className={`td num text-right ${same ? 'text-emerald-600' : 'text-rose-600'}`}>
         {same ? '0' : fixed(ts - py, digits)}
       </td>
     </tr>
@@ -131,8 +131,8 @@ export function EvaluationTab({
       >
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {Object.entries((metrics?.definitions ?? {}) as Record<string, string>).map(([k, v]) => (
-            <div key={k} className="rounded-lg border border-white/10 bg-white/[0.025] px-2.5 py-2">
-              <div className="num text-[10px] text-cyan-300">{k}</div>
+            <div key={k} className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
+              <div className="num text-[10px] text-live-600">{k}</div>
               <div className="muted mt-0.5">{v}</div>
             </div>
           ))}
@@ -149,14 +149,14 @@ export function EvaluationTab({
         }
         right={
           busy ? (
-            <span className="flex items-center gap-1.5 text-[11px] text-cyan-200">
+            <span className="flex items-center gap-1.5 text-[11px] text-live-700">
               <Loader2 size={12} className="animate-spin" />
               {busy}
             </span>
           ) : (
             <button
               onClick={onRun}
-              className="rounded-lg border border-white/15 px-2.5 py-1 text-[11px] text-slate-300 hover:border-cyan-300/40 hover:text-cyan-100"
+              className="rounded-lg border border-slate-300 px-2.5 py-1 text-[11px] text-slate-700 hover:border-live-300 hover:text-live-700"
             >
               重新计算
             </button>
@@ -199,8 +199,8 @@ export function EvaluationTab({
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-2 py-6 text-[12px] text-slate-400">
-            <Loader2 size={14} className="animate-spin text-cyan-300" />
+          <div className="flex items-center gap-2 py-6 text-[12px] text-slate-600">
+            <Loader2 size={14} className="animate-spin text-live-600" />
             正在对全库重跑四层门禁…（这一步是真算，所以要花几百毫秒）
           </div>
         )}
@@ -216,21 +216,21 @@ export function EvaluationTab({
                 return (
                   <div key={type}>
                     <div className="flex items-baseline justify-between">
-                      <span className="text-[12px] text-slate-200">
+                      <span className="text-[12px] text-slate-800">
                         {FRAUD_TYPE_LABEL[type] ?? type}
                         <span className="num ml-1.5 text-[10px] text-slate-500">n={int0(v.n)}</span>
                       </span>
-                      <span className="num text-[11px] text-slate-400">
+                      <span className="num text-[11px] text-slate-600">
                         严 {fixed(v.recall_strict, 3)} · 宽 {fixed(v.recall_loose, 3)}
-                        {py && <span className="ml-1.5 text-slate-600">AUC {fixed(Number(py.auc_vs_clean), 3)}</span>}
+                        {py && <span className="ml-1.5 text-slate-500">AUC {fixed(Number(py.auc_vs_clean), 3)}</span>}
                       </span>
                     </div>
                     <div className="mt-1 flex gap-1">
-                      <div className="h-2 flex-1 overflow-hidden rounded-sm bg-white/[0.05]">
-                        <div className="h-full rounded-sm bg-cyan-400" style={{ width: `${v.recall_strict * 100}%` }} />
+                      <div className="h-2 flex-1 overflow-hidden rounded-sm bg-slate-50">
+                        <div className="h-full rounded-sm bg-live-500" style={{ width: `${v.recall_strict * 100}%` }} />
                       </div>
-                      <div className="h-2 flex-1 overflow-hidden rounded-sm bg-white/[0.05]">
-                        <div className="h-full rounded-sm bg-cyan-400/45" style={{ width: `${v.recall_loose * 100}%` }} />
+                      <div className="h-2 flex-1 overflow-hidden rounded-sm bg-slate-50">
+                        <div className="h-full rounded-sm bg-live-500" style={{ width: `${v.recall_loose * 100}%` }} />
                       </div>
                     </div>
                   </div>
@@ -307,17 +307,17 @@ export function EvaluationTab({
           {attribution ? (
             <div>
               <div className="flex items-baseline justify-between">
-                <span className="num text-[12px] text-amber-200">{String(attribution.cell)}</span>
-                <span className="num text-[12px] text-slate-300">{int0(Number(attribution.n))} 人</span>
+                <span className="num text-[12px] text-amber-700">{String(attribution.cell)}</span>
+                <span className="num text-[12px] text-slate-700">{int0(Number(attribution.n))} 人</span>
               </div>
               <div className="mt-2 space-y-1">
                 {((attribution.top_rule_signatures ?? []) as Loose[]).map((s) => (
                   <div key={String(s.rules)} className="flex items-center gap-2">
-                    <span className="num w-24 shrink-0 text-[10.5px] text-cyan-300">{String(s.rules)}</span>
-                    <div className="h-2 flex-1 overflow-hidden rounded-sm bg-white/[0.05]">
-                      <div className="h-full rounded-sm bg-amber-400/70" style={{ width: `${Number(s.share) * 100}%` }} />
+                    <span className="num w-24 shrink-0 text-[10.5px] text-live-600">{String(s.rules)}</span>
+                    <div className="h-2 flex-1 overflow-hidden rounded-sm bg-slate-50">
+                      <div className="h-full rounded-sm bg-amber-500" style={{ width: `${Number(s.share) * 100}%` }} />
                     </div>
-                    <span className="num w-20 shrink-0 text-right text-[10.5px] text-slate-400">
+                    <span className="num w-20 shrink-0 text-right text-[10.5px] text-slate-600">
                       {int0(Number(s.n))} · {pct1(Number(s.share))}
                     </span>
                   </div>
@@ -325,8 +325,8 @@ export function EvaluationTab({
               </div>
               {attribution.solely_caused_by_G2_2 !== undefined && (
                 <Note tone="warn">
-                  其中 <b className="text-amber-200">{int0(Number(attribution.solely_caused_by_G2_2))}</b> 人的唯一命中就是 G2.2（多源标签互相冲突）。
-                  这是<b className="text-amber-200">口径冲突而不是模型错</b>：SPEC 3.3 合成 gt.verdict 时没把「多源冲突」计入 review，而 SPEC 4.G2.2 要求口径冲突需人核。
+                  其中 <b className="text-amber-700">{int0(Number(attribution.solely_caused_by_G2_2))}</b> 人的唯一命中就是 G2.2（多源标签互相冲突）。
+                  这是<b className="text-amber-700">口径冲突而不是模型错</b>：SPEC 3.3 合成 gt.verdict 时没把「多源冲突」计入 review，而 SPEC 4.G2.2 要求口径冲突需人核。
                   产品上这些号确实该进人核队列。本实现选择保留 G2.2，并给出屏蔽 G2.2 的对照版本 ——
                   准确率会从 {fixed(Number(t2?.accuracy), 4)} 升到 {fixed(Number((t2?.variant_rule_disabled_G2_2 as Loose | undefined)?.accuracy), 4)}，
                   但我没有把它当成主口径，因为那等于为了指标改判据。
@@ -337,19 +337,19 @@ export function EvaluationTab({
             <div className="space-y-2">
               <Note>点左侧矩阵里的任意错判格（红色）查看归因。pass→review 这一格是准确率的主要失分来源。</Note>
               {t2?.variant_rule_disabled_G2_2 && (
-                <div className="rounded-lg border border-white/10 bg-white/[0.025] p-2.5">
-                  <div className="text-[11px] text-slate-300">口径对照：屏蔽 G2.2 后的同一份数据</div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5">
+                  <div className="text-[11px] text-slate-700">口径对照：屏蔽 G2.2 后的同一份数据</div>
                   <div className="mt-1.5 grid grid-cols-2 gap-2">
                     <div>
                       <div className="muted">主口径（保留 G2.2）</div>
-                      <div className="num text-[15px] text-slate-100">
+                      <div className="num text-[15px] text-slate-900">
                         {fixed(Number(t2.accuracy), 4)} <span className="text-[11px] text-slate-500">accuracy</span>
                       </div>
                       <div className="num text-[11px] text-slate-500">macro F1 {fixed(Number(t2.macro_f1), 4)}</div>
                     </div>
                     <div>
                       <div className="muted">对照口径（屏蔽 G2.2）</div>
-                      <div className="num text-[15px] text-amber-200">
+                      <div className="num text-[15px] text-amber-700">
                         {fixed(Number((t2.variant_rule_disabled_G2_2 as Loose).accuracy), 4)}
                         <span className="text-[11px] text-slate-500"> accuracy</span>
                       </div>
@@ -362,8 +362,8 @@ export function EvaluationTab({
                 </div>
               )}
               {(t2?.missed_fraud_profile as Loose | undefined) && (
-                <div className="rounded-lg border border-white/10 bg-white/[0.025] p-2.5">
-                  <div className="text-[11px] text-slate-300">漏掉的水号长什么样</div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5">
+                  <div className="text-[11px] text-slate-700">漏掉的水号长什么样</div>
                   <pre className="muted mt-1 whitespace-pre-wrap font-mono text-[10px]">
                     {JSON.stringify(t2?.missed_fraud_profile, null, 1).slice(0, 600)}
                   </pre>
@@ -395,13 +395,13 @@ export function EvaluationTab({
         <Heatmap rows={stratRows} />
         <div className="mt-3 grid gap-2 lg:grid-cols-2">
           {weak.map((w) => (
-            <div key={`${w.dimension}-${w.cell}`} className="rounded-xl border border-rose-400/25 bg-rose-400/[0.06] px-3 py-2.5">
+            <div key={`${w.dimension}-${w.cell}`} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5">
               <div className="flex items-center gap-1.5">
-                <ShieldAlert size={12} className="text-rose-300" />
-                <span className="num text-[11px] text-rose-200">
+                <ShieldAlert size={12} className="text-rose-600" />
+                <span className="num text-[11px] text-rose-700">
                   {String(w.dimension)} = {String(w.cell)}
                 </span>
-                <span className="num ml-auto text-[13px] font-semibold text-rose-200">F1 {fixed(Number(w.f1), 3)}</span>
+                <span className="num ml-auto text-[13px] font-semibold text-rose-700">F1 {fixed(Number(w.f1), 3)}</span>
               </div>
               <div className="muted mt-1">{String(w.note)}</div>
             </div>
@@ -413,10 +413,10 @@ export function EvaluationTab({
           {worstWeakSpot ? (
             <>
               {' '}
-              当前最刺眼的一格是 <b className="text-amber-200">
+              当前最刺眼的一格是 <b className="text-amber-700">
                 {String(worstWeakSpot.dimension)}={String(worstWeakSpot.cell)}
               </b>
-              ，F1 只有 <b className="num text-rose-200">{fixed(Number(worstWeakSpot.f1), 3)}</b>（这一句由产物现算，不写死是哪个分层）：
+              ，F1 只有 <b className="num text-rose-700">{fixed(Number(worstWeakSpot.f1), 3)}</b>（这一句由产物现算，不写死是哪个分层）：
               样本少、互动率天然偏低，与买粉特征混淆。
             </>
           ) : (
@@ -431,11 +431,11 @@ export function EvaluationTab({
         subtitle="delta = 变体 − 全量；负值表示关掉它指标下降（即它有贡献）"
         right={
           <div className="flex items-center gap-2">
-            {busy && <Loader2 size={12} className="animate-spin text-cyan-300" />}
+            {busy && <Loader2 size={12} className="animate-spin text-live-600" />}
             <button
               onClick={onAblation}
               disabled={Boolean(busy)}
-              className="flex items-center gap-1.5 rounded-lg border border-cyan-300/40 bg-cyan-400/10 px-2.5 py-1 text-[11px] text-cyan-100 hover:bg-cyan-400/20 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-lg border border-live-300 bg-live-50 px-2.5 py-1 text-[11px] text-live-700 hover:bg-live-100 disabled:opacity-50"
             >
               <FlaskConical size={11} />
               在浏览器里现关一层重跑
@@ -464,7 +464,7 @@ export function EvaluationTab({
                   const cf = CONTRIB_STYLE[String(c.fraud_f1_strict ?? '')] ?? CONTRIB_STYLE.unknown;
                   const cv = CONTRIB_STYLE[String(c.verdict_accuracy ?? '')] ?? CONTRIB_STYLE.unknown;
                   return (
-                    <tr key={String(v.variant)} className={`hairline ${cv.kind === 'negative' ? 'bg-amber-400/[0.07]' : ''}`}>
+                    <tr key={String(v.variant)} className={`hairline ${cv.kind === 'negative' ? 'bg-amber-50' : ''}`}>
                       <td className="td num">
                         {String(v.variant)}
                         <div className="muted max-w-[200px] truncate" title={String(v.role)}>
@@ -472,10 +472,10 @@ export function EvaluationTab({
                         </div>
                       </td>
                       <td className="td num text-right">{fixed(Number(m.fraud_f1_strict), 4)}</td>
-                      <td className={`td num text-right ${Number(d.d_fraud_f1_strict) < 0 ? 'text-emerald-300' : 'text-slate-500'}`}>
+                      <td className={`td num text-right ${Number(d.d_fraud_f1_strict) < 0 ? 'text-emerald-600' : 'text-slate-500'}`}>
                         {Number(d.d_fraud_f1_strict) === 0 ? '0' : fixed(Number(d.d_fraud_f1_strict), 4)}
                       </td>
-                      <td className={`td num text-right ${Number(d.d_verdict_accuracy) < 0 ? 'text-emerald-300' : 'text-amber-300'}`}>
+                      <td className={`td num text-right ${Number(d.d_verdict_accuracy) < 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
                         {Number(d.d_verdict_accuracy) === 0 ? '0' : fixed(Number(d.d_verdict_accuracy), 4)}
                       </td>
                       <td className="td">
@@ -491,12 +491,12 @@ export function EvaluationTab({
             </table>
             {negLayer && (
               <Note tone="warn">
-                注意 <b className="text-amber-200">
+                注意 <b className="text-amber-700">
                   {String(negLayer.variant)} 的三分类准确率反而更高（
                   {signed(Number((negLayer.delta as Loose).d_verdict_accuracy), 4)}）
                 </b>
                 ，所以它在"三分类"这一列是{' '}
-                <b className="text-amber-100">
+                <b className="text-amber-800">
                   {(CONTRIB_STYLE[String(((negLayer.contribution ?? {}) as Loose).verdict_accuracy ?? '')] ?? CONTRIB_STYLE.unknown).label}
                 </b>
                 。我没有据此删掉它 —— 原因就是上面那条口径冲突：G2.2 的"错判"在产品上是对的。
@@ -523,7 +523,7 @@ export function EvaluationTab({
                     <tr key={r.variant} className="hairline">
                       <td className="td num">{r.variant}</td>
                       <td className="td num text-right">{fixed(r.fraud_f1_strict, 4)}</td>
-                      <td className={`td num text-right ${r.d_fraud_f1_strict < 0 ? 'text-emerald-300' : 'text-slate-500'}`}>
+                      <td className={`td num text-right ${r.d_fraud_f1_strict < 0 ? 'text-emerald-600' : 'text-slate-500'}`}>
                         {r.d_fraud_f1_strict === 0 ? '0' : fixed(r.d_fraud_f1_strict, 4)}
                       </td>
                       <td className="td num text-right text-slate-500">{Math.round(r.elapsedMs)} ms</td>
@@ -550,7 +550,7 @@ export function EvaluationTab({
                       return (
                         <tr
                           key={String(v.variant)}
-                          className={`hairline ${kind === 'negative' ? 'bg-amber-400/[0.07]' : ''}`}
+                          className={`hairline ${kind === 'negative' ? 'bg-amber-50' : ''}`}
                           title={String(v.contribution_note ?? '')}
                         >
                           <td className="td num">
@@ -558,7 +558,7 @@ export function EvaluationTab({
                             <span className="ml-1.5 text-[10px] text-slate-500">{ruleLabel(String(v.variant).slice(1))}</span>
                           </td>
                           <td className="td num text-right">{fixed(Number(v.weight), 2)}</td>
-                          <td className={`td num text-right ${d < 0 ? 'text-emerald-300' : d > 0 ? 'text-amber-300' : 'text-slate-500'}`}>
+                          <td className={`td num text-right ${d < 0 ? 'text-emerald-600' : d > 0 ? 'text-amber-600' : 'text-slate-500'}`}>
                             {d > 0 ? '+' : ''}
                             {fixed(d, 4)}
                           </td>
@@ -576,31 +576,31 @@ export function EvaluationTab({
             )}
             {/* ---- contribution 三态：把「关掉后 F1 反而更好」这件事摆到台面上 ---- */}
             {t4?.contribution_criteria && (
-              <div className="mt-2 rounded-xl border border-amber-400/30 bg-amber-400/[0.07] px-3 py-2.5">
+              <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="flex items-center gap-1.5 text-[12px] font-semibold text-amber-100">
+                  <span className="flex items-center gap-1.5 text-[12px] font-semibold text-amber-800">
                     <ShieldAlert size={12} />
                     这张表原来撒了一个谎，我把它修了
                   </span>
-                  <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
+                  <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700">
                     正向 {((t4.positive_rules ?? []) as string[]).length} 条
                   </Badge>
-                  <Badge className="border-amber-400/35 bg-amber-400/10 text-amber-200">
+                  <Badge className="border-amber-300 bg-amber-50 text-amber-700">
                     负向 {((t4.negative_rules ?? []) as string[]).length} 条
                   </Badge>
-                  <Badge className="border-white/15 text-slate-400">
+                  <Badge className="border-slate-300 text-slate-600">
                     死规则 {((t4.dead_rules ?? []) as unknown[]).length} 条
                   </Badge>
                 </div>
-                <p className="mt-1.5 text-[11.5px] leading-relaxed text-slate-300">
-                  早期实现用 <code className="rounded bg-black/30 px-1 font-mono text-[10px] text-rose-200">abs(delta) &ge; {String((t4.contribution_criteria as Loose).eps)}</code>{' '}
-                  判"有贡献"，<b className="text-rose-200">不看符号</b> —— 于是{' '}
+                <p className="mt-1.5 text-[11.5px] leading-relaxed text-slate-700">
+                  早期实现用 <code className="rounded bg-slate-100 px-1 font-mono text-[10px] text-rose-700">abs(delta) &ge; {String((t4.contribution_criteria as Loose).eps)}</code>{' '}
+                  判"有贡献"，<b className="text-rose-700">不看符号</b> —— 于是{' '}
                   {((t4.negative_rules ?? []) as string[]).join('、')} 这种"关掉后 F1 反而更好"的规则也被算成有贡献。
-                  现在改成 <b className="text-amber-100">三态判定</b>：
+                  现在改成 <b className="text-amber-800">三态判定</b>：
                 </p>
                 <div className="mt-1.5 grid gap-1 sm:grid-cols-3">
                   {(['positive', 'negative', 'negligible'] as const).map((k) => (
-                    <div key={k} className="rounded-lg border border-white/10 bg-black/25 px-2 py-1.5">
+                    <div key={k} className="rounded-lg border border-slate-200 bg-slate-100 px-2 py-1.5">
                       <Badge className={CONTRIB_STYLE[k].cls}>{CONTRIB_STYLE[k].label}</Badge>
                       <div className="muted mt-1">{String((t4.contribution_criteria as Loose)[k] ?? '')}</div>
                     </div>
@@ -610,15 +610,15 @@ export function EvaluationTab({
                   const row = ((t4.by_g1_rule ?? []) as Loose[]).find((v) => String(v.variant) === rid);
                   if (!row) return null;
                   return (
-                    <p key={rid} className="mt-2 text-[11.5px] leading-relaxed text-amber-50/90">
-                      <b className="num text-amber-100">{rid}</b>（{ruleLabel(rid.slice(1))}，权重{' '}
+                    <p key={rid} className="mt-2 text-[11.5px] leading-relaxed text-amber-800/90">
+                      <b className="num text-amber-800">{rid}</b>（{ruleLabel(rid.slice(1))}，权重{' '}
                       {fixed(Number(row.weight), 2)}）：关掉它严口径 F1{' '}
-                      <b className="num text-amber-200">
+                      <b className="num text-amber-700">
                         {signed(Number((row.delta as Loose).d_fraud_f1_strict), 4)}
                       </b>{' '}
-                      —— 也就是说<b className="text-amber-100">它在这个指标上是净负担</b>。我没有偷偷删掉它、也没有继续把它算作"有贡献"：
+                      —— 也就是说<b className="text-amber-800">它在这个指标上是净负担</b>。我没有偷偷删掉它、也没有继续把它算作"有贡献"：
                       保留理由（软信号、只推 review、宽口径召回来源）写在 docs/03-evaluation.md 表 4 一节，
-                      判定则如实标成 negative。<b className="text-slate-100">一张全是"✓"的消融表才是可疑的。</b>
+                      判定则如实标成 negative。<b className="text-slate-900">一张全是"✓"的消融表才是可疑的。</b>
                     </p>
                   );
                 })}
@@ -644,14 +644,14 @@ export function EvaluationTab({
         right={
           <div className="flex items-center gap-2">
             {t5 && (
-              <Badge className={t5.stable ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200' : 'border-rose-400/30 bg-rose-400/10 text-rose-200'}>
+              <Badge className={t5.stable ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'}>
                 稳健性判据（≤{fixed(Number(t5.stability_tolerance), 2)}）：{t5.stable ? '通过' : '未通过'}
               </Badge>
             )}
             <button
               onClick={onSens}
               disabled={Boolean(busy)}
-              className="rounded-lg border border-white/15 px-2.5 py-1 text-[11px] text-slate-300 hover:border-cyan-300/40 hover:text-cyan-100 disabled:opacity-50"
+              className="rounded-lg border border-slate-300 px-2.5 py-1 text-[11px] text-slate-700 hover:border-live-300 hover:text-live-700 disabled:opacity-50"
             >
               浏览器内重扫 ±20%
             </button>
@@ -703,14 +703,14 @@ export function EvaluationTab({
               <div className="mt-2 space-y-1.5">
                 {((t5.per_signal ?? []) as Loose[]).map((s) => (
                   <div key={String(s.signal)} className="flex items-center gap-2">
-                    <span className="w-40 shrink-0 truncate text-[10.5px] text-slate-400">{String(s.signal)}</span>
-                    <div className="h-2 flex-1 overflow-hidden rounded-sm bg-white/[0.05]">
+                    <span className="w-40 shrink-0 truncate text-[10.5px] text-slate-600">{String(s.signal)}</span>
+                    <div className="h-2 flex-1 overflow-hidden rounded-sm bg-slate-50">
                       <div
-                        className="h-full rounded-sm bg-amber-400/70"
+                        className="h-full rounded-sm bg-amber-500"
                         style={{ width: `${(Number(s.max_abs_shift) / Number(t5.max_abs_f1_shift)) * 100}%` }}
                       />
                     </div>
-                    <span className="num w-14 shrink-0 text-right text-[10.5px] text-slate-400">{fixed(Number(s.max_abs_shift), 4)}</span>
+                    <span className="num w-14 shrink-0 text-right text-[10.5px] text-slate-600">{fixed(Number(s.max_abs_shift), 4)}</span>
                   </div>
                 ))}
               </div>
@@ -732,8 +732,8 @@ export function EvaluationTab({
       <Panel title="⑨ 产物自带的诚实声明" subtitle="metrics.json 的 honesty_notes 数组，原样渲染" tone="warn">
         <ol className="space-y-1.5">
           {((metrics?.honesty_notes ?? []) as string[]).map((n, i) => (
-            <li key={n} className="flex gap-2 text-[11.5px] leading-relaxed text-slate-300">
-              <span className="num mt-[1px] flex h-4 w-4 shrink-0 items-center justify-center rounded bg-amber-400/15 text-[9px] text-amber-200">
+            <li key={n} className="flex gap-2 text-[11.5px] leading-relaxed text-slate-700">
+              <span className="num mt-[1px] flex h-4 w-4 shrink-0 items-center justify-center rounded bg-amber-100 text-[9px] text-amber-700">
                 {i + 1}
               </span>
               {n}

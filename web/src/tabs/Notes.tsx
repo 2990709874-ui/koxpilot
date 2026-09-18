@@ -14,19 +14,19 @@ function signedFixed(v: number, digits = 2): string {
 
 const WEIGHT_STYLE: Record<LogEntry['weight'], { border: string; kicker: string; icon: React.ReactElement }> = {
   critical: {
-    border: 'border-rose-400/35 bg-rose-400/[0.055]',
-    kicker: 'bg-rose-400/15 text-rose-200',
-    icon: <AlertTriangle size={13} className="text-rose-300" />,
+    border: 'border-rose-300 bg-rose-50',
+    kicker: 'bg-rose-100 text-rose-700',
+    icon: <AlertTriangle size={13} className="text-rose-600" />,
   },
   high: {
-    border: 'border-amber-400/30 bg-amber-400/[0.05]',
-    kicker: 'bg-amber-400/15 text-amber-200',
-    icon: <Bug size={13} className="text-amber-300" />,
+    border: 'border-amber-200 bg-amber-50',
+    kicker: 'bg-amber-100 text-amber-700',
+    icon: <Bug size={13} className="text-amber-600" />,
   },
   normal: {
-    border: 'border-white/10 bg-white/[0.025]',
-    kicker: 'bg-slate-400/15 text-slate-300',
-    icon: <FileWarning size={13} className="text-slate-400" />,
+    border: 'border-slate-200 bg-slate-50',
+    kicker: 'bg-slate-100 text-slate-700',
+    icon: <FileWarning size={13} className="text-slate-600" />,
   },
 };
 
@@ -39,27 +39,27 @@ function LogCard({ e, defaultOpen, evidence }: { e: LogEntry; defaultOpen: boole
         {st.icon}
         <div className="min-w-0 flex-1">
           <span className={`num inline-block rounded px-1.5 py-0.5 text-[9.5px] ${st.kicker}`}>{e.kicker}</span>
-          <h4 className="mt-1.5 text-[14px] font-semibold leading-snug text-slate-100">{e.title}</h4>
-          <p className="mt-1 text-[12px] leading-relaxed text-slate-300">{e.punchline}</p>
+          <h4 className="mt-1.5 text-[14px] font-semibold leading-snug text-slate-900">{e.title}</h4>
+          <p className="mt-1 text-[12px] leading-relaxed text-slate-700">{e.punchline}</p>
         </div>
         <ChevronDown size={14} className={`mt-1 shrink-0 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="grid gap-3 border-t border-white/[0.07] px-4 py-3 md:grid-cols-3">
+        <div className="grid gap-3 border-t border-slate-300 px-4 py-3 md:grid-cols-3">
           <div>
             <div className="mb-1 text-[10.5px] font-medium uppercase tracking-wider text-slate-500">怎么发现的</div>
-            <p className="text-[11.5px] leading-relaxed text-slate-400">{e.found}</p>
+            <p className="text-[11.5px] leading-relaxed text-slate-600">{e.found}</p>
           </div>
           <div>
             <div className="mb-1 text-[10.5px] font-medium uppercase tracking-wider text-slate-500">根因</div>
-            <p className="text-[11.5px] leading-relaxed text-slate-400">{e.cause}</p>
+            <p className="text-[11.5px] leading-relaxed text-slate-600">{e.cause}</p>
           </div>
           <div>
             <div className="mb-1 text-[10.5px] font-medium uppercase tracking-wider text-slate-500">修法</div>
             <ul className="space-y-1">
               {e.fix.map((f) => (
-                <li key={f} className="flex gap-1.5 text-[11.5px] leading-relaxed text-slate-400">
-                  <Wrench size={10} className="mt-[3px] shrink-0 text-cyan-400/70" />
+                <li key={f} className="flex gap-1.5 text-[11.5px] leading-relaxed text-slate-600">
+                  <Wrench size={10} className="mt-[3px] shrink-0 text-live-600" />
                   {f}
                 </li>
               ))}
@@ -67,10 +67,10 @@ function LogCard({ e, defaultOpen, evidence }: { e: LogEntry; defaultOpen: boole
           </div>
           {evidence && (
             <div className="md:col-span-3">
-              <div className="rounded-xl border border-cyan-300/25 bg-cyan-400/[0.05] px-3 py-2.5">
+              <div className="rounded-xl border border-live-200 bg-live-50 px-3 py-2.5">
                 <div className="mb-1.5 flex items-center gap-1.5">
-                  <Sigma size={11} className="text-cyan-300" />
-                  <span className="text-[10.5px] font-medium uppercase tracking-wider text-cyan-200/90">
+                  <Sigma size={11} className="text-live-600" />
+                  <span className="text-[10.5px] font-medium uppercase tracking-wider text-live-700">
                     修完之后的产物现场证据（本页运行时从 public/data 现读）
                   </span>
                 </div>
@@ -80,15 +80,15 @@ function LogCard({ e, defaultOpen, evidence }: { e: LogEntry; defaultOpen: boole
           )}
           {e.cost && (
             <div className="md:col-span-3">
-              <div className="rounded-lg border border-white/10 bg-black/25 px-3 py-2">
+              <div className="rounded-lg border border-slate-200 bg-slate-100 px-3 py-2">
                 <span className="text-[10.5px] font-medium uppercase tracking-wider text-slate-500">修完的代价 </span>
-                <span className="text-[12px] leading-relaxed text-slate-200">{e.cost}</span>
+                <span className="text-[12px] leading-relaxed text-slate-800">{e.cost}</span>
               </div>
             </div>
           )}
           <div className="md:col-span-3 flex flex-wrap gap-1.5">
             {e.files.map((f) => (
-              <Badge key={f} className="border-white/15 font-mono text-slate-500">
+              <Badge key={f} className="border-slate-300 font-mono text-slate-500">
                 {f}
               </Badge>
             ))}
@@ -101,10 +101,10 @@ function LogCard({ e, defaultOpen, evidence }: { e: LogEntry; defaultOpen: boole
 
 /** 证据块里的一格：一个数字 + 它的产物字段路径。字段路径直接写在下面，方便打开 JSON 核对。 */
 function Cell({ label, value, path, tone = 'plain' }: { label: string; value: string; path: string; tone?: 'plain' | 'good' | 'warn' }): React.ReactElement {
-  const cls = tone === 'good' ? 'text-emerald-200' : tone === 'warn' ? 'text-amber-200' : 'text-cyan-100';
+  const cls = tone === 'good' ? 'text-emerald-700' : tone === 'warn' ? 'text-amber-700' : 'text-live-700';
   return (
-    <div className="rounded-lg border border-white/10 bg-black/25 px-2.5 py-1.5">
-      <div className="text-[10.5px] leading-snug text-slate-400">{label}</div>
+    <div className="rounded-lg border border-slate-200 bg-slate-100 px-2.5 py-1.5">
+      <div className="text-[10.5px] leading-snug text-slate-600">{label}</div>
       <div className={`num mt-0.5 text-[14px] font-semibold leading-none ${cls}`}>{value}</div>
       <div className="num mt-1 text-[9.5px] leading-snug text-slate-500">{path}</div>
     </div>
@@ -130,27 +130,27 @@ function SpotlightSwap({
   source: string;
 }): React.ReactElement {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-rose-400/25 bg-gradient-to-br from-rose-400/[0.09] via-transparent to-cyan-400/[0.07] px-4 py-4">
-      <div className="text-[11px] font-medium text-slate-400">{label}</div>
+    <div className="relative overflow-hidden rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-100 via-transparent to-live-100 px-4 py-4">
+      <div className="text-[11px] font-medium text-slate-600">{label}</div>
       <div className="mt-3 flex flex-wrap items-end gap-x-5 gap-y-3">
         <div>
-          <div className="text-[10px] text-rose-300/80">{earlyTag}</div>
-          <div className="num relative mt-0.5 text-[30px] font-semibold leading-none text-rose-300/55">
+          <div className="text-[10px] text-rose-600/80">{earlyTag}</div>
+          <div className="num relative mt-0.5 text-[30px] font-semibold leading-none text-rose-600/55">
             <span className="relative">
               {early}
-              <span className="absolute left-[-4%] top-1/2 h-[2px] w-[108%] -translate-y-1/2 rotate-[-8deg] bg-rose-300/70" />
+              <span className="absolute left-[-4%] top-1/2 h-[2px] w-[108%] -translate-y-1/2 rotate-[-8deg] bg-rose-500" />
             </span>
           </div>
           <div className="muted mt-1">历史值 · 来自迭代日志</div>
         </div>
         <ArrowDown size={18} className="mb-3 -rotate-90 text-slate-500" />
         <div>
-          <div className="text-[10px] text-cyan-300/90">最终采用（本页从 JSON 读）</div>
-          <div className="num mt-0.5 text-[34px] font-semibold leading-none text-cyan-100">{final}</div>
+          <div className="text-[10px] text-live-600">最终采用（本页从 JSON 读）</div>
+          <div className="num mt-0.5 text-[34px] font-semibold leading-none text-live-700">{final}</div>
           {finalSub && <div className="muted mt-1">{finalSub}</div>}
         </div>
       </div>
-      <p className="mt-3 text-[12px] leading-relaxed text-slate-300">{why}</p>
+      <p className="mt-3 text-[12px] leading-relaxed text-slate-700">{why}</p>
       <div className="num mt-2 text-[10px] text-slate-500">数据来源：{source}</div>
     </div>
   );
@@ -381,16 +381,16 @@ export function NotesTab({
         right={<TruthChip kind="synthetic" />}
         tone="accent"
       >
-        <p className="text-[12.5px] leading-relaxed text-slate-300">
-          下面每一条都可以对着源码和产物复核：<b className="text-slate-100">两次评测自证</b>、
-          <b className="text-slate-100">两处会让结论方向相反的"虚假声称"</b>（一个绝对值判据、一个分母趋 0 的比率）、
-          <b className="text-slate-100">一次补对照臂之后把自己的结论推翻</b>、一个会静默产生错误结论的缓存 bug、
+        <p className="text-[12.5px] leading-relaxed text-slate-700">
+          下面每一条都可以对着源码和产物复核：<b className="text-slate-900">两次评测自证</b>、
+          <b className="text-slate-900">两处会让结论方向相反的"虚假声称"</b>（一个绝对值判据、一个分母趋 0 的比率）、
+          <b className="text-slate-900">一次补对照臂之后把自己的结论推翻</b>、一个会静默产生错误结论的缓存 bug、
           一处"缓存里有分但正式链路没用"的口径落差、一个长期没有证据的关键参数，
-          以及一整张<b className="text-slate-100">"修完之后数字变差、但照实采用"</b>的对照表。
+          以及一整张<b className="text-slate-900">"修完之后数字变差、但照实采用"</b>的对照表。
         </p>
         <Note tone="warn">
           本轮新增的五条自我修复（消融符号判定、有界 uplift、三臂归因、A4 口径审计、decay 敏感性）都带一块
-          <b className="text-amber-100">「产物现场证据」</b>：展开卡片就能看到修完之后的当前值和它对应的 JSON 字段路径。
+          <b className="text-amber-800">「产物现场证据」</b>：展开卡片就能看到修完之后的当前值和它对应的 JSON 字段路径。
           这一页的历史值是字面量（产物里查不到），当前值一律现读。
         </Note>
       </Panel>
@@ -398,8 +398,8 @@ export function NotesTab({
       {/* ============ 三个最重要的数字 ============ */}
       <div>
         <div className="mb-2 flex items-center gap-2">
-          <h3 className="text-[15px] font-semibold text-slate-100">三个最重要的口径，都是我自己把它改难看的</h3>
-          <Badge className="border-rose-400/30 bg-rose-400/10 text-rose-200">对外口径取修完之后那个更保守的值</Badge>
+          <h3 className="text-[15px] font-semibold text-slate-900">三个最重要的口径，都是我自己把它改难看的</h3>
+          <Badge className="border-rose-200 bg-rose-50 text-rose-700">对外口径取修完之后那个更保守的值</Badge>
         </div>
         <div className="grid gap-3 lg:grid-cols-3">
           <SpotlightSwap
@@ -463,16 +463,16 @@ export function NotesTab({
             </thead>
             <tbody>
               {REGRESSIONS.map((r) => (
-                <tr key={r.finalKey} className={`hairline ${r.spotlight ? 'bg-rose-400/[0.05]' : ''}`}>
-                  <td className="td text-[12px] text-slate-200">
+                <tr key={r.finalKey} className={`hairline ${r.spotlight ? 'bg-rose-50' : ''}`}>
+                  <td className="td text-[12px] text-slate-800">
                     {r.metric}
-                    {r.spotlight && <Badge className="ml-1.5 border-rose-400/30 bg-rose-400/10 text-rose-200">重点</Badge>}
+                    {r.spotlight && <Badge className="ml-1.5 border-rose-200 bg-rose-50 text-rose-700">重点</Badge>}
                   </td>
-                  <td className="td num text-slate-500 line-through decoration-rose-400/60">{r.early}</td>
-                  <td className={`td num text-[13px] font-semibold ${r.worse ? 'text-rose-200' : 'text-emerald-200'}`}>
+                  <td className="td num text-slate-500 line-through decoration-rose-400">{r.early}</td>
+                  <td className={`td num text-[13px] font-semibold ${r.worse ? 'text-rose-700' : 'text-emerald-700'}`}>
                     {finalOf(r.finalKey)}
                   </td>
-                  <td className="td text-[11.5px] text-slate-400">{r.why}</td>
+                  <td className="td text-[11.5px] text-slate-600">{r.why}</td>
                   <td className="td num text-[10px] text-slate-500">{r.finalSource}</td>
                 </tr>
               ))}
@@ -482,7 +482,7 @@ export function NotesTab({
         <Note tone="warn">
           关于阈值敏感性那一行：±20% 扰动下最大 F1 偏移{' '}
           {t5 ? fixed(Number(t5.max_abs_f1_shift), 4) : '—'}，按我自己设的判据（≤{t5 ? fixed(Number(t5.stability_tolerance), 2) : '0.05'} 才算稳健）
-          <b className="text-amber-200">是不达标的</b>。我没有把判据放宽到 0.06 让它变绿，而是保留 stable = false 并写进弱项 ——
+          <b className="text-amber-700">是不达标的</b>。我没有把判据放宽到 0.06 让它变绿，而是保留 stable = false 并写进弱项 ——
           改判据就等于改考卷。
         </Note>
       </Panel>
@@ -490,17 +490,17 @@ export function NotesTab({
       {/* ============ 迭代日志 ============ */}
       <div>
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <h3 className="text-[15px] font-semibold text-slate-100">迭代日志（按严重程度排序）</h3>
-          <Badge className="border-rose-400/30 bg-rose-400/10 text-rose-200">
+          <h3 className="text-[15px] font-semibold text-slate-900">迭代日志（按严重程度排序）</h3>
+          <Badge className="border-rose-200 bg-rose-50 text-rose-700">
             {ITERATION_LOG.filter((e) => e.weight === 'critical').length} 条 critical（含 2 处虚假声称）
           </Badge>
-          <Badge className="border-amber-400/30 bg-amber-400/10 text-amber-200">
+          <Badge className="border-amber-200 bg-amber-50 text-amber-700">
             {ITERATION_LOG.filter((e) => e.weight === 'high').length} 条 high
           </Badge>
-          <Badge className="border-cyan-300/30 bg-cyan-400/10 text-cyan-200">
+          <Badge className="border-live-200 bg-live-50 text-live-700">
             {ITERATION_LOG.filter((e) => e.evidenceId && EVIDENCE[e.evidenceId]).length} 条带产物现场证据
           </Badge>
-          <Badge className="border-white/15 text-slate-400">{KNOWN_DEFECTS.length} 项刻意保留的缺陷</Badge>
+          <Badge className="border-slate-300 text-slate-600">{KNOWN_DEFECTS.length} 项刻意保留的缺陷</Badge>
           <span className="muted">critical 默认展开</span>
         </div>
         <div className="space-y-2.5">
@@ -521,10 +521,10 @@ export function NotesTab({
           <ol className="space-y-2">
             {METHOD_RULES.map((m, i) => (
               <li key={m} className="flex gap-2">
-                <span className="num mt-[1px] flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded bg-cyan-400/15 px-1 text-[9.5px] text-cyan-200">
+                <span className="num mt-[1px] flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded bg-live-100 px-1 text-[9.5px] text-live-700">
                   {i + 1}
                 </span>
-                <span className="text-[12px] leading-relaxed text-slate-300">{m}</span>
+                <span className="text-[12px] leading-relaxed text-slate-700">{m}</span>
               </li>
             ))}
           </ol>
@@ -533,8 +533,8 @@ export function NotesTab({
           <ul className="space-y-2">
             {GUARD_TESTS.map((g) => (
               <li key={g} className="flex gap-2">
-                <ShieldCheck size={13} className="mt-[2px] shrink-0 text-emerald-400" />
-                <span className="text-[12px] leading-relaxed text-slate-300">{g}</span>
+                <ShieldCheck size={13} className="mt-[2px] shrink-0 text-emerald-600" />
+                <span className="text-[12px] leading-relaxed text-slate-700">{g}</span>
               </li>
             ))}
           </ul>
@@ -557,14 +557,14 @@ export function NotesTab({
               key={b.title}
               className={`rounded-xl border px-3 py-2.5 ${
                 b.tone === 'warn'
-                  ? 'border-amber-400/25 bg-amber-400/[0.05]'
+                  ? 'border-amber-200 bg-amber-50'
                   : b.tone === 'good'
-                    ? 'border-emerald-400/25 bg-emerald-400/[0.05]'
-                    : 'border-white/10 bg-white/[0.025]'
+                    ? 'border-emerald-200 bg-emerald-50'
+                    : 'border-slate-200 bg-slate-50'
               }`}
             >
-              <div className="text-[12px] font-medium text-slate-100">{b.title}</div>
-              <p className="mt-1 text-[11.5px] leading-relaxed text-slate-400">{b.body}</p>
+              <div className="text-[12px] font-medium text-slate-900">{b.title}</div>
+              <p className="mt-1 text-[11.5px] leading-relaxed text-slate-600">{b.body}</p>
             </div>
           ))}
         </div>
@@ -574,15 +574,15 @@ export function NotesTab({
         <ul className="space-y-2">
           {KNOWN_DEFECTS.map((d) => (
             <li key={d} className="flex gap-2">
-              <AlertTriangle size={12} className="mt-[3px] shrink-0 text-amber-300" />
-              <span className="text-[12px] leading-relaxed text-slate-300">{d}</span>
+              <AlertTriangle size={12} className="mt-[3px] shrink-0 text-amber-600" />
+              <span className="text-[12px] leading-relaxed text-slate-700">{d}</span>
             </li>
           ))}
         </ul>
       </Panel>
 
       <Note>
-        本页文字来自仓库里的 <code className="rounded bg-black/30 px-1 font-mono text-[10px] text-cyan-200">koxpilot-build/02-ITERATION-LOG.md</code>
+        本页文字来自仓库里的 <code className="rounded bg-slate-100 px-1 font-mono text-[10px] text-live-700">koxpilot-build/02-ITERATION-LOG.md</code>
         ，历史值以字面量记录并标注；所有"最终采用"的数字都是本页运行时从 public/data 下的产物 JSON 读出来的。
       </Note>
     </div>

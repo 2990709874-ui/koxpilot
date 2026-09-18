@@ -41,9 +41,9 @@ export const ms = (x: number | null | undefined): string =>
 
 export const VERDICT_LABEL: Record<string, string> = { pass: '直接可投', review: '待人核', reject: '拒绝' };
 export const VERDICT_COLOR: Record<string, string> = {
-  pass: 'text-emerald-300 border-emerald-400/30 bg-emerald-400/10',
-  review: 'text-amber-300 border-amber-400/30 bg-amber-400/10',
-  reject: 'text-rose-300 border-rose-400/30 bg-rose-400/10',
+  pass: 'text-emerald-600 border-emerald-200 bg-emerald-50',
+  review: 'text-amber-600 border-amber-200 bg-amber-50',
+  reject: 'text-rose-600 border-rose-200 bg-rose-50',
 };
 export const VERDICT_HEX: Record<string, string> = { pass: '#34d399', review: '#fbbf24', reject: '#f87171' };
 

@@ -178,11 +178,11 @@ export default function App(): React.ReactElement {
   if (loadErr) {
     return (
       <div className="flex min-h-screen items-center justify-center p-6">
-        <div className="glass max-w-lg px-5 py-4">
-          <div className="text-[13px] font-semibold text-rose-300">产物加载失败</div>
+        <div className="card max-w-lg px-5 py-4">
+          <div className="text-[13px] font-semibold text-rose-600">产物加载失败</div>
           <p className="muted mt-1.5">{loadErr}</p>
           <p className="muted mt-2">
-            请先在 koxpilot/web 目录下运行 <code className="font-mono text-cyan-200">npm run prepare-data</code>，
+            请先在 koxpilot/web 目录下运行 <code className="font-mono text-live-700">npm run prepare-data</code>，
             把 Python 侧的 data/ 与 output/ 产物搬运到 public/data。本页不会用任何占位数字代替缺失产物。
           </p>
         </div>
@@ -193,8 +193,8 @@ export default function App(): React.ReactElement {
   if (!art) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3">
-        <Loader2 size={20} className="animate-spin text-cyan-300" />
-        <div className="num text-[12px] tracking-[0.2em] text-cyan-200">加载 5,000 条达人数据与阈值表…</div>
+        <Loader2 size={20} className="animate-spin text-live-600" />
+        <div className="num text-[12px] tracking-[0.2em] text-live-700">加载 5,000 条达人数据与阈值表…</div>
         <div className="muted">加载完成后引擎会在你的浏览器里真跑一遍，不是播放录像</div>
       </div>
     );
@@ -207,20 +207,20 @@ export default function App(): React.ReactElement {
   return (
     <div className="min-h-screen">
       {/* ================= Header ================= */}
-      <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-ink-900/80 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-slate-300 bg-white backdrop-blur-md">
         <div className="mx-auto max-w-[1560px] px-4 py-2.5">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <div className="flex items-center gap-2.5">
-              <div className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-cyan-300/35 bg-cyan-400/10">
-                <ShieldCheck size={15} className="text-cyan-300" />
+              <div className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-live-300 bg-live-50">
+                <ShieldCheck size={15} className="text-live-600" />
               </div>
               <div>
                 <div className="flex items-baseline gap-2">
-                  <h1 className="text-[15px] font-semibold tracking-tight text-slate-50">KOXPilot</h1>
-                  <span className="text-[11px] text-slate-400">出海达人营销 · 投前决策智能体</span>
+                  <h1 className="text-[15px] font-semibold tracking-tight text-slate-900">KOXPilot</h1>
+                  <span className="text-[11px] text-slate-600">出海达人营销 · 投前决策智能体</span>
                 </div>
                 <div className="muted">
-                  不是"帮你找达人"，而是<b className="text-slate-400">先把不该投的人挡掉</b>，再把预算分配得经得起问
+                  不是"帮你找达人"，而是<b className="text-slate-600">先把不该投的人挡掉</b>，再把预算分配得经得起问
                 </div>
               </div>
             </div>
@@ -236,25 +236,25 @@ export default function App(): React.ReactElement {
                 <Badge
                   className={
                     diffCount === 0
-                      ? 'border-emerald-400/35 bg-emerald-400/10 text-emerald-200'
-                      : 'border-rose-400/35 bg-rose-400/10 text-rose-200'
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                      : 'border-rose-300 bg-rose-50 text-rose-700'
                   }
                 >
                   TS / Python 一致性差异 {diffCount === null ? '未生成' : int0(diffCount)} 条
                 </Badge>
               </Hint>
               <Hint text={`数据集 sha256 ${art.manifest.dataset.sha256}｜种子 ${art.manifest.dataset.seed}｜全部为合成数据`}>
-                <Badge className="border-white/15 text-slate-300">
+                <Badge className="border-slate-300 text-slate-700">
                   {int0(art.manifest.dataset.n)} 达人 · 合成数据
                 </Badge>
               </Hint>
               {savedTotal !== null && (
                 <Hint text="以 ground truth 为裁判，对照「按粉丝量降序买」的反事实审计结果（三个 campaign 合计，其中 BRIEF-002 为负，未剔除）">
-                  <Badge className="border-cyan-400/30 bg-cyan-400/10 text-cyan-200">少浪费 {usd0(savedTotal)}</Badge>
+                  <Badge className="border-live-200 bg-live-50 text-live-700">少浪费 {usd0(savedTotal)}</Badge>
                 </Hint>
               )}
               <Hint text="页面上任何数字要么来自 public/data 下的产物 JSON，要么由 TS 引擎在你的浏览器里现算，没有第三种来源。">
-                <Badge className="border-indigo-400/30 bg-indigo-400/10 text-indigo-200">无硬编码指标</Badge>
+                <Badge className="border-indigo-200 bg-indigo-50 text-indigo-700">无硬编码指标</Badge>
               </Hint>
             </div>
           </div>
@@ -270,14 +270,14 @@ export default function App(): React.ReactElement {
                   onClick={() => goTab(t.id)}
                   className={`group flex shrink-0 items-center gap-2 rounded-lg border px-3 py-1.5 transition-all ${
                     active
-                      ? 'border-cyan-300/45 bg-cyan-400/[0.11] text-cyan-100 shadow-glow'
-                      : 'border-transparent text-slate-400 hover:border-white/10 hover:bg-white/[0.04] hover:text-slate-200'
+                      ? 'border-live-300 bg-live-50 text-live-700 shadow-lift'
+                      : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-800'
                   }`}
                 >
                   <span className="num text-[10px] opacity-60">{['①', '②', '③', '④', '⑤', '⑥'][i]}</span>
                   <Icon size={13} />
                   <span className="text-[12px] font-medium">{t.label}</span>
-                  <span className={`hidden text-[10px] xl:inline ${active ? 'text-cyan-200/60' : 'text-slate-600'}`}>
+                  <span className={`hidden text-[10px] xl:inline ${active ? 'text-live-700' : 'text-slate-500'}`}>
                     {t.desc}
                   </span>
                 </button>
@@ -361,10 +361,10 @@ export default function App(): React.ReactElement {
       </main>
 
       <footer className="mx-auto max-w-[1560px] px-4 pb-8 pt-2">
-        <div className="glass px-4 py-3">
+        <div className="card px-4 py-3">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
             <span className="muted">
-              数据集 sha256 <code className="font-mono text-slate-400">{art.manifest.dataset.sha256.slice(0, 24)}…</code>
+              数据集 sha256 <code className="font-mono text-slate-600">{art.manifest.dataset.sha256.slice(0, 24)}…</code>
             </span>
             <span className="muted">阈值版本 {String(art.manifest.thresholds_meta.thresholds_version ?? '—')}</span>
             <span className="muted">

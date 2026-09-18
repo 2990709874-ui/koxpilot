@@ -51,9 +51,9 @@ const AGENTS = [
 ];
 
 const KIND_STYLE: Record<string, string> = {
-  rule: 'border-cyan-400/35 bg-cyan-400/[0.07]',
-  'llm-offline': 'border-indigo-400/35 bg-indigo-400/[0.07]',
-  audit: 'border-fuchsia-400/35 bg-fuchsia-400/[0.07]',
+  rule: 'border-live-300 bg-live-50',
+  'llm-offline': 'border-indigo-300 bg-indigo-50',
+  audit: 'border-fuchsia-300 bg-fuchsia-50',
 };
 
 function ParityCard({
@@ -70,12 +70,12 @@ function ParityCard({
   note?: React.ReactNode;
 }): React.ReactElement {
   return (
-    <div className={`rounded-xl border px-3 py-2.5 ${ok ? 'border-emerald-400/30 bg-emerald-400/[0.06]' : 'border-rose-400/30 bg-rose-400/[0.06]'}`}>
+    <div className={`rounded-xl border px-3 py-2.5 ${ok ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'}`}>
       <div className="flex items-center gap-1.5">
-        {ok ? <CheckCircle2 size={13} className="text-emerald-400" /> : <XCircle size={13} className="text-rose-400" />}
-        <span className="text-[12px] font-medium text-slate-100">{title}</span>
+        {ok ? <CheckCircle2 size={13} className="text-emerald-600" /> : <XCircle size={13} className="text-rose-600" />}
+        <span className="text-[12px] font-medium text-slate-900">{title}</span>
       </div>
-      <div className={`num mt-1 text-[20px] font-semibold ${ok ? 'text-emerald-300' : 'text-rose-300'}`}>{main}</div>
+      <div className={`num mt-1 text-[20px] font-semibold ${ok ? 'text-emerald-600' : 'text-rose-600'}`}>{main}</div>
       <div className="mt-1">
         {rows.map(([k, v]) => (
           <KV key={k} k={k} v={v} />
@@ -130,8 +130,8 @@ export function ArchitectureTab({
             <div key={a.id} className="relative">
               <div className={`h-full rounded-xl border px-3 py-2.5 ${KIND_STYLE[a.kind]}`}>
                 <div className="flex items-center gap-1.5">
-                  <span className="num text-[11px] font-semibold text-slate-100">{a.id}</span>
-                  <span className="text-[11px] text-slate-300">{a.name}</span>
+                  <span className="num text-[11px] font-semibold text-slate-900">{a.id}</span>
+                  <span className="text-[11px] text-slate-700">{a.name}</span>
                   <span className="num ml-auto text-[9.5px] text-slate-500">
                     {stageMs.has(a.id) ? ms(stageMs.get(a.id) as number) : '—'}
                   </span>
@@ -146,30 +146,30 @@ export function ArchitectureTab({
                 <p className="muted mt-1.5">{a.why}</p>
               </div>
               {i < AGENTS.length - 1 && (
-                <div className="pointer-events-none absolute -right-1.5 top-1/2 hidden h-3 w-3 -translate-y-1/2 rotate-45 border-r border-t border-white/20 xl:block" />
+                <div className="pointer-events-none absolute -right-1.5 top-1/2 hidden h-3 w-3 -translate-y-1/2 rotate-45 border-r border-t border-slate-300 xl:block" />
               )}
             </div>
           ))}
         </div>
 
-        <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-3">
-          <div className="mb-2 text-[11px] text-slate-400">A3 内部：四层门禁按顺序执行，任一层给出 block 即短路</div>
+        <div className="mt-3 rounded-xl border border-slate-200 bg-slate-100 p-3">
+          <div className="mb-2 text-[11px] text-slate-600">A3 内部：四层门禁按顺序执行，任一层给出 block 即短路</div>
           <div className="grid gap-2 sm:grid-cols-4">
             {[
-              ['G0', '数据完整性', '关键字段缺失 / 低置信度', 2, 'from-slate-400/15'],
-              ['G1', '真实性', '7 条统计信号识别水号', 7, 'from-rose-400/15'],
-              ['G2', '一致性', '品类 / 多源 / 语言 / 受众', 6, 'from-amber-400/15'],
-              ['G3', '品牌安全', '高危硬阻断 / 竞品 / 争议', 5, 'from-fuchsia-400/15'],
+              ['G0', '数据完整性', '关键字段缺失 / 低置信度', 2, 'from-slate-100'],
+              ['G1', '真实性', '7 条统计信号识别水号', 7, 'from-rose-100'],
+              ['G2', '一致性', '品类 / 多源 / 语言 / 受众', 6, 'from-amber-100'],
+              ['G3', '品牌安全', '高危硬阻断 / 竞品 / 争议', 5, 'from-fuchsia-100'],
             ].map(([g, name, desc, n, grad]) => (
-              <div key={String(g)} className={`rounded-lg border border-white/10 bg-gradient-to-br ${grad} to-transparent px-2.5 py-2`}>
+              <div key={String(g)} className={`rounded-lg border border-slate-200 bg-gradient-to-br ${grad} to-transparent px-2.5 py-2`}>
                 <div className="flex items-center gap-1.5">
-                  <span className="num text-[12px] font-semibold text-slate-100">{g}</span>
-                  <span className="text-[11px] text-slate-300">{name}</span>
+                  <span className="num text-[12px] font-semibold text-slate-900">{g}</span>
+                  <span className="text-[11px] text-slate-700">{name}</span>
                   <span className="num ml-auto text-[10px] text-slate-500">{n} 条规则</span>
                 </div>
                 <div className="muted mt-1">{desc}</div>
                 {result && (
-                  <div className="num mt-1 text-[10px] text-cyan-200">
+                  <div className="num mt-1 text-[10px] text-live-700">
                     本次命中 {int0(result.gateHits[String(g)] ?? 0)} 人
                   </div>
                 )}
@@ -193,8 +193,8 @@ export function ArchitectureTab({
             <Badge
               className={
                 c.status === 'pass'
-                  ? 'border-emerald-400/40 bg-emerald-400/15 text-emerald-100'
-                  : 'border-rose-400/40 bg-rose-400/15 text-rose-100'
+                  ? 'border-emerald-300 bg-emerald-100 text-emerald-800'
+                  : 'border-rose-300 bg-rose-100 text-rose-800'
               }
             >
               <ShieldCheck size={11} className="mr-1" />
@@ -265,10 +265,10 @@ export function ArchitectureTab({
                     {(c.budget.arms ?? []).map((a) => (
                       <tr key={`${a.campaign_id}-${a.arm}`} className="hairline">
                         <td className="td num">{a.campaign_id}</td>
-                        <td className="td text-[11px] text-slate-400">
+                        <td className="td text-[11px] text-slate-600">
                           {ARM_LABEL[a.arm] ?? a.arm}
                           {a.per_person_compared === false && (
-                            <span className="ml-1 text-[10px] text-amber-300/90" title="Python 侧只落摘要（无逐人明细），本臂只比摘要标量、约束检查与 trace">
+                            <span className="ml-1 text-[10px] text-amber-600/90" title="Python 侧只落摘要（无逐人明细），本臂只比摘要标量、约束检查与 trace">
                               仅摘要
                             </span>
                           )}
@@ -280,9 +280,9 @@ export function ArchitectureTab({
                         <td className="td num text-right">${fixed(a.est_cpm_usd, 2)}</td>
                         <td className="td text-center">
                           {a.matched ? (
-                            <CheckCircle2 size={13} className="mx-auto text-emerald-400" />
+                            <CheckCircle2 size={13} className="mx-auto text-emerald-600" />
                           ) : (
-                            <XCircle size={13} className="mx-auto text-rose-400" />
+                            <XCircle size={13} className="mx-auto text-rose-600" />
                           )}
                         </td>
                       </tr>
@@ -292,7 +292,7 @@ export function ArchitectureTab({
               </div>
               <div>
                 <div className="muted mb-1.5">阈值与口径</div>
-                <div className="rounded-xl border border-white/10 bg-white/[0.025] px-3 py-2">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                   <KV k="阈值文件" v={c.thresholds.file} />
                   <KV k="阈值版本" v={c.thresholds.version ?? '—'} />
                   <KV k="分组数" v={`${c.thresholds.n_groups} 组`} />
@@ -326,17 +326,17 @@ export function ArchitectureTab({
         <Panel title="数据流与真值边界" subtitle="谁能读 gt、谁不能，在架构上就分开了">
           <div className="space-y-2">
             {[
-              ['datagen（固定种子）', 'data/kox_5000.json', '合成 5,000 达人 + gt 块；问题注入只改可观测信号的统计偏移', 'border-slate-400/25'],
-              ['Python 标定', 'output/thresholds.json', '按 platform×follower_bucket 分组标定分位阈值，25 组 + 三级回退', 'border-emerald-400/25'],
-              ['Python 判定/预算/审计', 'output/verdicts.json · budget.json · audit.json · metrics.json', '全量离线跑，作为参考实现与产物来源', 'border-emerald-400/25'],
-              ['构建期 LLM runner', 'output/llm_bench.json · prompt_bench.json', '真调模型、记录真实 usage，结果固化；线上不再调用', 'border-indigo-400/25'],
-              ['prepare-data.mjs', 'public/data/*.json', '字段白名单瘦身 + 记录 sha256/字节数到 manifest', 'border-cyan-400/25'],
-              ['浏览器 TS 引擎', '本页所有实时数字', '读同一份 thresholds.json，现场跑门禁/预算/审计/评测', 'border-cyan-400/25'],
+              ['datagen（固定种子）', 'data/kox_5000.json', '合成 5,000 达人 + gt 块；问题注入只改可观测信号的统计偏移', 'border-slate-200'],
+              ['Python 标定', 'output/thresholds.json', '按 platform×follower_bucket 分组标定分位阈值，25 组 + 三级回退', 'border-emerald-200'],
+              ['Python 判定/预算/审计', 'output/verdicts.json · budget.json · audit.json · metrics.json', '全量离线跑，作为参考实现与产物来源', 'border-emerald-200'],
+              ['构建期 LLM runner', 'output/llm_bench.json · prompt_bench.json', '真调模型、记录真实 usage，结果固化；线上不再调用', 'border-indigo-200'],
+              ['prepare-data.mjs', 'public/data/*.json', '字段白名单瘦身 + 记录 sha256/字节数到 manifest', 'border-live-200'],
+              ['浏览器 TS 引擎', '本页所有实时数字', '读同一份 thresholds.json，现场跑门禁/预算/审计/评测', 'border-live-200'],
             ].map(([stage, out, desc, border]) => (
-              <div key={String(stage)} className={`rounded-lg border ${border} bg-white/[0.02] px-2.5 py-2`}>
+              <div key={String(stage)} className={`rounded-lg border ${border} bg-slate-50 px-2.5 py-2`}>
                 <div className="flex flex-wrap items-baseline gap-1.5">
-                  <span className="text-[11.5px] font-medium text-slate-200">{stage}</span>
-                  <span className="num text-[10px] text-cyan-300">→ {out}</span>
+                  <span className="text-[11.5px] font-medium text-slate-800">{stage}</span>
+                  <span className="num text-[10px] text-live-600">→ {out}</span>
                 </div>
                 <div className="muted mt-0.5">{desc}</div>
               </div>
@@ -352,12 +352,12 @@ export function ArchitectureTab({
         <Panel
           title="前端消费的产物清单"
           subtitle="每个产物都记录了来源文件、字节数与 sha256，可逐个核对"
-          right={<Badge className="border-white/15 text-slate-400"><Hash size={10} className="mr-1" />manifest.json</Badge>}
+          right={<Badge className="border-slate-300 text-slate-600"><Hash size={10} className="mr-1" />manifest.json</Badge>}
           bodyClass="px-0 py-0"
         >
           <div className="max-h-[420px] overflow-auto">
             <table className="w-full">
-              <thead className="sticky top-0 bg-ink-800/95 backdrop-blur">
+              <thead className="sticky top-0 bg-white backdrop-blur">
                 <tr className="hairline">
                   <th className="th">产物</th>
                   <th className="th">来源</th>
@@ -373,14 +373,14 @@ export function ArchitectureTab({
                       {a.key}
                       {a.note && (
                         <Hint text={a.note}>
-                          <span className="ml-1 text-[9px] text-cyan-300">ⓘ</span>
+                          <span className="ml-1 text-[9px] text-live-600">ⓘ</span>
                         </Hint>
                       )}
                     </td>
                     <td className="td num text-[10px] text-slate-500">{a.source}</td>
                     <td className="td num text-right text-[10.5px]">
                       {a.source_bytes ? `${(a.source_bytes / 1024).toFixed(0)}K` : '—'}
-                      <span className="mx-1 text-slate-600">→</span>
+                      <span className="mx-1 text-slate-500">→</span>
                       {a.shipped_bytes ? `${(a.shipped_bytes / 1024).toFixed(0)}K` : '—'}
                     </td>
                     <td className="td num text-[10px] text-slate-500" title={a.source_sha256 ?? ''}>
@@ -388,10 +388,10 @@ export function ArchitectureTab({
                     </td>
                     <td className="td text-center">
                       {a.present ? (
-                        <CheckCircle2 size={12} className="mx-auto text-emerald-400" />
+                        <CheckCircle2 size={12} className="mx-auto text-emerald-600" />
                       ) : (
                         <Hint text={a.reason ?? '未生成'}>
-                          <XCircle size={12} className="mx-auto text-amber-400" />
+                          <XCircle size={12} className="mx-auto text-amber-600" />
                         </Hint>
                       )}
                     </td>
@@ -401,9 +401,9 @@ export function ArchitectureTab({
             </table>
           </div>
           {(manifest.field_audit ?? []).length > 0 && (
-            <div className="border-t border-white/[0.06] px-4 py-2.5">
+            <div className="border-t border-slate-300 px-4 py-2.5">
               <div className="muted mb-1.5">
-                关键字段在位自检（prepare-data 对可选产物<b className="text-slate-400">整份原样搬运、不做字段白名单</b>，
+                关键字段在位自检（prepare-data 对可选产物<b className="text-slate-600">整份原样搬运、不做字段白名单</b>，
                 所以 Python 侧新增字段会自动到前端；这里只核对页面上重口径结论依赖的字段是否真的在）
               </div>
               <div className="grid gap-1 lg:grid-cols-2">
@@ -411,16 +411,16 @@ export function ArchitectureTab({
                   <div
                     key={`${f.artifact}.${f.path}`}
                     className={`flex items-start gap-1.5 rounded-lg border px-2 py-1.5 ${
-                      f.present ? 'border-emerald-400/20 bg-emerald-400/[0.04]' : 'border-rose-400/30 bg-rose-400/[0.06]'
+                      f.present ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'
                     }`}
                   >
                     {f.present ? (
-                      <CheckCircle2 size={11} className="mt-[2px] shrink-0 text-emerald-400" />
+                      <CheckCircle2 size={11} className="mt-[2px] shrink-0 text-emerald-600" />
                     ) : (
-                      <XCircle size={11} className="mt-[2px] shrink-0 text-rose-400" />
+                      <XCircle size={11} className="mt-[2px] shrink-0 text-rose-600" />
                     )}
                     <div className="min-w-0">
-                      <div className="num truncate text-[10px] text-slate-400">
+                      <div className="num truncate text-[10px] text-slate-600">
                         {f.artifact}.{f.path}
                       </div>
                       <div className="muted">{f.what}</div>
@@ -431,7 +431,7 @@ export function ArchitectureTab({
             </div>
           )}
           {(manifest.warnings ?? []).length > 0 && (
-            <div className="border-t border-white/[0.06] px-4 py-2">
+            <div className="border-t border-slate-300 px-4 py-2">
               {(manifest.warnings ?? []).map((w) => (
                 <Note key={w} tone="warn">
                   {w}
@@ -472,9 +472,9 @@ export function ArchitectureTab({
       <Panel title="注入率核对：数据生成器声明 vs 实际落盘" subtitle="连「注入了多少」都不靠记忆，直接读 manifest">
         <div className="flex flex-wrap gap-1.5">
           {Object.entries(manifest.dataset.injection_actual_rates).map(([k, v]) => (
-            <Badge key={k} className="border-white/15 text-slate-300">
+            <Badge key={k} className="border-slate-300 text-slate-700">
               {k}
-              <span className="num ml-1 text-slate-100">{pct1(Number(v), 1)}</span>
+              <span className="num ml-1 text-slate-900">{pct1(Number(v), 1)}</span>
             </Badge>
           ))}
         </div>
@@ -494,9 +494,9 @@ export function ArchitectureTab({
         <Panel title="本次运行的性能账" subtitle="全部为 performance.now() 实测，不是估算">
           <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
             {result.stages.map((s) => (
-              <div key={s.id} className="glass px-2.5 py-2">
+              <div key={s.id} className="card px-2.5 py-2">
                 <div className="num text-[10px] text-slate-500">{s.id}</div>
-                <div className="num text-[15px] text-slate-100">{ms(s.elapsedMs)}</div>
+                <div className="num text-[15px] text-slate-900">{ms(s.elapsedMs)}</div>
                 <div className="muted">{int0(s.items)} 条</div>
               </div>
             ))}

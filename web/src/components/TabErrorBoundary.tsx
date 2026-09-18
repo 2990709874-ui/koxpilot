@@ -42,8 +42,8 @@ export class TabErrorBoundary extends React.Component<Props, State> {
     const { error, stack } = this.state;
     if (!error) return this.props.children;
     return (
-      <div className="glass px-5 py-4">
-        <div className="text-[13px] font-semibold text-rose-300">
+      <div className="card px-5 py-4">
+        <div className="text-[13px] font-semibold text-rose-600">
           页签 #{this.props.tab} 渲染失败（页面没有白屏，这里如实报错）
         </div>
         <p className="muted mt-1.5">
@@ -54,7 +54,7 @@ export class TabErrorBoundary extends React.Component<Props, State> {
           而不是一片无法自证的空白。完整堆栈同时打在浏览器 console 里。
         </p>
         {stack && (
-          <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-lg border border-white/10 bg-black/30 p-2 font-mono text-[10px] leading-relaxed text-slate-400">
+          <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-slate-100 p-2 font-mono text-[10px] leading-relaxed text-slate-600">
             {stack.trim()}
           </pre>
         )}

@@ -9,9 +9,9 @@ import { BUCKET_LABEL, VERDICT_COLOR, VERDICT_LABEL, fixed, int0, pct1, usd0 } f
 
 const SEVERITY_LABEL: Record<string, string> = { hard: '硬信号', soft: '软信号', block: '硬阻断' };
 const SEVERITY_CLS: Record<string, string> = {
-  hard: 'border-rose-400/30 bg-rose-400/10 text-rose-200',
-  soft: 'border-amber-400/30 bg-amber-400/10 text-amber-200',
-  block: 'border-rose-500/50 bg-rose-500/20 text-rose-100',
+  hard: 'border-rose-200 bg-rose-50 text-rose-700',
+  soft: 'border-amber-200 bg-amber-50 text-amber-700',
+  block: 'border-rose-300 bg-rose-100 text-rose-800',
 };
 
 const GATE_TITLE: Record<string, string> = {
@@ -29,18 +29,18 @@ function directionOf(signal: string): 'upper' | 'lower' | 'abs' {
 
 function ReasonRow({ r, rank }: { r: Reason; rank: number | null }): React.ReactElement {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5">
       <div className="flex flex-wrap items-center gap-1.5">
-        <Badge className="border-cyan-400/30 bg-cyan-400/10 font-mono text-cyan-200">{r.rule_id}</Badge>
-        <Badge className={SEVERITY_CLS[r.severity] ?? 'border-white/15 text-slate-300'}>
+        <Badge className="border-live-200 bg-live-50 font-mono text-live-700">{r.rule_id}</Badge>
+        <Badge className={SEVERITY_CLS[r.severity] ?? 'border-slate-300 text-slate-700'}>
           {SEVERITY_LABEL[r.severity] ?? r.severity}
         </Badge>
-        <span className="text-[12px] text-slate-200">{ruleLabel(r.rule_id)}</span>
+        <span className="text-[12px] text-slate-800">{ruleLabel(r.rule_id)}</span>
         <span className="num ml-auto text-[10px] text-slate-500">
           权重 {fixed(r.weight, 2)} · 越界深度 {fixed(r.depth, 3)}
         </span>
       </div>
-      <p className="mt-1.5 text-[12px] leading-relaxed text-slate-300">{r.human_text}</p>
+      <p className="mt-1.5 text-[12px] leading-relaxed text-slate-700">{r.human_text}</p>
       <div className="mt-2">
         {QUANTILE_SIGNALS.has(r.signal) ? (
           <RankStrip
@@ -53,9 +53,9 @@ function ReasonRow({ r, rank }: { r: Reason; rank: number | null }): React.React
         ) : (
           <div className="flex items-baseline justify-between text-[10px]">
             <span className="text-slate-500">{r.signal}</span>
-            <span className="num text-slate-300">
+            <span className="num text-slate-700">
               实际 {typeof r.actual === 'number' ? fixed(r.actual, 4) : (r.actual ?? '—')}
-              <span className="mx-1 text-slate-600">vs</span>
+              <span className="mx-1 text-slate-500">vs</span>
               阈值 {typeof r.threshold === 'number' ? fixed(r.threshold, 4) : (r.threshold ?? '—')}
             </span>
           </div>
@@ -91,19 +91,19 @@ export function EvidenceBody({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <Badge className={VERDICT_COLOR[result.verdict]}>判定 {VERDICT_LABEL[result.verdict]}</Badge>
-        {result.blocked_by && <Badge className="border-rose-500/40 bg-rose-500/15 text-rose-100">硬阻断 {result.blocked_by}</Badge>}
-        <Badge className="border-white/15 text-slate-300">{PLATFORM_LABEL[String(kox.platform)] ?? kox.platform}</Badge>
-        <Badge className="border-white/15 text-slate-300">{kox.country}</Badge>
-        <Badge className="border-white/15 text-slate-300">{BUCKET_LABEL[result.group_key.split('|')[1]] ?? result.group_key}</Badge>
-        <Badge className="border-white/15 font-mono text-slate-400">同组 {result.group_key}</Badge>
+        {result.blocked_by && <Badge className="border-rose-300 bg-rose-100 text-rose-800">硬阻断 {result.blocked_by}</Badge>}
+        <Badge className="border-slate-300 text-slate-700">{PLATFORM_LABEL[String(kox.platform)] ?? kox.platform}</Badge>
+        <Badge className="border-slate-300 text-slate-700">{kox.country}</Badge>
+        <Badge className="border-slate-300 text-slate-700">{BUCKET_LABEL[result.group_key.split('|')[1]] ?? result.group_key}</Badge>
+        <Badge className="border-slate-300 font-mono text-slate-600">同组 {result.group_key}</Badge>
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {scoreRows.map(([label, v, hint]) => (
-          <div key={label} className="glass px-2.5 py-2" title={hint}>
+          <div key={label} className="card px-2.5 py-2" title={hint}>
             <div className="text-[10px] text-slate-500">{label}</div>
-            <div className="num mt-0.5 text-[15px] text-slate-100">{fixed(v, 4)}</div>
-            <div className="mt-1 h-1 overflow-hidden rounded-full bg-white/[0.07]">
+            <div className="num mt-0.5 text-[15px] text-slate-900">{fixed(v, 4)}</div>
+            <div className="mt-1 h-1 overflow-hidden rounded-full bg-slate-100">
               <div
                 className="h-full rounded-full"
                 style={{ width: `${Math.max(0, Math.min(1, v)) * 100}%`, background: '#22d3ee' }}
@@ -127,7 +127,7 @@ export function EvidenceBody({
       <div>
         <h4 className="section-title mb-2">
           证据链 · 共 {result.reasons.length} 条规则命中
-          {result.reasons.length === 0 && <span className="ml-2 text-[11px] font-normal text-emerald-300">四层全部无命中</span>}
+          {result.reasons.length === 0 && <span className="ml-2 text-[11px] font-normal text-emerald-600">四层全部无命中</span>}
         </h4>
         <div className="space-y-3">
           {['G0', 'G1', 'G2', 'G3'].map((gate) => {
@@ -135,8 +135,8 @@ export function EvidenceBody({
             return (
               <div key={gate}>
                 <div className="mb-1.5 flex items-center gap-2">
-                  <span className="text-[11px] font-medium text-slate-300">{GATE_TITLE[gate]}</span>
-                  <span className={`num text-[10px] ${rows.length ? 'text-rose-300' : 'text-emerald-300'}`}>
+                  <span className="text-[11px] font-medium text-slate-700">{GATE_TITLE[gate]}</span>
+                  <span className={`num text-[10px] ${rows.length ? 'text-rose-600' : 'text-emerald-600'}`}>
                     {rows.length ? `${rows.length} 条命中` : '无命中'}
                   </span>
                 </div>
@@ -188,7 +188,7 @@ export function EvidenceBody({
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 6)
                 .map(([c, v]) => (
-                  <Badge key={c} className="border-white/15 text-slate-300">
+                  <Badge key={c} className="border-slate-300 text-slate-700">
                     {c} {pct1(v, 0)}
                   </Badge>
                 ))}
@@ -200,7 +200,7 @@ export function EvidenceBody({
             <div className="text-[10px] text-slate-500">内容风险标记</div>
             <div className="mt-1 flex flex-wrap gap-1">
               {(kox.content_flags ?? []).map((f) => (
-                <Badge key={`${f.type}-${f.severity}`} className="border-rose-400/30 bg-rose-400/10 text-rose-200">
+                <Badge key={`${f.type}-${f.severity}`} className="border-rose-200 bg-rose-50 text-rose-700">
                   {f.type} · {f.severity} × {f.hits ?? 1}
                 </Badge>
               ))}
@@ -212,7 +212,7 @@ export function EvidenceBody({
             <div className="text-[10px] text-slate-500">历史合作</div>
             <div className="mt-1 flex flex-wrap gap-1">
               {(kox.past_collabs ?? []).map((c) => (
-                <Badge key={`${c.brand}-${c.months_ago}`} className="border-white/15 text-slate-300">
+                <Badge key={`${c.brand}-${c.months_ago}`} className="border-slate-300 text-slate-700">
                   {c.brand} · {c.months_ago} 个月前
                 </Badge>
               ))}

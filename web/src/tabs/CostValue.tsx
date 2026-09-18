@@ -78,16 +78,16 @@ function RobustRow({
   return (
     <div
       className={`rounded-xl border px-3 py-2.5 ${
-        verdictTone === 'good' ? 'border-emerald-400/30 bg-emerald-400/[0.06]' : 'border-rose-400/30 bg-rose-400/[0.06]'
+        verdictTone === 'good' ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'
       }`}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <span className="text-[12px] font-medium text-slate-100">{title}</span>
+        <span className="text-[12px] font-medium text-slate-900">{title}</span>
         <Badge
           className={
             verdictTone === 'good'
-              ? 'border-emerald-400/35 bg-emerald-400/10 text-emerald-200'
-              : 'border-rose-400/35 bg-rose-400/10 text-rose-200'
+              ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+              : 'border-rose-300 bg-rose-50 text-rose-700'
           }
         >
           {verdict}
@@ -95,22 +95,22 @@ function RobustRow({
       </div>
       <div className="num mt-1 text-[19px] font-semibold" style={{ color }}>
         {fmt(stat.mean)}
-        <span className="ml-1 text-[12px] font-normal text-slate-400">± {fmt(stat.std)}</span>
+        <span className="ml-1 text-[12px] font-normal text-slate-600">± {fmt(stat.std)}</span>
       </div>
       <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10.5px] text-slate-500">
         <span>
-          中位数 <b className="num text-slate-300">{fmt(stat.median)}</b>
+          中位数 <b className="num text-slate-700">{fmt(stat.median)}</b>
         </span>
         <span>
-          变异系数 CV <b className={`num ${stat.cv <= 0.5 ? 'text-emerald-300' : 'text-rose-300'}`}>{fixed(stat.cv, 2)}</b>
+          变异系数 CV <b className={`num ${stat.cv <= 0.5 ? 'text-emerald-600' : 'text-rose-600'}`}>{fixed(stat.cv, 2)}</b>
         </span>
         <span>
           为正的种子{' '}
-          <b className={`num ${nNegative === 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+          <b className={`num ${nNegative === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
             {stat.n - nNegative}/{stat.n}
           </b>
         </span>
-        {crossesZero && <span className="text-rose-300">95% CI 跨 0 → 符号不可靠</span>}
+        {crossesZero && <span className="text-rose-600">95% CI 跨 0 → 符号不可靠</span>}
       </div>
       <div className="mt-1.5">
         <SeedStrip points={points} mean={stat.mean} ciLow={stat.ci95_low} ciHigh={stat.ci95_high} fmt={fmt} color={color} />
@@ -392,58 +392,58 @@ export function CostValueTab({
                 active={picked}
               />
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-                <span className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                <span className="flex items-center gap-1.5 text-[11px] text-slate-600">
                   <span className="inline-block h-0.5 w-5 border-t border-dashed border-slate-200" />
                   规则基线横贯全图：柱子低于它就是没打赢
                 </span>
-                <span className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                <span className="flex items-center gap-1.5 text-[11px] text-slate-600">
                   <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-400 text-[9px] font-bold text-black">!</span>
                   斜纹柱 = 存在混淆变量，见右侧
                 </span>
-                <span className="num text-[11px] text-rose-300">
+                <span className="num text-[11px] text-rose-600">
                   {belowCount} / {bars.length} 个{view === 'arms' ? ' arm' : ' 版本'}低于规则基线
                 </span>
               </div>
 
               {pickedBar && (
                 <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  <div className="glass px-2.5 py-2">
+                  <div className="card px-2.5 py-2">
                     <div className="text-[10px] text-slate-500">F1</div>
-                    <div className="num text-[15px] text-slate-100">{fixed(pickedBar.f1, 4)}</div>
-                    <div className={`num text-[10px] ${pickedBar.f1 >= (ruleF1 ?? 0) ? 'text-emerald-300' : 'text-rose-300'}`}>
+                    <div className="num text-[15px] text-slate-900">{fixed(pickedBar.f1, 4)}</div>
+                    <div className={`num text-[10px] ${pickedBar.f1 >= (ruleF1 ?? 0) ? 'text-emerald-600' : 'text-rose-600'}`}>
                       vs 规则 {pickedBar.f1 - (ruleF1 ?? 0) >= 0 ? '+' : ''}
                       {fixed(pickedBar.f1 - (ruleF1 ?? 0), 4)}
                     </div>
                   </div>
-                  <div className="glass px-2.5 py-2">
+                  <div className="card px-2.5 py-2">
                     <div className="text-[10px] text-slate-500">精确率</div>
-                    <div className="num text-[15px] text-slate-100">{fixed(pickedBar.precision, 4)}</div>
+                    <div className="num text-[15px] text-slate-900">{fixed(pickedBar.precision, 4)}</div>
                     <div className="num text-[10px] text-slate-500">规则 {fixed(Number(ruleArm?.precision), 4)}</div>
                   </div>
-                  <div className="glass px-2.5 py-2">
+                  <div className="card px-2.5 py-2">
                     <div className="text-[10px] text-slate-500">召回率</div>
-                    <div className="num text-[15px] text-slate-100">{fixed(pickedBar.recall, 4)}</div>
+                    <div className="num text-[15px] text-slate-900">{fixed(pickedBar.recall, 4)}</div>
                     <div className="num text-[10px] text-slate-500">规则 {fixed(Number(ruleArm?.recall), 4)}</div>
                   </div>
-                  <div className="glass px-2.5 py-2">
+                  <div className="card px-2.5 py-2">
                     <div className="text-[10px] text-slate-500">token 成本</div>
-                    <div className="num text-[15px] text-amber-200">{int0(pickedBar.tokens)}</div>
+                    <div className="num text-[15px] text-amber-700">{int0(pickedBar.tokens)}</div>
                     <div className="num text-[10px] text-slate-500">规则 0</div>
                   </div>
                 </div>
               )}
 
-              <div className="mt-3 rounded-xl border border-rose-400/25 bg-rose-400/[0.06] px-3 py-2.5">
-                <div className="flex items-center gap-1.5 text-[12px] font-medium text-rose-200">
+              <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5">
+                <div className="flex items-center gap-1.5 text-[12px] font-medium text-rose-700">
                   <Ban size={12} />
                   结论先说难听的那半句
                 </div>
-                <p className="mt-1 text-[11.5px] leading-relaxed text-slate-300">
-                  v1（只描述任务）双模型平均 F1 <b className="num text-rose-200">{fixed(Number(versionAvg.v1?.avg_f1), 4)}</b>、
-                  v2（加负例约束）<b className="num text-rose-200">{fixed(Number(versionAvg.v2?.avg_f1), 4)}</b>，
-                  都<b className="text-rose-200">低于</b>那条 20 行 Jaccard 规则的 <b className="num">{fixed(ruleF1, 4)}</b>，
+                <p className="mt-1 text-[11.5px] leading-relaxed text-slate-700">
+                  v1（只描述任务）双模型平均 F1 <b className="num text-rose-700">{fixed(Number(versionAvg.v1?.avg_f1), 4)}</b>、
+                  v2（加负例约束）<b className="num text-rose-700">{fixed(Number(versionAvg.v2?.avg_f1), 4)}</b>，
+                  都<b className="text-rose-700">低于</b>那条 20 行 Jaccard 规则的 <b className="num">{fixed(ruleF1, 4)}</b>，
                   却分别烧掉了 {int0(Number(versionAvg.v1?.total_tokens))} 和 {int0(Number(versionAvg.v2?.total_tokens))} token。
-                  换句话说：<b className="text-slate-100">把任务丢给大模型并不自动比规则强</b>，前两版是花钱买了更差的结果。
+                  换句话说：<b className="text-slate-900">把任务丢给大模型并不自动比规则强</b>，前两版是花钱买了更差的结果。
                   直到 v3 把判据从「标签是否一致」改成「投放方按 declared 选人会不会选错」，才第一次越过这条线
                   （{fixed(Number(versionAvg.v3?.avg_f1), 4)}，最好单组合 v3 × Azure = {fixed(Number((promptBench.best_arm as Loose).f1), 4)}）。
                 </p>
@@ -460,7 +460,7 @@ export function CostValueTab({
                   <div
                     key={String(v.version)}
                     className={`rounded-xl border px-3 py-2.5 ${
-                      beat ? 'border-cyan-300/40 bg-cyan-400/[0.07]' : 'border-white/10 bg-white/[0.025]'
+                      beat ? 'border-live-300 bg-live-50' : 'border-slate-200 bg-slate-50'
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -470,18 +470,18 @@ export function CostValueTab({
                       >
                         {String(v.version)}
                       </span>
-                      <span className="text-[12px] font-medium text-slate-100">{String(v.name)}</span>
-                      <span className={`num ml-auto text-[12px] ${beat ? 'text-cyan-200' : 'text-rose-300'}`}>
+                      <span className="text-[12px] font-medium text-slate-900">{String(v.name)}</span>
+                      <span className={`num ml-auto text-[12px] ${beat ? 'text-live-700' : 'text-rose-600'}`}>
                         F1 {fixed(f1, 4)}
                       </span>
                     </div>
                     <div className="muted mt-1">{String(v.change)}</div>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                      <Badge className="border-white/15 text-slate-400">system prompt {String(v.system_prompt_chars)} 字</Badge>
-                      <Badge className="border-white/15 text-slate-400">
+                      <Badge className="border-slate-300 text-slate-600">system prompt {String(v.system_prompt_chars)} 字</Badge>
+                      <Badge className="border-slate-300 text-slate-600">
                         精确率 {fixed(Number(avg.avg_precision), 3)} / 召回 {fixed(Number(avg.avg_recall), 3)}
                       </Badge>
-                      <Badge className={beat ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200' : 'border-rose-400/30 bg-rose-400/10 text-rose-200'}>
+                      <Badge className={beat ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'}>
                         {beat ? '越过规则基线' : `低于规则基线 ${fixed(f1 - (ruleF1 ?? 0), 4)}`}
                       </Badge>
                     </div>
@@ -493,15 +493,15 @@ export function CostValueTab({
                 );
               })}
 
-              <div className="rounded-xl border border-amber-400/35 bg-amber-400/[0.09] px-3 py-2.5">
-                <div className="flex items-center gap-1.5 text-[12px] font-semibold text-amber-100">
+              <div className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5">
+                <div className="flex items-center gap-1.5 text-[12px] font-semibold text-amber-800">
                   <TriangleAlert size={13} />
                   v3 的增益不能严格归因（混淆变量）
                 </div>
-                <p className="mt-1 text-[11.5px] leading-relaxed text-amber-50/85">
+                <p className="mt-1 text-[11.5px] leading-relaxed text-amber-800/85">
                   v3 同时做了<b>两处</b>改动：<br />
-                  <span className="text-amber-100">(1)</span> 把判据从「标签是否一致」改写为「投放方按 declared 选人会不会选错」，给 severity 明确定义、要求以浪费预算为锚点；<br />
-                  <span className="text-amber-100">(2)</span> 把品类邻接关系从举例改为从 taxonomy 注入的完整确定性邻接表。<br />
+                  <span className="text-amber-800">(1)</span> 把判据从「标签是否一致」改写为「投放方按 declared 选人会不会选错」，给 severity 明确定义、要求以浪费预算为锚点；<br />
+                  <span className="text-amber-800">(2)</span> 把品类邻接关系从举例改为从 taxonomy 注入的完整确定性邻接表。<br />
                   因此 v2 → v3 的 +{fixed(Number(versionAvg.v3?.avg_f1) - Number(versionAvg.v2?.avg_f1), 4)} F1{' '}
                   <b>无法在这两处之间做严格归因</b>。要归因就得再补一组只改其中一处的实验 —— 我没有跑，所以这里如实标注，
                   而不是把功劳直接算给"业务判据化"这个更好听的说法。
@@ -509,11 +509,11 @@ export function CostValueTab({
               </div>
 
               <Note>
-                <b className="text-slate-300">控制变量：</b>
+                <b className="text-slate-700">控制变量：</b>
                 {String(promptBench.control_variables)}
               </Note>
               <Note tone="warn">
-                <b className="text-amber-200">可信度边界：</b>推理类模型默认不是贪心解码，同 prompt 同模型两次跑出的 F1 会不同（实测 ARK 0.653 vs 0.681）。
+                <b className="text-amber-700">可信度边界：</b>推理类模型默认不是贪心解码，同 prompt 同模型两次跑出的 F1 会不同（实测 ARK 0.653 vs 0.681）。
                 所以这里所有数字都是<b>单次实测值</b>，不是均值±方差；结论层面（v3 &gt; v2 &gt; v1）稳，小数点后第二位不稳。
               </Note>
             </div>
@@ -549,15 +549,15 @@ export function CostValueTab({
                     return (
                       <tr key={k} className="hairline">
                         <td className="td">
-                          <span className={isRule ? 'text-slate-300' : 'text-cyan-100'}>{k}</span>
-                          <Badge className={`ml-1.5 ${isRule ? 'border-slate-400/25 text-slate-400' : 'border-indigo-400/30 bg-indigo-400/10 text-indigo-200'}`}>
+                          <span className={isRule ? 'text-slate-700' : 'text-live-700'}>{k}</span>
+                          <Badge className={`ml-1.5 ${isRule ? 'border-slate-200 text-slate-600' : 'border-indigo-200 bg-indigo-50 text-indigo-700'}`}>
                             {isRule ? '纯规则' : 'LLM'}
                           </Badge>
                         </td>
                         <td className="td num text-right">{fixed(Number(v.precision), 4)}</td>
                         <td className="td num text-right">{fixed(Number(v.recall), 4)}</td>
                         <td className="td num text-right font-semibold">{fixed(Number(v.f1), 4)}</td>
-                        <td className={`td num text-right ${Number(v.coverage) < 1 ? 'text-amber-300' : 'text-slate-400'}`}>
+                        <td className={`td num text-right ${Number(v.coverage) < 1 ? 'text-amber-600' : 'text-slate-600'}`}>
                           {pct1(Number(v.coverage))}
                           {v.n_judged !== undefined && (
                             <span className="ml-1 text-[10px] text-slate-500">({int0(Number(v.n_judged))} 条)</span>
@@ -571,8 +571,8 @@ export function CostValueTab({
               </table>
               <Note tone="warn">
                 <AlertTriangle size={11} className="mr-1 inline" />
-                Azure 那一行覆盖率是 <b className="text-amber-200">{pct1(Number(tagArms.azure?.coverage ?? 0))}</b>：50 个 batch 里
-                <b className="text-amber-200">失败了 1 个</b>，对应 12 条样本没有判定。这 12 条被算作<b>未覆盖</b>（n_judged = {int0(Number(tagArms.azure?.n_judged ?? 0))}），
+                Azure 那一行覆盖率是 <b className="text-amber-700">{pct1(Number(tagArms.azure?.coverage ?? 0))}</b>：50 个 batch 里
+                <b className="text-amber-700">失败了 1 个</b>，对应 12 条样本没有判定。这 12 条被算作<b>未覆盖</b>（n_judged = {int0(Number(tagArms.azure?.n_judged ?? 0))}），
                 而不是用默认值 / 众数 / 规则结果填充 —— 填充会让指标虚高且无法追溯。
               </Note>
               <Note>
@@ -631,7 +631,7 @@ export function CostValueTab({
           subtitle={`离线对照：${String((fitAudit.llm as Loose)?.model ?? '')}，抽样 ${int0(Number((fitAudit.llm as Loose)?.fit_sample_n))} 条；正式链路的 fit_score 仍是 ${String(fitAudit.formal_chain_fit_source)}`}
           right={
             <div className="flex items-center gap-1.5">
-              <Badge className="border-amber-400/35 bg-amber-400/10 text-amber-200">{String(fitAudit.decision)}</Badge>
+              <Badge className="border-amber-300 bg-amber-50 text-amber-700">{String(fitAudit.decision)}</Badge>
               <TruthChip kind="llm-offline" />
             </div>
           }
@@ -664,25 +664,25 @@ export function CostValueTab({
                 />
               </div>
               <Note tone="warn">
-                <b className="text-amber-200">三条判据全部不通过</b>（
+                <b className="text-amber-700">三条判据全部不通过</b>（
                 {Object.entries(fitChecks).map(([k, v]) => (
                   <span key={k} className="num mr-2 text-[10.5px]">
-                    {k}=<b className={v ? 'text-emerald-300' : 'text-rose-300'}>{String(v)}</b>
+                    {k}=<b className={v ? 'text-emerald-600' : 'text-rose-600'}>{String(v)}</b>
                   </span>
                 ))}
-                ）。注意浪费金额差是<b className="text-amber-200">负的（LLM 略好 {usd0(Math.abs(Number(fitTotals.wasted_delta_usd_llm_minus_rule)))}）</b>
+                ）。注意浪费金额差是<b className="text-amber-700">负的（LLM 略好 {usd0(Math.abs(Number(fitTotals.wasted_delta_usd_llm_minus_rule)))}）</b>
                 —— 数字对 LLM 有利，但我没有据此升格，因为它建立在 {pct1(Number(fitTotals.coverage_share))} 覆盖率和{' '}
                 {pct1(Number(fitTotals.double_counted_share))} 双算率之上，是口径叠加的产物而不是能力提升。
               </Note>
             </div>
             <div className="space-y-2">
               {((fitAudit.blockers ?? []) as string[]).map((b, i) => (
-                <div key={b} className="rounded-xl border border-rose-400/25 bg-rose-400/[0.06] px-3 py-2">
+                <div key={b} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2">
                   <div className="flex items-start gap-1.5">
-                    <span className="num mt-[1px] shrink-0 rounded bg-rose-400/15 px-1.5 text-[9.5px] text-rose-200">
+                    <span className="num mt-[1px] shrink-0 rounded bg-rose-100 px-1.5 text-[9.5px] text-rose-700">
                       阻断 {i + 1}
                     </span>
-                    <p className="text-[11.5px] leading-relaxed text-slate-300">{b}</p>
+                    <p className="text-[11.5px] leading-relaxed text-slate-700">{b}</p>
                   </div>
                 </div>
               ))}
@@ -715,13 +715,13 @@ export function CostValueTab({
                 return (
                   <div key={String(s.scheme)}>
                     <div className="flex items-baseline justify-between">
-                      <span className={`text-[12px] ${isOurs ? 'text-cyan-100' : 'text-slate-300'}`}>
+                      <span className={`text-[12px] ${isOurs ? 'text-live-700' : 'text-slate-700'}`}>
                         {String(s.scheme)}
-                        {isOurs && <Badge className="ml-1.5 border-cyan-400/30 bg-cyan-400/10 text-cyan-200">本实现</Badge>}
+                        {isOurs && <Badge className="ml-1.5 border-live-200 bg-live-50 text-live-700">本实现</Badge>}
                       </span>
-                      <span className="num text-[12px] text-slate-300">{int0(Number(s.calls_total))} 次调用</span>
+                      <span className="num text-[12px] text-slate-700">{int0(Number(s.calls_total))} 次调用</span>
                     </div>
-                    <div className="mt-1 h-2.5 overflow-hidden rounded-sm bg-white/[0.05]">
+                    <div className="mt-1 h-2.5 overflow-hidden rounded-sm bg-slate-50">
                       <div
                         className="h-full rounded-sm"
                         style={{
@@ -763,18 +763,18 @@ export function CostValueTab({
               </div>
               {tokenAccount ? (
                 <Note>
-                  <b className="text-slate-300">产物口径说明（本段全部读 audit.json，无写死状态）：</b>这份成本审计的{' '}
+                  <b className="text-slate-700">产物口径说明（本段全部读 audit.json，无写死状态）：</b>这份成本审计的{' '}
                   <code className="font-mono text-[10px]">token_account</code> 已填充：status ={' '}
                   <code className="font-mono text-[10px]">{String(costAudit.status)}</code>，实测{' '}
-                  <b className="num text-slate-200">{int0(Number(tokenAccount.measured_calls))}</b> 次调用 /{' '}
-                  <b className="num text-slate-200">{int0(Number(tokenAccount.total_tokens))}</b> token（平均{' '}
+                  <b className="num text-slate-800">{int0(Number(tokenAccount.measured_calls))}</b> 次调用 /{' '}
+                  <b className="num text-slate-800">{int0(Number(tokenAccount.total_tokens))}</b> token（平均{' '}
                   <span className="num">{fixed(Number(tokenAccount.tokens_per_call), 1)}</span> token/次），来源{' '}
                   {String(tokenAccount.source ?? '')}。它与上面第 ③ 块是同一份 usage 字段，两处数字必须相等
                   —— 页面不做任何二次估算。
                 </Note>
               ) : (
                 <Note tone="warn">
-                  <b className="text-amber-200">产物口径说明：</b>这份 audit.json 里{' '}
+                  <b className="text-amber-700">产物口径说明：</b>这份 audit.json 里{' '}
                   <code className="font-mono text-[10px]">token_account</code> 尚未填充（status ={' '}
                   {String(costAudit.status)}）—— 成本审计跑在 LLM 真调之前。真实 token 账在 llm_bench.json，见上面第 ③ 块；
                   这条说明由产物状态驱动，产物一旦补齐就会自动改写。
@@ -810,38 +810,38 @@ export function CostValueTab({
           }
         >
           {/* ---- 三个口径并列：招牌 / 12 种子 / 24 种子离线复核 ---- */}
-          <div className="mb-3 overflow-hidden rounded-2xl border border-amber-400/30 bg-amber-400/[0.05] px-4 py-3.5">
+          <div className="mb-3 overflow-hidden rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge className="border-amber-400/35 bg-amber-400/10 text-amber-200">三个口径并列</Badge>
-              <h4 className="text-[13.5px] font-semibold text-slate-100">
+              <Badge className="border-amber-300 bg-amber-50 text-amber-700">三个口径并列</Badge>
+              <h4 className="text-[13.5px] font-semibold text-slate-900">
                 「少浪费多少」有三个口径，招牌那个最好看 —— 三个一起摆出来，并写清各自的取舍
               </h4>
             </div>
             <div className="mt-3 grid gap-2.5 lg:grid-cols-3">
               {/* 招牌口径 */}
-              <div className="rounded-xl border border-white/12 bg-black/25 px-3 py-2.5">
+              <div className="rounded-xl border border-slate-200 bg-slate-100 px-3 py-2.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-medium text-slate-400">定稿单种子（招牌口径 · n = 1）</span>
-                  <Badge className="border-amber-400/30 bg-amber-400/10 text-amber-200">好看</Badge>
+                  <span className="text-[11px] font-medium text-slate-600">定稿单种子（招牌口径 · n = 1）</span>
+                  <Badge className="border-amber-200 bg-amber-50 text-amber-700">好看</Badge>
                 </div>
-                <div className="num mt-1.5 text-[20px] font-semibold text-amber-200">
+                <div className="num mt-1.5 text-[20px] font-semibold text-amber-700">
                   {singleSaved !== null ? usd0(singleSaved) : '—'}
-                  <span className="ml-1.5 text-[13px] font-normal text-slate-400">
+                  <span className="ml-1.5 text-[13px] font-normal text-slate-600">
                     {singleShare !== null ? pct1(singleShare) : '—'}
                   </span>
                 </div>
-                <p className="mt-1.5 text-[11px] leading-relaxed text-slate-400">
+                <p className="mt-1.5 text-[11px] leading-relaxed text-slate-600">
                   取舍：只有 1 个样本。
                   {singleRank && (
                     <>
                       {' '}
                       它是 {int0(singleRank.n)} 个种子里第{' '}
-                      <b className="num text-rose-200">{int0(singleRank.rank)}</b> 高的观测
+                      <b className="num text-rose-700">{int0(singleRank.rank)}</b> 高的观测
                     </>
                   )}
                   {singleOutsideCi && shareStat && (
                     <>
-                      ，且<b className="text-rose-200">落在均值 95% CI（{pct1(shareStat.ci95_low)}~{pct1(shareStat.ci95_high)}）之外</b>
+                      ，且<b className="text-rose-700">落在均值 95% CI（{pct1(shareStat.ci95_low)}~{pct1(shareStat.ci95_high)}）之外</b>
                     </>
                   )}
                   。所以它能当招牌，不能当结论。
@@ -850,27 +850,27 @@ export function CostValueTab({
               </div>
 
               {/* 12 种子 */}
-              <div className="rounded-xl border border-emerald-400/30 bg-black/25 px-3 py-2.5">
+              <div className="rounded-xl border border-emerald-200 bg-slate-100 px-3 py-2.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-medium text-slate-400">
+                  <span className="text-[11px] font-medium text-slate-600">
                     {shareStat ? `${int0(shareStat.n)} 种子` : '多种子'}（对外结论取这一列）
                   </span>
-                  <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">采用</Badge>
+                  <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700">采用</Badge>
                 </div>
                 {shareStat ? (
                   <>
-                    <div className="num mt-1.5 text-[20px] font-semibold text-emerald-200">
+                    <div className="num mt-1.5 text-[20px] font-semibold text-emerald-700">
                       {pct1(shareStat.mean)}
-                      <span className="ml-1 text-[13px] font-normal text-slate-400">± {pct1(shareStat.std)}</span>
+                      <span className="ml-1 text-[13px] font-normal text-slate-600">± {pct1(shareStat.std)}</span>
                     </div>
-                    <p className="mt-1.5 text-[11px] leading-relaxed text-slate-300">
+                    <p className="mt-1.5 text-[11px] leading-relaxed text-slate-700">
                       95% CI <b className="num">{pct1(shareStat.ci95_low)}~{pct1(shareStat.ci95_high)}</b>；区间跨了近 18 个百分点。
-                      总口径下<b className="text-rose-200">
+                      总口径下<b className="text-rose-700">
                         {' '}
                         {int0(Number(aRob?.n_seeds_koxpilot_loses_overall))}/{int0(Number(aRob?.n_seeds))} 个种子跑输基线
                       </b>
                       （seed {((aRob?.seeds_koxpilot_loses_overall ?? []) as number[]).join(', ')}），最差那个种子是{' '}
-                      <span className="num text-rose-200">{pct1(shareStat.min)}</span>。
+                      <span className="num text-rose-700">{pct1(shareStat.min)}</span>。
                     </p>
                     <div className="muted mt-1">来源：multiseed.json → A_value_robustness.saved_share_of_budget</div>
                   </>
@@ -880,22 +880,22 @@ export function CostValueTab({
               </div>
 
               {/* 24 种子离线复核 */}
-              <div className="rounded-xl border border-dashed border-slate-400/35 bg-black/20 px-3 py-2.5">
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-100 px-3 py-2.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-medium text-slate-400">
+                  <span className="text-[11px] font-medium text-slate-600">
                     {OFFLINE_24_SEED.n_seeds} 种子复核（最保守口径）
                   </span>
-                  <Badge className="border-slate-400/35 bg-slate-400/10 text-slate-300">离线 · 产物未入库</Badge>
+                  <Badge className="border-slate-300 bg-slate-50 text-slate-700">离线 · 产物未入库</Badge>
                 </div>
-                <div className="num mt-1.5 text-[20px] font-semibold text-slate-200">
+                <div className="num mt-1.5 text-[20px] font-semibold text-slate-800">
                   {pct1(OFFLINE_24_SEED.saved_share_mean)}
-                  <span className="ml-1 text-[13px] font-normal text-slate-400">
+                  <span className="ml-1 text-[13px] font-normal text-slate-600">
                     ± {pct1(OFFLINE_24_SEED.saved_share_std)}
                   </span>
                 </div>
-                <p className="mt-1.5 text-[11px] leading-relaxed text-slate-300">
-                  <b className="text-rose-200">{OFFLINE_24_SEED.n_loses}/{OFFLINE_24_SEED.n_seeds} 个种子跑输基线。</b>{' '}
-                  <b className="text-amber-200">这一列是离线复核结论，产物未入库，页面无法读产物核对</b> ——
+                <p className="mt-1.5 text-[11px] leading-relaxed text-slate-700">
+                  <b className="text-rose-700">{OFFLINE_24_SEED.n_loses}/{OFFLINE_24_SEED.n_seeds} 个种子跑输基线。</b>{' '}
+                  <b className="text-amber-700">这一列是离线复核结论，产物未入库，页面无法读产物核对</b> ——
                   {OFFLINE_24_SEED.why_not_committed}。可用{' '}
                   <code className="font-mono text-[10px]">{OFFLINE_24_SEED.repro}</code> 复现。
                 </p>
@@ -907,7 +907,7 @@ export function CostValueTab({
             </div>
             <Note tone="warn">
               <AlertTriangle size={11} className="mr-1 inline" />
-              <b className="text-amber-200">对外该引哪个：</b>引{' '}
+              <b className="text-amber-700">对外该引哪个：</b>引{' '}
               {shareStat ? <b className="num">{pct1(shareStat.mean)} ± {pct1(shareStat.std)}</b> : '多种子均值'}
               （12 种子），并同时说明有种子跑输。招牌那个{' '}
               {singleShare !== null && <b className="num">{pct1(singleShare)}</b>} 只在"定稿那一次"成立；
@@ -959,13 +959,13 @@ export function CostValueTab({
           </div>
           <Note tone="warn">
             <AlertTriangle size={11} className="mr-1 inline" />
-            <b className="text-amber-200">上面第三格那个 +{pct1(Number(cvaTotals.effective_view_uplift))} 是无界比率，请不要跨样本引用。</b>
+            <b className="text-amber-700">上面第三格那个 +{pct1(Number(cvaTotals.effective_view_uplift))} 是无界比率，请不要跨样本引用。</b>
             它的分母是基线有效曝光，基线一旦几乎把钱全烧在水号上（浪费率 &gt;99%），分母趋 0，比率会爆炸。
             {ratioBlowup && (
               <>
                 {' '}
                 实测在 12 种子的 <span className="num">{ratioBlowup.cid}</span> 上，这个比率最大炸到{' '}
-                <b className="num text-rose-200">×{fixed(ratioBlowup.max, 1)}</b>（同一格的中位数只有{' '}
+                <b className="num text-rose-700">×{fixed(ratioBlowup.max, 1)}</b>（同一格的中位数只有{' '}
                 <span className="num">×{fixed(ratioBlowup.median, 2)}</span>）—— 这就是为什么现在补了有界口径
                 （rate_gap_pp ∈[−100,100]、symmetric_uplift ∈[−1,1]），并规定聚合只用有界口径。
               </>
@@ -974,23 +974,23 @@ export function CostValueTab({
 
           {/* ---- 结论反转 ---- */}
           {armAttr && gateStat && divStat && wr && (
-            <div className="mt-3 overflow-hidden rounded-2xl border border-rose-400/30 bg-gradient-to-br from-rose-400/[0.09] via-transparent to-emerald-400/[0.07] px-4 py-3.5">
+            <div className="mt-3 overflow-hidden rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-100 via-transparent to-emerald-100 px-4 py-3.5">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge className="border-rose-400/35 bg-rose-400/10 text-rose-200">结论反转</Badge>
-                <h4 className="text-[13.5px] font-semibold text-slate-100">
-                  单种子看像"分散化占七成"；12 种子看，稳定的价值来源是<b className="text-emerald-200">门禁与质量排序</b>，不是分散投放
+                <Badge className="border-rose-300 bg-rose-50 text-rose-700">结论反转</Badge>
+                <h4 className="text-[13.5px] font-semibold text-slate-900">
+                  单种子看像"分散化占七成"；12 种子看，稳定的价值来源是<b className="text-emerald-700">门禁与质量排序</b>，不是分散投放
                 </h4>
               </div>
               <div className="mt-3 grid gap-3 lg:grid-cols-2">
-                <div className="rounded-xl border border-white/10 bg-black/25 px-3 py-2.5">
-                  <div className="text-[11px] font-medium text-slate-400">
+                <div className="rounded-xl border border-slate-200 bg-slate-100 px-3 py-2.5">
+                  <div className="text-[11px] font-medium text-slate-600">
                     定稿单种子（招牌口径 · n = 1）
-                    <Badge className="ml-1.5 border-amber-400/30 bg-amber-400/10 text-amber-200">好看但样本 = 1</Badge>
+                    <Badge className="ml-1.5 border-amber-200 bg-amber-50 text-amber-700">好看但样本 = 1</Badge>
                   </div>
                   <div className="mt-2 space-y-1.5">
                     <div className="flex items-baseline justify-between">
-                      <span className="text-[11.5px] text-amber-200">结构分散化</span>
-                      <span className="num text-[15px] font-semibold text-amber-200">
+                      <span className="text-[11.5px] text-amber-700">结构分散化</span>
+                      <span className="num text-[15px] font-semibold text-amber-700">
                         {usd0(Number(wr.by_diversification))}
                         <span className="ml-1 text-[11px] font-normal text-slate-500">
                           占 {pct1(Number(wr.share_of_total_by_diversification))}
@@ -998,8 +998,8 @@ export function CostValueTab({
                       </span>
                     </div>
                     <div className="flex items-baseline justify-between">
-                      <span className="text-[11.5px] text-cyan-200">门禁与质量排序</span>
-                      <span className="num text-[15px] font-semibold text-cyan-200">
+                      <span className="text-[11.5px] text-live-700">门禁与质量排序</span>
+                      <span className="num text-[15px] font-semibold text-live-700">
                         {usd0(Number(wr.by_gating_and_quality_ranking))}
                         <span className="ml-1 text-[11px] font-normal text-slate-500">
                           占 {pct1(Number(wr.share_of_total_by_gating))}
@@ -1007,41 +1007,41 @@ export function CostValueTab({
                       </span>
                     </div>
                   </div>
-                  <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
+                  <p className="mt-2 text-[11px] leading-relaxed text-slate-600">
                     只看这一列，很容易得出"价值主要来自把钱摊开"的结论 —— 这是本页曾经的叙事，
-                    <b className="text-rose-200">它是采样运气，不是规律</b>。
+                    <b className="text-rose-700">它是采样运气，不是规律</b>。
                   </p>
                 </div>
-                <div className="rounded-xl border border-emerald-400/25 bg-black/25 px-3 py-2.5">
-                  <div className="text-[11px] font-medium text-slate-400">
+                <div className="rounded-xl border border-emerald-200 bg-slate-100 px-3 py-2.5">
+                  <div className="text-[11px] font-medium text-slate-600">
                     {int0(Number(armAttr.n_seeds))} 种子（更诚实的口径 · 对外结论取这一列）
-                    <Badge className="ml-1.5 border-emerald-400/30 bg-emerald-400/10 text-emerald-200">采用</Badge>
+                    <Badge className="ml-1.5 border-emerald-200 bg-emerald-50 text-emerald-700">采用</Badge>
                   </div>
                   <div className="mt-2 space-y-1.5">
                     <div className="flex items-baseline justify-between">
-                      <span className="text-[11.5px] text-amber-200">结构分散化</span>
-                      <span className="num text-[15px] font-semibold text-amber-200">
+                      <span className="text-[11.5px] text-amber-700">结构分散化</span>
+                      <span className="num text-[15px] font-semibold text-amber-700">
                         {usd0(divStat.mean)}
                         <span className="ml-1 text-[11px] font-normal text-slate-500">± {usd0(divStat.std)}</span>
                       </span>
                     </div>
                     <div className="flex items-baseline justify-between">
-                      <span className="text-[11.5px] text-cyan-200">门禁与质量排序</span>
-                      <span className="num text-[15px] font-semibold text-cyan-200">
+                      <span className="text-[11.5px] text-live-700">门禁与质量排序</span>
+                      <span className="num text-[15px] font-semibold text-live-700">
                         {usd0(gateStat.mean)}
                         <span className="ml-1 text-[11px] font-normal text-slate-500">± {usd0(gateStat.std)}</span>
                       </span>
                     </div>
                   </div>
-                  <p className="mt-2 text-[11px] leading-relaxed text-slate-300">
-                    门禁那一段 CV <b className="num text-emerald-300">{fixed(gateStat.cv, 2)}</b>、
-                    <b className="num text-emerald-300">
+                  <p className="mt-2 text-[11px] leading-relaxed text-slate-700">
+                    门禁那一段 CV <b className="num text-emerald-600">{fixed(gateStat.cv, 2)}</b>、
+                    <b className="num text-emerald-600">
                       {gateStat.n - Number(armAttr.n_seeds_gating_contribution_negative)}/{gateStat.n}
                     </b>{' '}
-                    个种子为正；分散化那一段 CV <b className="num text-rose-300">{fixed(divStat.cv, 2)}</b>、
-                    <b className="num text-rose-300">{int0(Number(armAttr.n_seeds_diversification_contribution_negative))}</b>{' '}
+                    个种子为正；分散化那一段 CV <b className="num text-rose-600">{fixed(divStat.cv, 2)}</b>、
+                    <b className="num text-rose-600">{int0(Number(armAttr.n_seeds_diversification_contribution_negative))}</b>{' '}
                     个种子为负，95% CI{' '}
-                    <b className="num text-rose-300">
+                    <b className="num text-rose-600">
                       [{usd0(divStat.ci95_low)}, {usd0(divStat.ci95_high)}]
                     </b>{' '}
                     跨 0。
@@ -1143,7 +1143,7 @@ export function CostValueTab({
                 )}
                 <div className="lg:col-span-2">
                   <Note tone="good">
-                    <b className="text-emerald-200">可加性已显式校验：</b>
+                    <b className="text-emerald-700">可加性已显式校验：</b>
                     {String((armAttr.additivity_check as Loose).note ?? '')} 均值合计{' '}
                     <span className="num">{usd0(Number((armAttr.additivity_check as Loose).mean_total))}</span> vs 两段之和{' '}
                     <span className="num">
@@ -1151,7 +1151,7 @@ export function CostValueTab({
                     </span>
                     ，绝对误差 <span className="num">{fixed(Number((armAttr.additivity_check as Loose).abs_error), 4)}</span>。
                     另：总口径下 KOXPilot 跑输基线的种子有{' '}
-                    <b className="num text-rose-200">
+                    <b className="num text-rose-700">
                       {int0(Number(aRob?.n_seeds_koxpilot_loses_overall))}/{int0(Number(aRob?.n_seeds))}
                     </b>{' '}
                     个（seed {((aRob?.seeds_koxpilot_loses_overall ?? []) as number[]).join(', ')}），一并写在这里。
@@ -1165,18 +1165,18 @@ export function CostValueTab({
           {armAttr && (
             <div className="mt-3">
               <div className="mb-2 flex flex-wrap items-center gap-2">
-                <h4 className="text-[13px] font-semibold text-slate-100">三条不许只报一半的反面事实</h4>
-                <Badge className="border-rose-400/30 bg-rose-400/10 text-rose-200">与上面的好结论同等重要</Badge>
+                <h4 className="text-[13px] font-semibold text-slate-900">三条不许只报一半的反面事实</h4>
+                <Badge className="border-rose-200 bg-rose-50 text-rose-700">与上面的好结论同等重要</Badge>
               </div>
               <div className="grid gap-2 lg:grid-cols-3">
-                <div className="rounded-xl border border-rose-400/25 bg-rose-400/[0.06] px-3 py-2.5">
-                  <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-rose-200">
+                <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-rose-700">
                     <Ban size={12} />
                     第三臂的绝对有效曝光赢过我们
                   </div>
-                  <p className="mt-1 text-[11px] leading-relaxed text-slate-300">
+                  <p className="mt-1 text-[11px] leading-relaxed text-slate-700">
                     在{' '}
-                    <b className="num text-rose-200">
+                    <b className="num text-rose-700">
                       {int0(Number(armAttr.n_seeds_third_arm_more_effective_views))}/{int0(Number(armAttr.n_seeds))}
                     </b>{' '}
                     个种子上，第三臂的绝对有效曝光都高于 KOXPilot
@@ -1187,19 +1187,19 @@ export function CostValueTab({
                       </>
                     )}
                     。原因是它按"每美元名义曝光"排序，专挑 CPM 最便宜的长尾；KOXPilot 优化的是质量加权价值，会
-                    <b className="text-slate-100">主动放弃便宜但不对味的曝光</b>。所以三臂可比的口径是
-                    <b className="text-slate-100">浪费金额与有效曝光率</b>，绝对曝光数不是 KOXPilot 的优化目标。
+                    <b className="text-slate-900">主动放弃便宜但不对味的曝光</b>。所以三臂可比的口径是
+                    <b className="text-slate-900">浪费金额与有效曝光率</b>，绝对曝光数不是 KOXPilot 的优化目标。
                   </p>
                 </div>
-                <div className="rounded-xl border border-amber-400/25 bg-amber-400/[0.06] px-3 py-2.5">
-                  <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-amber-200">
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-amber-700">
                     <Users size={12} />
                     第三臂平均选 {thirdArmN ? int0(thirdArmN.mean) : '—'} 人，真实采购不可执行
                   </div>
-                  <p className="mt-1 text-[11px] leading-relaxed text-slate-300">
+                  <p className="mt-1 text-[11px] leading-relaxed text-slate-700">
                     {thirdArmN && (
                       <>
-                        12 种子均值 <b className="num text-amber-200">{int0(thirdArmN.mean)}</b> 人（min{' '}
+                        12 种子均值 <b className="num text-amber-700">{int0(thirdArmN.mean)}</b> 人（min{' '}
                         <span className="num">{int0(thirdArmN.min)}</span> / max <span className="num">{int0(thirdArmN.max)}</span>
                         ）
                       </>
@@ -1212,17 +1212,17 @@ export function CostValueTab({
                       </>
                     )}
                     。同一笔钱摊到五百多个达人身上，在真实采购里签约、寄样、排期都不可执行 ——
-                    <b className="text-slate-100">它只是对照臂，不是一个方案</b>；"分散化贡献"里也天然含着"摊得更开"的大数效应。
+                    <b className="text-slate-900">它只是对照臂，不是一个方案</b>；"分散化贡献"里也天然含着"摊得更开"的大数效应。
                   </p>
                 </div>
-                <div className="rounded-xl border border-white/12 bg-white/[0.03] px-3 py-2.5">
-                  <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-slate-200">
-                    <TriangleAlert size={12} className="text-slate-400" />
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-slate-800">
+                    <TriangleAlert size={12} className="text-slate-600" />
                     "门禁贡献"其实是"门禁过滤 + 质量排序"的合计
                   </div>
-                  <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
+                  <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
                     第三臂与 KOXPilot 的差额里同时包含两件事：门禁过滤掉 review/reject，以及排序依据从"每美元名义曝光"换成
-                    "质量加权价值"。二者<b className="text-slate-200">共用同一批真实性/适配分数，在实现上无法再拆细</b>，
+                    "质量加权价值"。二者<b className="text-slate-800">共用同一批真实性/适配分数，在实现上无法再拆细</b>，
                     所以这里合并命名为"门禁与质量排序"，不谎报成纯门禁效果。
                   </p>
                 </div>
@@ -1258,8 +1258,8 @@ export function CostValueTab({
           tone="warn"
           right={
             <div className="flex flex-wrap items-center gap-1.5">
-              <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">价值结论不依赖该假设</Badge>
-              <Badge className="border-rose-400/30 bg-rose-400/10 text-rose-200">但选谁会变</Badge>
+              <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700">价值结论不依赖该假设</Badge>
+              <Badge className="border-rose-200 bg-rose-50 text-rose-700">但选谁会变</Badge>
               <TruthChip kind="python" />
             </div>
           }
@@ -1282,21 +1282,21 @@ export function CostValueTab({
                   {decayRows.map((r) => {
                     const isRef = Boolean(r.is_reference);
                     return (
-                      <tr key={String(r.decay)} className={`hairline ${isRef ? 'bg-cyan-400/[0.07]' : ''}`}>
+                      <tr key={String(r.decay)} className={`hairline ${isRef ? 'bg-live-50' : ''}`}>
                         <td className="td num">
                           {fixed(Number(r.decay), 1)}
                           {isRef && (
-                            <Badge className="ml-1.5 border-cyan-400/30 bg-cyan-400/10 text-cyan-200">正式链路</Badge>
+                            <Badge className="ml-1.5 border-live-200 bg-live-50 text-live-700">正式链路</Badge>
                           )}
                         </td>
                         <td className="td num text-right">{int0(Number(r.n_selected_total))}</td>
                         <td className="td num text-right">{int0(Number(r.n_posts_total))}</td>
-                        <td className="td num text-right font-semibold text-emerald-200">
+                        <td className="td num text-right font-semibold text-emerald-700">
                           {usd0(Number(r.saved_usd_total))}
                           <div className="muted">{pct1(Number(r.saved_share_of_budget))}</div>
                         </td>
-                        <td className="td num text-right text-amber-200">{usd0(Number(r.saved_usd_by_diversification))}</td>
-                        <td className="td num text-right text-cyan-200">
+                        <td className="td num text-right text-amber-700">{usd0(Number(r.saved_usd_by_diversification))}</td>
+                        <td className="td num text-right text-live-700">
                           {usd0(Number(r.saved_usd_by_gating_and_quality_ranking))}
                         </td>
                         <td className="td num text-right">{pp(Number(r.effective_view_rate_gap_pp_total))}</td>
@@ -1306,7 +1306,7 @@ export function CostValueTab({
                 </tbody>
               </table>
               <Note>
-                <b className="text-slate-300">这些必然随 decay 变，不属于"应当稳定"的范畴：</b>
+                <b className="text-slate-700">这些必然随 decay 变，不属于"应当稳定"的范畴：</b>
                 {((decayScan.what_moves_with_decay ?? []) as string[]).map((w) => (
                   <span key={w.slice(0, 16)} className="mt-1 block">
                     · {w}
@@ -1315,17 +1315,17 @@ export function CostValueTab({
               </Note>
             </div>
             <div className="space-y-2">
-              <div className="rounded-xl border border-emerald-400/30 bg-emerald-400/[0.06] px-3 py-2.5">
-                <div className="flex items-center gap-1.5 text-[12px] font-medium text-emerald-200">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+                <div className="flex items-center gap-1.5 text-[12px] font-medium text-emerald-700">
                   <Sliders size={12} />
                   好的那一半：价值结论不依赖这个假设
                 </div>
-                <div className="mt-1.5 space-y-1 text-[11px] leading-relaxed text-slate-300">
+                <div className="mt-1.5 space-y-1 text-[11px] leading-relaxed text-slate-700">
                   {savedSpread && (
                     <div>
                       合计少浪费在 <b className="num">{usd0(savedSpread.lo)}</b> ~ <b className="num">{usd0(savedSpread.hi)}</b>{' '}
                       之间，相对离差（极差 / 均值）只有{' '}
-                      <b className="num text-emerald-300">{pct1(savedSpread.rel ?? 0)}</b>。
+                      <b className="num text-emerald-600">{pct1(savedSpread.rel ?? 0)}</b>。
                     </div>
                   )}
                   {decayStab && (
@@ -1333,28 +1333,28 @@ export function CostValueTab({
                       两段归因符号逐档均未翻转：
                       {Object.entries((decayStab.sign_stable ?? {}) as Record<string, boolean>).map(([k, v]) => (
                         <span key={k} className="num ml-1.5 text-[10.5px]">
-                          {k}=<b className={v ? 'text-emerald-300' : 'text-rose-300'}>{String(v)}</b>
+                          {k}=<b className={v ? 'text-emerald-600' : 'text-rose-600'}>{String(v)}</b>
                         </span>
                       ))}
                     </div>
                   )}
                 </div>
               </div>
-              <div className="rounded-xl border border-rose-400/30 bg-rose-400/[0.06] px-3 py-2.5">
-                <div className="flex items-center gap-1.5 text-[12px] font-medium text-rose-200">
+              <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5">
+                <div className="flex items-center gap-1.5 text-[12px] font-medium text-rose-700">
                   <AlertTriangle size={12} />
                   难听的那一半：具体选谁会变，且没过我自设的判据
                 </div>
                 {decayStab && (
-                  <div className="mt-1.5 space-y-1 text-[11px] leading-relaxed text-slate-300">
+                  <div className="mt-1.5 space-y-1 text-[11px] leading-relaxed text-slate-700">
                     <div>
                       选中名单 Jaccard 最低{' '}
-                      <b className="num text-rose-200">{fixed(Number(decayStab.selection_jaccard_min_vs_reference), 3)}</b>
+                      <b className="num text-rose-700">{fixed(Number(decayStab.selection_jaccard_min_vs_reference), 3)}</b>
                       、金额加权重叠最低{' '}
-                      <b className="num text-rose-200">{fixed(Number(decayStab.spend_overlap_share_min_vs_reference), 3)}</b>
+                      <b className="num text-rose-700">{fixed(Number(decayStab.spend_overlap_share_min_vs_reference), 3)}</b>
                       ，都低于自设判据{' '}
                       <b className="num">{fixed(Number(decayStab.threshold), 2)}</b> ——
-                      <b className="text-rose-200">selection_stable = {String(decayStab.selection_stable)}</b>。
+                      <b className="text-rose-700">selection_stable = {String(decayStab.selection_stable)}</b>。
                     </div>
                     <div>
                       即：这个假设不影响"要不要用 KOXPilot"，但影响"最终名单里是哪些人、每人买几条"。
@@ -1364,19 +1364,19 @@ export function CostValueTab({
                 )}
               </div>
               {/* ---- blockers / caveats 分列：两类不许混装，空也要说明是空 ---- */}
-              <div className="rounded-xl border border-white/10 bg-white/[0.025] px-3 py-2.5">
-                <div className="text-[11.5px] font-medium text-slate-200">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                <div className="text-[11.5px] font-medium text-slate-800">
                   阻断项 {decayBlockers.length} 条 · 保留意见 {decayCaveats.length} 条
                   <span className="muted ml-1.5">（两类分开读产物，缺一类就会让读者只看到一片绿）</span>
                 </div>
                 <div className="mt-1.5 space-y-1">
                   {decayBlockers.length === 0 ? (
-                    <div className="text-[11px] leading-relaxed text-emerald-200/90">
+                    <div className="text-[11px] leading-relaxed text-emerald-700/90">
                       blockers 为空：没有"必须先解决才能对外用"的阻断项。
                     </div>
                   ) : (
                     decayBlockers.map((b) => (
-                      <div key={b.slice(0, 20)} className="text-[11px] leading-relaxed text-rose-200">
+                      <div key={b.slice(0, 20)} className="text-[11px] leading-relaxed text-rose-700">
                         · 阻断：{b}
                       </div>
                     ))
@@ -1385,7 +1385,7 @@ export function CostValueTab({
                     <div className="muted">caveats 为空。</div>
                   ) : (
                     decayCaveats.map((cv) => (
-                      <div key={cv.slice(0, 20)} className="text-[11px] leading-relaxed text-amber-100/90">
+                      <div key={cv.slice(0, 20)} className="text-[11px] leading-relaxed text-amber-800/90">
                         · 保留意见：{cv}
                       </div>
                     ))
@@ -1393,7 +1393,7 @@ export function CostValueTab({
                 </div>
               </div>
               <Note tone="warn">
-                <b className="text-amber-200">判定：</b>
+                <b className="text-amber-700">判定：</b>
                 <code className="font-mono text-[10px]">{String(decayScan.verdict)}</code>
                 <span className="mt-1 block">{String(decayScan.headline)}</span>
               </Note>
@@ -1403,49 +1403,49 @@ export function CostValueTab({
 
           {/* ================= 分层交付：把"名单不稳"变成分流规则 ================= */}
           {delivery && deliveryCore && deliverySens ? (
-            <div className="mt-3 overflow-hidden rounded-2xl border border-cyan-300/30 bg-cyan-400/[0.05] px-4 py-3.5">
+            <div className="mt-3 overflow-hidden rounded-2xl border border-live-200 bg-live-50 px-4 py-3.5">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge className="border-cyan-400/35 bg-cyan-400/10 text-cyan-200">分层交付</Badge>
-                <h4 className="text-[13.5px] font-semibold text-slate-100">
+                <Badge className="border-live-300 bg-live-50 text-live-700">分层交付</Badge>
+                <h4 className="text-[13.5px] font-semibold text-slate-900">
                   判据不达标不是写一句免责声明就完了：名单按"在几档 decay 上都被选中"分两层，不确定性变成分流动作
                 </h4>
                 <span className="muted ml-auto">
                   触发条件 <code className="font-mono text-[10px]">{String(delivery.trigger)}</code>
                 </span>
               </div>
-              <p className="mt-2 text-[11.5px] leading-relaxed text-slate-300">{String(delivery.rule)}</p>
+              <p className="mt-2 text-[11.5px] leading-relaxed text-slate-700">{String(delivery.rule)}</p>
               <div className="mt-3 grid gap-2.5 lg:grid-cols-2">
-                <div className="rounded-xl border border-emerald-400/30 bg-black/25 px-3 py-2.5">
+                <div className="rounded-xl border border-emerald-200 bg-slate-100 px-3 py-2.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-medium text-slate-400">核心层（三档 decay 全部选中）</span>
-                    <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">可直接下单</Badge>
+                    <span className="text-[11px] font-medium text-slate-600">核心层（三档 decay 全部选中）</span>
+                    <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700">可直接下单</Badge>
                   </div>
-                  <div className="num mt-1.5 text-[19px] font-semibold text-emerald-200">
+                  <div className="num mt-1.5 text-[19px] font-semibold text-emerald-700">
                     {int0(Number(deliveryCore.n_kox))} 人
-                    <span className="ml-2 text-[14px] font-normal text-slate-300">{usd0(Number(deliveryCore.amount_usd))}</span>
+                    <span className="ml-2 text-[14px] font-normal text-slate-700">{usd0(Number(deliveryCore.amount_usd))}</span>
                     <span className="ml-1.5 text-[12px] font-normal text-slate-500">
                       占参照档支出 {pct1(Number(deliveryCore.share_of_spend))}
                     </span>
                   </div>
-                  <p className="mt-1 text-[11px] leading-relaxed text-slate-400">{String(deliveryCore.action)}</p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-slate-600">{String(deliveryCore.action)}</p>
                 </div>
-                <div className="rounded-xl border border-amber-400/35 bg-black/25 px-3 py-2.5">
+                <div className="rounded-xl border border-amber-300 bg-slate-100 px-3 py-2.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-medium text-slate-400">假设敏感层（只在部分档位出现）</span>
-                    <Badge className="border-amber-400/35 bg-amber-400/10 text-amber-200">不自动执行</Badge>
+                    <span className="text-[11px] font-medium text-slate-600">假设敏感层（只在部分档位出现）</span>
+                    <Badge className="border-amber-300 bg-amber-50 text-amber-700">不自动执行</Badge>
                   </div>
-                  <div className="num mt-1.5 text-[19px] font-semibold text-amber-200">
+                  <div className="num mt-1.5 text-[19px] font-semibold text-amber-700">
                     {int0(Number(deliverySens.n_kox))} 人
-                    <span className="ml-2 text-[14px] font-normal text-slate-300">{usd0(Number(deliverySens.amount_usd))}</span>
+                    <span className="ml-2 text-[14px] font-normal text-slate-700">{usd0(Number(deliverySens.amount_usd))}</span>
                     <span className="ml-1.5 text-[12px] font-normal text-slate-500">
                       占参照档支出 {pct1(Number(deliverySens.share_of_spend))}
                     </span>
                   </div>
-                  <p className="mt-1 text-[11px] leading-relaxed text-slate-400">{String(deliverySens.action)}</p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-slate-600">{String(deliverySens.action)}</p>
                 </div>
               </div>
               <Note tone="good">
-                <b className="text-emerald-200">这句话才是要传达的：</b>这个建模假设的不确定性只影响{' '}
+                <b className="text-emerald-700">这句话才是要传达的：</b>这个建模假设的不确定性只影响{' '}
                 <b className="num">{pct1(Number(deliverySens.share_of_spend))}</b> 的预算（
                 {usd0(Number(deliverySens.amount_usd))}），而且已经定位到具体{' '}
                 <b className="num">{int0(Number(deliverySens.n_kox))}</b> 个人 —— 剩下{' '}
@@ -1478,15 +1478,15 @@ export function CostValueTab({
                               {int0(Number(t?.n_selected_reference))}
                               <div className="muted">并集 {int0(Number(t?.n_union_across_decays))}</div>
                             </td>
-                            <td className="td num text-right text-emerald-200">
+                            <td className="td num text-right text-emerald-700">
                               {int0(Number(core.n))}
                               <div className="muted">{pct1(Number(core.share_of_reference_spend))} 支出</div>
                             </td>
-                            <td className="td num text-right text-amber-200">
+                            <td className="td num text-right text-amber-700">
                               {int0(Number(sens.n_in_reference_plan))} / {int0(Number(sens.n))}
                               <div className="muted">{pct1(Number(sens.share_of_reference_spend))} 支出</div>
                             </td>
-                            <td className="td num text-right text-amber-200">
+                            <td className="td num text-right text-amber-700">
                               {usd0(Number(sens.amount_usd_in_reference_plan))}
                             </td>
                           </tr>
@@ -1495,9 +1495,9 @@ export function CostValueTab({
                     </tbody>
                   </table>
                   <Note>
-                    敏感层两个人数不是同一件事，故并列：<b className="text-slate-300">参照档内</b>{' '}
+                    敏感层两个人数不是同一件事，故并列：<b className="text-slate-700">参照档内</b>{' '}
                     = 在正式链路（decay ={fixed(Number(decayScan.reference_decay), 1)}）那份清单里、但换档会掉出去的人（三个 campaign 合计{' '}
-                    {int0(Number(deliverySens.n_kox))} 人，与上面那格一致）；<b className="text-slate-300">并集</b>{' '}
+                    {int0(Number(deliverySens.n_kox))} 人，与上面那格一致）；<b className="text-slate-700">并集</b>{' '}
                     = 三档里任意一档出现过、但没有三档全中的人（含参照档没选、别的档才冒出来的）。
                     顶部政策格用的是前者，因为要交出去的清单就是参照档那一份。
                   </Note>
@@ -1506,9 +1506,9 @@ export function CostValueTab({
                   <div className="muted mb-1.5">
                     敏感层逐人（{int0(sensitiveKox.length)} 人 · 金额区间来自三档实测，min = 0 表示该档整个没选它）
                   </div>
-                  <div className="max-h-[280px] overflow-auto rounded-xl border border-white/10">
+                  <div className="max-h-[280px] overflow-auto rounded-xl border border-slate-200">
                     <table className="w-full min-w-[420px]">
-                      <thead className="sticky top-0 z-10 bg-ink-800/95 backdrop-blur">
+                      <thead className="sticky top-0 z-10 bg-white backdrop-blur">
                         <tr>
                           <th className="th">达人 / campaign</th>
                           <th className="th text-right">参照档金额</th>
@@ -1520,14 +1520,14 @@ export function CostValueTab({
                         {sensitiveKox.map((k) => (
                           <tr key={`${k.campaign_id}-${String(k.kox_id)}`} className="hairline">
                             <td className="td">
-                              <span className="num text-[11px] text-slate-200">{String(k.kox_id)}</span>
+                              <span className="num text-[11px] text-slate-800">{String(k.kox_id)}</span>
                               <div className="muted num">{k.campaign_id}</div>
                             </td>
-                            <td className="td num text-right text-amber-200">{usd0(Number(k.amount_usd_reference))}</td>
-                            <td className="td num text-right text-slate-400">
+                            <td className="td num text-right text-amber-700">{usd0(Number(k.amount_usd_reference))}</td>
+                            <td className="td num text-right text-slate-600">
                               {usd0(Number(k.amount_usd_min))} ~ {usd0(Number(k.amount_usd_max))}
                             </td>
-                            <td className="td num text-[10.5px] text-slate-400">
+                            <td className="td num text-[10.5px] text-slate-600">
                               {((k.selected_at_decays ?? []) as number[]).map((d) => fixed(Number(d), 1)).join(' / ')}
                             </td>
                           </tr>
@@ -1568,8 +1568,8 @@ export function CostValueTab({
               <Badge
                 className={
                   bUnit.pooled_p_value_usable
-                    ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
-                    : 'border-rose-400/35 bg-rose-400/10 text-rose-200'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : 'border-rose-300 bg-rose-50 text-rose-700'
                 }
               >
                 pooled_p_value_usable = {String(bUnit.pooled_p_value_usable)}
@@ -1600,11 +1600,11 @@ export function CostValueTab({
                     return (
                       <tr key={cid} className="hairline">
                         <td className="td num">{cid}</td>
-                        <td className="td num text-right text-rose-300">{fixed(Number(t?.std_a), 4)}</td>
-                        <td className="td num text-right text-emerald-300">{fixed(Number(t?.std_b), 4)}</td>
+                        <td className="td num text-right text-rose-600">{fixed(Number(t?.std_a), 4)}</td>
+                        <td className="td num text-right text-emerald-600">{fixed(Number(t?.std_b), 4)}</td>
                         <td className="td num text-right">{fixed(Number(v.std_ratio_baseline_over_koxpilot), 2)}×</td>
                         <td className="td num text-right">{fixed(Number(t?.f), 1)}</td>
-                        <td className="td num text-right font-semibold text-cyan-200">{sci(Number(t?.p_two_sided))}</td>
+                        <td className="td num text-right font-semibold text-live-700">{sci(Number(t?.p_two_sided))}</td>
                       </tr>
                     );
                   })}
@@ -1613,7 +1613,7 @@ export function CostValueTab({
               {bPooled && (
                 <Note tone="warn">
                   <AlertTriangle size={11} className="mr-1 inline" />
-                  <b className="text-amber-200">
+                  <b className="text-amber-700">
                     pooled（{int0(Number(bPooled.n_obs))} 个 (seed, campaign) 观测）的 F ={' '}
                     {fixed(Number((bPooled.variance_ratio_test as Loose).f), 1)}、p ={' '}
                     {sci(Number((bPooled.variance_ratio_test as Loose).p_two_sided))} 是伪重复，量级不可当真。
@@ -1625,21 +1625,21 @@ export function CostValueTab({
             </div>
             <div className="space-y-2">
               {bPooled && (
-                <div className="rounded-xl border border-emerald-400/30 bg-emerald-400/[0.06] px-3 py-2.5">
-                  <div className="text-[12px] font-medium text-emerald-200">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+                  <div className="text-[12px] font-medium text-emerald-700">
                     主证据一：极端频次计数（不依赖任何分布假设）
                   </div>
                   <div className="mt-1.5 grid grid-cols-2 gap-2">
-                    <div className="rounded-lg border border-rose-400/25 bg-black/25 px-2.5 py-2">
+                    <div className="rounded-lg border border-rose-200 bg-slate-100 px-2.5 py-2">
                       <div className="text-[10px] text-slate-500">基线浪费率 &gt; 50%</div>
-                      <div className="num text-[17px] font-semibold text-rose-200">
+                      <div className="num text-[17px] font-semibold text-rose-700">
                         {int0(Number(bPooled.n_obs_baseline_share_above_50pct))}/{int0(Number(bPooled.n_obs))}
                       </div>
                       <div className="muted">另有 {int0(Number(bPooled.n_obs_baseline_share_below_5pct))} 个观测 &lt; 5%（运气好）</div>
                     </div>
-                    <div className="rounded-lg border border-emerald-400/25 bg-black/25 px-2.5 py-2">
+                    <div className="rounded-lg border border-emerald-200 bg-slate-100 px-2.5 py-2">
                       <div className="text-[10px] text-slate-500">KOXPilot 浪费率 &gt; 50%</div>
-                      <div className="num text-[17px] font-semibold text-emerald-200">
+                      <div className="num text-[17px] font-semibold text-emerald-700">
                         {int0(Number(bPooled.n_obs_koxpilot_share_above_50pct))}/{int0(Number(bPooled.n_obs))}
                       </div>
                       <div className="muted">
@@ -1647,44 +1647,44 @@ export function CostValueTab({
                       </div>
                     </div>
                   </div>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-slate-300">
-                    基线是<b className="text-rose-200">高方差赌博</b>：同一套预算，运气好时几乎不浪费，踩坑时把钱几乎全烧掉
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-slate-700">
+                    基线是<b className="text-rose-700">高方差赌博</b>：同一套预算，运气好时几乎不浪费，踩坑时把钱几乎全烧掉
                     （max {pct1(Number((bPooled.baseline_waste_share as Loose).max))}）。KOXPilot 换来的主要不是"平均更好"，
-                    而是<b className="text-emerald-200">把坏尾巴切掉</b>。这两个计数是 {int0(Number(bPooled.n_obs))} 个 (seed, campaign)
+                    而是<b className="text-emerald-700">把坏尾巴切掉</b>。这两个计数是 {int0(Number(bPooled.n_obs))} 个 (seed, campaign)
                     观测上的频次，不做任何正态假设。
                   </p>
                 </div>
               )}
               {bBands.length > 0 && bCond && (
-                <div className="rounded-xl border border-white/12 bg-white/[0.03] px-3 py-2.5">
-                  <div className="text-[12px] font-medium text-slate-200">主证据二：按"基线运气"分档的条件胜率</div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                  <div className="text-[12px] font-medium text-slate-800">主证据二：按"基线运气"分档的条件胜率</div>
                   <div className="mt-1.5 space-y-1.5">
                     {bBands.map((b) => (
-                      <div key={String(b.band)} className="rounded-lg border border-white/10 bg-black/20 px-2.5 py-1.5">
-                        <div className="text-[11px] text-slate-300">{String(b.band)}</div>
-                        <div className="mt-0.5 flex flex-wrap gap-x-3 text-[10.5px] text-slate-400">
+                      <div key={String(b.band)} className="rounded-lg border border-slate-200 bg-slate-100 px-2.5 py-1.5">
+                        <div className="text-[11px] text-slate-700">{String(b.band)}</div>
+                        <div className="mt-0.5 flex flex-wrap gap-x-3 text-[10.5px] text-slate-600">
                           <span>
-                            观测 <b className="num text-slate-200">{int0(Number(b.n_obs))}</b>
+                            观测 <b className="num text-slate-800">{int0(Number(b.n_obs))}</b>
                           </span>
                           <span>
                             胜率{' '}
-                            <b className={`num ${Number(b.koxpilot_win_rate) >= 0.9 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                            <b className={`num ${Number(b.koxpilot_win_rate) >= 0.9 ? 'text-emerald-600' : 'text-rose-600'}`}>
                               {pct1(Number(b.koxpilot_win_rate))}
                             </b>
                           </span>
                           <span>
-                            跑输 <b className="num text-rose-300">{int0(Number(b.n_koxpilot_loses))}</b>
+                            跑输 <b className="num text-rose-600">{int0(Number(b.n_koxpilot_loses))}</b>
                           </span>
                           <span>
-                            平均少浪费 <b className="num text-slate-200">{usd0(Number(b.mean_saved_usd))}</b>
+                            平均少浪费 <b className="num text-slate-800">{usd0(Number(b.mean_saved_usd))}</b>
                           </span>
                         </div>
                       </div>
                     ))}
                   </div>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-slate-400">
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-slate-600">
                     难听的那半句一起报：全部{' '}
-                    <b className="num text-rose-200">
+                    <b className="num text-rose-700">
                       {int0(Number(bCond.n_koxpilot_loses))}/{int0(Number(bCond.n_obs))}
                     </b>{' '}
                     个跑输的观测里，基线浪费率最高也只有{' '}
@@ -1694,7 +1694,7 @@ export function CostValueTab({
                 </div>
               )}
               <Note tone="warn">
-                <b className="text-amber-200">措辞纪律：</b>{String(bUnit.note ?? '')}
+                <b className="text-amber-700">措辞纪律：</b>{String(bUnit.note ?? '')}
               </Note>
             </div>
           </div>
@@ -1724,11 +1724,11 @@ export function CostValueTab({
       )}
 
       <Note>
-        <ArrowRight size={11} className="mr-1 inline text-cyan-300" />
-        本页想说两句反直觉的话。第一句：<b className="text-slate-200">大模型不是免费的准确率</b> ——
+        <ArrowRight size={11} className="mr-1 inline text-live-600" />
+        本页想说两句反直觉的话。第一句：<b className="text-slate-800">大模型不是免费的准确率</b> ——
         它在标签错配这种需要业务常识的任务上确实赢过规则，但只有把业务判据写清楚之后才赢；在 G0/G1 这类纯统计信号上，
         规则又快又准还 0 token，所以生产链路是混合的。第二句更贵：
-        <b className="text-slate-200">单个种子上的归因可能整个反过来</b> ——
+        <b className="text-slate-800">单个种子上的归因可能整个反过来</b> ——
         定稿那一次看像"钱省在分散投放上"，跑满 12 个种子才发现分散化的符号都不稳，稳定的那一段是门禁与质量排序。
         招牌数字我留着，但对外结论取的是更诚实的那一列。
       </Note>

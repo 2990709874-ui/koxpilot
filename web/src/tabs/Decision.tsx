@@ -28,19 +28,19 @@ function ConstraintList({ plan }: { plan: BudgetPlan }): React.ReactElement {
       {plan.constraints.checks.map((c) => (
         <div key={c.name} className="flex items-center gap-2">
           {c.satisfied ? (
-            <Check size={12} className="shrink-0 text-emerald-400" />
+            <Check size={12} className="shrink-0 text-emerald-600" />
           ) : (
-            <X size={12} className="shrink-0 text-rose-400" />
+            <X size={12} className="shrink-0 text-rose-600" />
           )}
-          <span className="text-[11px] text-slate-300">{c.desc}</span>
+          <span className="text-[11px] text-slate-700">{c.desc}</span>
           {!c.enforced && (
             <Hint text="基线臂刻意不施加结构约束（那就是行业最朴素做法），所以这些检查只做记录、不强制。这样两臂的差异才来自选人依据本身。">
-              <Badge className="border-slate-400/25 bg-slate-400/10 text-slate-400">仅记录</Badge>
+              <Badge className="border-slate-200 bg-slate-50 text-slate-600">仅记录</Badge>
             </Hint>
           )}
-          <span className="num ml-auto text-[11px] text-slate-400">
+          <span className="num ml-auto text-[11px] text-slate-600">
             {c.name === 'total_budget' ? usd0(c.actual) : c.actual <= 1.05 ? pct1(c.actual) : fixed(c.actual, 2)}
-            <span className="mx-1 text-slate-600">/</span>
+            <span className="mx-1 text-slate-500">/</span>
             {c.name === 'total_budget' ? usd0(c.limit) : c.limit <= 1.05 ? pct1(c.limit, 0) : fixed(c.limit, 2)}
           </span>
         </div>
@@ -48,14 +48,14 @@ function ConstraintList({ plan }: { plan: BudgetPlan }): React.ReactElement {
       <div
         className={`mt-1 rounded-lg border px-2.5 py-1.5 text-[11px] ${
           plan.constraints.all_enforced_satisfied
-            ? 'border-emerald-400/25 bg-emerald-400/[0.06] text-emerald-200'
-            : 'border-rose-400/25 bg-rose-400/[0.06] text-rose-200'
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+            : 'border-rose-200 bg-rose-50 text-rose-700'
         }`}
       >
         {plan.constraints.all_enforced_satisfied
           ? '强制约束全部满足'
           : `未满足：${plan.constraints.violations.join('、')}`}
-        <span className="ml-2 text-slate-400">
+        <span className="ml-2 text-slate-600">
           预算利用率 {pct1(plan.constraints.utilization)}
           {plan.constraints.utilization_ok ? '（达标）' : '（低于目标）'}
         </span>
@@ -240,30 +240,30 @@ export function DecisionTab({
             fmt={(x) => (x > 1e5 ? compact(x) : int0(x))}
           />
           <div className="mt-3 grid grid-cols-3 gap-2">
-            <div className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
               <div className="text-[10px] text-slate-500">少浪费</div>
-              <div className={`num text-[16px] ${audit.saved_usd >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+              <div className={`num text-[16px] ${audit.saved_usd >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {audit.saved_usd >= 0 ? '' : '−'}
                 {usd0(Math.abs(audit.saved_usd))}
               </div>
               <div className="muted">占预算 {signedPct1(audit.saved_share_of_budget)}</div>
             </div>
-            <div className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
               <div className="text-[10px] text-slate-500">有效曝光提升</div>
-              <div className={`num text-[16px] ${audit.effective_view_uplift >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+              <div className={`num text-[16px] ${audit.effective_view_uplift >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {signedPct1(audit.effective_view_uplift)}
               </div>
               <div className="muted">宽松口径 {signedPct1(audit.effective_view_uplift_lenient)}</div>
             </div>
-            <div className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
               <div className="text-[10px] text-slate-500">每千美元有效曝光</div>
-              <div className="num text-[16px] text-cyan-200">{compact(audit.effective_views_per_1k_usd.koxpilot)}</div>
+              <div className="num text-[16px] text-live-700">{compact(audit.effective_views_per_1k_usd.koxpilot)}</div>
               <div className="muted">基线 {compact(audit.effective_views_per_1k_usd.baseline)}</div>
             </div>
           </div>
           {audit.saved_usd < 0 && (
             <Note tone="warn">
-              本 campaign 的对照结果是<b className="text-amber-200">负的</b>：KOXPilot 反而多花了浪费钱。原因是这个候选池里基线恰好没买到多少水号，
+              本 campaign 的对照结果是<b className="text-amber-700">负的</b>：KOXPilot 反而多花了浪费钱。原因是这个候选池里基线恰好没买到多少水号，
               而 KOXPilot 为了满足长尾配额买入了更多中小达人。三个 campaign 合计仍然是正收益，但单个 campaign 的失败案例照实展示，不挑好看的看板。
             </Note>
           )}
@@ -302,8 +302,8 @@ export function DecisionTab({
       <Panel title="分配过程日志（trace）" subtitle="这些中文说明由分配器在运行时生成，双实现一致性校验会逐字比对它们">
         <ol className="space-y-1.5">
           {plan.trace.map((t, i) => (
-            <li key={t} className="flex gap-2 text-[12px] leading-relaxed text-slate-300">
-              <span className="num mt-[1px] flex h-4 w-4 shrink-0 items-center justify-center rounded bg-cyan-400/15 text-[9px] text-cyan-200">
+            <li key={t} className="flex gap-2 text-[12px] leading-relaxed text-slate-700">
+              <span className="num mt-[1px] flex h-4 w-4 shrink-0 items-center justify-center rounded bg-live-100 text-[9px] text-live-700">
                 {i + 1}
               </span>
               {t}
@@ -312,7 +312,7 @@ export function DecisionTab({
         </ol>
         {other.trace.length > 0 && (
           <details className="mt-2">
-            <summary className="cursor-pointer text-[11px] text-slate-500 hover:text-slate-300">
+            <summary className="cursor-pointer text-[11px] text-slate-500 hover:text-slate-700">
               查看{arm === 'koxpilot' ? '基线臂' : 'KOXPilot 臂'}的 trace
             </summary>
             <ol className="mt-1.5 space-y-1">
@@ -346,7 +346,7 @@ export function DecisionTab({
       >
         <div className="max-h-[480px] overflow-auto">
           <table className="w-full border-collapse">
-            <thead className="sticky top-0 z-10 bg-ink-800/95 backdrop-blur">
+            <thead className="sticky top-0 z-10 bg-white backdrop-blur">
               <tr className="hairline">
                 <th className="th">达人</th>
                 <th className="th">层级 / 地区</th>
@@ -368,22 +368,22 @@ export function DecisionTab({
                   <tr
                     key={a.kox_id}
                     onClick={() => setOpenId(a.kox_id)}
-                    className="hairline cursor-pointer transition-colors hover:bg-cyan-400/[0.06]"
+                    className="hairline cursor-pointer transition-colors hover:bg-live-50"
                   >
                     <td className="td">
-                      <div className="font-medium text-slate-200">{a.handle}</div>
-                      <div className="num text-[10px] text-slate-600">{a.kox_id}</div>
+                      <div className="font-medium text-slate-800">{a.handle}</div>
+                      <div className="num text-[10px] text-slate-500">{a.kox_id}</div>
                     </td>
-                    <td className="td text-[11px] text-slate-400">
+                    <td className="td text-[11px] text-slate-600">
                       {a.bucket}
-                      <span className="mx-1 text-slate-600">/</span>
+                      <span className="mx-1 text-slate-500">/</span>
                       {a.country} · {PLATFORM_LABEL[a.platform] ?? a.platform}
                     </td>
-                    <td className="td num text-right text-cyan-100">
+                    <td className="td num text-right text-live-700">
                       {usd0(a.amount_usd)}
                       {a.price_estimated && (
                         <Hint text="该达人未给报价，按同组 avg_cpm 的 P50 估算，产物里用 price_estimated 标注，不假装是真实报价">
-                          <span className="ml-1 text-[9px] text-amber-300">估</span>
+                          <span className="ml-1 text-[9px] text-amber-600">估</span>
                         </Hint>
                       )}
                     </td>
@@ -394,26 +394,26 @@ export function DecisionTab({
                     <td className="td num text-right">{compact(a.est_views)}</td>
                     <td className="td num text-right">{compact(a.value_score)}</td>
                     <td className="td num text-right">{fixed(a.efficiency, 2)}</td>
-                    <td className="td text-[11px] text-slate-400">{PICKED_BY_LABEL[a.picked_by] ?? a.picked_by}</td>
+                    <td className="td text-[11px] text-slate-600">{PICKED_BY_LABEL[a.picked_by] ?? a.picked_by}</td>
                     <td className="td">
                       {(() => {
                         const t = tierByKox.get(a.kox_id);
                         if (!tierComparable) {
                           return (
                             <Hint text={`分层来自 metrics.json 的 decay 三档扫描，产物口径是「不纳入 review、decay = ${referenceDecay ?? '?'}」。当前参数与该口径不一致，标记会误导，所以这里不显示。`}>
-                              <span className="text-[10px] text-slate-600">口径不符</span>
+                              <span className="text-[10px] text-slate-500">口径不符</span>
                             </Hint>
                           );
                         }
-                        if (arm !== 'koxpilot') return <span className="text-[10px] text-slate-600">—</span>;
-                        if (!t) return <span className="text-[10px] text-slate-600">未在扫描内</span>;
+                        if (arm !== 'koxpilot') return <span className="text-[10px] text-slate-500">—</span>;
+                        if (!t) return <span className="text-[10px] text-slate-500">未在扫描内</span>;
                         return t.tier === 'core' ? (
                           <Hint text={`三档 decay（${((decaySens?.scan ?? []) as number[]).join(' / ')}）都选中这个人，入选不依赖该假设，可直接下单。金额区间 $${Math.round(t.min)} ~ $${Math.round(t.max)}。`}>
-                            <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">核心</Badge>
+                            <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700">核心</Badge>
                           </Hint>
                         ) : (
                           <Hint text={`只在 decay = ${t.decays.map((d) => d.toFixed(1)).join(' / ')} 时被选中，换档会掉出名单；金额区间 $${Math.round(t.min)} ~ $${Math.round(t.max)}（min = 0 表示某一档整个没选它）。按分层交付规则：标记「重复触达折扣假设敏感」，转人工确认或改按单条采购，不自动执行。`}>
-                            <Badge className="border-amber-400/35 bg-amber-400/10 text-amber-200">假设敏感</Badge>
+                            <Badge className="border-amber-300 bg-amber-50 text-amber-700">假设敏感</Badge>
                           </Hint>
                         );
                       })()}
@@ -423,11 +423,11 @@ export function DecisionTab({
                     </td>
                     <td className="td">
                       {gt?.is_fraud ? (
-                        <Badge className="border-rose-400/30 bg-rose-400/10 text-rose-200">真水号 {gt.fraud_type}</Badge>
+                        <Badge className="border-rose-200 bg-rose-50 text-rose-700">真水号 {gt.fraud_type}</Badge>
                       ) : gt?.brand_safety === 'high' ? (
-                        <Badge className="border-rose-400/30 bg-rose-400/10 text-rose-200">高危</Badge>
+                        <Badge className="border-rose-200 bg-rose-50 text-rose-700">高危</Badge>
                       ) : (
-                        <span className="text-[10px] text-slate-600">正常</span>
+                        <span className="text-[10px] text-slate-500">正常</span>
                       )}
                     </td>
                   </tr>
@@ -436,16 +436,16 @@ export function DecisionTab({
             </tbody>
           </table>
         </div>
-        <div className="border-t border-white/[0.06] px-4 py-2">
+        <div className="border-t border-slate-300 px-4 py-2">
           {tierComparable && arm === 'koxpilot' && tierByKox.size > 0 && (
             <div className="mb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
-              <span className="text-slate-400">
+              <span className="text-slate-600">
                 本 campaign 交付分层（读 metrics.json → budget_decay_sensitivity.per_campaign[*].delivery_tiers）：
               </span>
-              <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
+              <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700">
                 核心 {int0(tierRowStats.core)} 人 · {usd0(tierRowStats.coreUsd)}
               </Badge>
-              <Badge className="border-amber-400/35 bg-amber-400/10 text-amber-200">
+              <Badge className="border-amber-300 bg-amber-50 text-amber-700">
                 假设敏感 {int0(tierRowStats.sensitive)} 人 · {usd0(tierRowStats.sensitiveUsd)}
                 {plan.spent_usd > 0 && <>（{pct1(tierRowStats.sensitiveUsd / plan.spent_usd)} 支出）</>}
               </Badge>
@@ -471,11 +471,11 @@ export function DecisionTab({
           tone={comparable && allParity ? 'accent' : 'default'}
           right={
             comparable ? (
-              <Badge className={allParity ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200' : 'border-rose-400/30 bg-rose-400/10 text-rose-200'}>
+              <Badge className={allParity ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'}>
                 {allParity ? '逐项一致' : '存在差异'}
               </Badge>
             ) : (
-              <Badge className="border-amber-400/30 bg-amber-400/10 text-amber-200">参数已改，不可比</Badge>
+              <Badge className="border-amber-200 bg-amber-50 text-amber-700">参数已改，不可比</Badge>
             )
           }
         >
@@ -493,10 +493,10 @@ export function DecisionTab({
                 {parityRows.map(([label, ts, py, ok]) => (
                   <tr key={label} className="hairline">
                     <td className="td">{label}</td>
-                    <td className="td num text-right text-cyan-100">{ts}</td>
-                    <td className="td num text-right text-slate-400">{py}</td>
+                    <td className="td num text-right text-live-700">{ts}</td>
+                    <td className="td num text-right text-slate-600">{py}</td>
                     <td className="td text-center">
-                      {ok ? <Check size={13} className="mx-auto text-emerald-400" /> : <X size={13} className="mx-auto text-rose-400" />}
+                      {ok ? <Check size={13} className="mx-auto text-emerald-600" /> : <X size={13} className="mx-auto text-rose-600" />}
                     </td>
                   </tr>
                 ))}
@@ -518,18 +518,18 @@ export function DecisionTab({
           {cfTotals ? (
             <>
               <div className="mb-2 grid grid-cols-3 gap-2">
-                <div className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
                   <div className="text-[10px] text-slate-500">合计预算</div>
-                  <div className="num text-[15px] text-slate-100">{usd0(Number(cfTotals.budget_usd))}</div>
+                  <div className="num text-[15px] text-slate-900">{usd0(Number(cfTotals.budget_usd))}</div>
                 </div>
-                <div className="rounded-lg border border-emerald-400/25 bg-emerald-400/[0.06] px-2.5 py-2">
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-2">
                   <div className="text-[10px] text-slate-500">合计少浪费</div>
-                  <div className="num text-[15px] text-emerald-300">{usd0(Number(cfTotals.saved_usd))}</div>
+                  <div className="num text-[15px] text-emerald-600">{usd0(Number(cfTotals.saved_usd))}</div>
                   <div className="muted">占预算 {pct1(Number(cfTotals.saved_share_of_budget))}</div>
                 </div>
-                <div className="rounded-lg border border-cyan-400/25 bg-cyan-400/[0.06] px-2.5 py-2">
+                <div className="rounded-lg border border-live-200 bg-live-50 px-2.5 py-2">
                   <div className="text-[10px] text-slate-500">有效曝光提升</div>
-                  <div className="num text-[15px] text-cyan-200">{signedPct1(Number(cfTotals.effective_view_uplift))}</div>
+                  <div className="num text-[15px] text-live-700">{signedPct1(Number(cfTotals.effective_view_uplift))}</div>
                   <div className="muted">
                     {compact(Number(cfTotals.effective_views_baseline))} → {compact(Number(cfTotals.effective_views_koxpilot))}
                   </div>
@@ -551,13 +551,13 @@ export function DecisionTab({
                     <tr key={String(c.campaign_id)} className="hairline">
                       <td className="td num">{String(c.campaign_id)}</td>
                       <td className="td num text-right">{usd0(Number(c.budget_usd))}</td>
-                      <td className="td num text-right text-rose-300">{usd0(Number((c.baseline as Loose).wasted_spend_usd))}</td>
-                      <td className="td num text-right text-emerald-300">{usd0(Number((c.koxpilot as Loose).wasted_spend_usd))}</td>
-                      <td className={`td num text-right ${Number(c.saved_usd) >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                      <td className="td num text-right text-rose-600">{usd0(Number((c.baseline as Loose).wasted_spend_usd))}</td>
+                      <td className="td num text-right text-emerald-600">{usd0(Number((c.koxpilot as Loose).wasted_spend_usd))}</td>
+                      <td className={`td num text-right ${Number(c.saved_usd) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {Number(c.saved_usd) >= 0 ? '' : '−'}
                         {usd0(Math.abs(Number(c.saved_usd)))}
                       </td>
-                      <td className={`td num text-right ${Number(c.effective_view_uplift) >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                      <td className={`td num text-right ${Number(c.effective_view_uplift) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {signedPct1(Number(c.effective_view_uplift))}
                       </td>
                     </tr>
@@ -592,7 +592,7 @@ export function DecisionTab({
       </div>
 
       <Note>
-        <TrendingUp size={11} className="mr-1 inline text-cyan-300" />
+        <TrendingUp size={11} className="mr-1 inline text-live-600" />
         采购模型：按内容条数买，单达人最多 3 条，第 n 条的边际有效曝光按 {plan.purchase_model.post_marginal_decay}^(n−1) 衰减 ——
         这样"把钱堆在一个人身上"会自然失去性价比，而不是靠一条硬规则拍死。
       </Note>

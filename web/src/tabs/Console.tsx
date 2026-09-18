@@ -21,29 +21,29 @@ import {
 import type { PipelineResult, StageReport } from '../lib/pipeline';
 
 const KIND_ICON: Record<StageReport['kind'], React.ReactElement> = {
-  rule: <Cpu size={13} className="text-cyan-300" />,
-  'llm-offline': <Sparkles size={13} className="text-indigo-300" />,
-  audit: <Gauge size={13} className="text-fuchsia-300" />,
+  rule: <Cpu size={13} className="text-live-600" />,
+  'llm-offline': <Sparkles size={13} className="text-indigo-600" />,
+  audit: <Gauge size={13} className="text-fuchsia-600" />,
 };
 
 function StageCard({ s, index, live }: { s: StageReport; index: number; live: boolean }): React.ReactElement {
   return (
     <div
-      className={`glass relative overflow-hidden px-3.5 py-3 ${live ? 'border-cyan-300/40' : ''}`}
+      className={`card relative overflow-hidden px-3.5 py-3 ${live ? 'border-live-300' : ''}`}
       style={{ animation: `fade-up .35s ease-out ${index * 0.05}s both` }}
     >
       {live && (
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="h-full w-1/3 animate-sweep bg-gradient-to-r from-transparent via-cyan-300/10 to-transparent" />
+          <div className="h-full w-1/3 animate-sweep bg-gradient-to-r from-transparent via-live-100 to-transparent" />
         </div>
       )}
       <div className="flex items-center gap-2">
         {KIND_ICON[s.kind]}
-        <span className="text-[12px] font-semibold text-slate-100">{s.agent}</span>
+        <span className="text-[12px] font-semibold text-slate-900">{s.agent}</span>
         <span className="num ml-auto text-[10px] text-slate-500">{ms(s.elapsedMs)}</span>
       </div>
       <div className="muted mt-1">{s.title}</div>
-      <div className="num mt-1.5 text-[13px] text-cyan-100">{s.headline}</div>
+      <div className="num mt-1.5 text-[13px] text-live-700">{s.headline}</div>
       <ul className="mt-2 space-y-1">
         {s.detail.map((d) => (
           <li key={d} className="flex gap-1.5 text-[10.5px] leading-relaxed text-slate-500">
@@ -56,12 +56,12 @@ function StageCard({ s, index, live }: { s: StageReport; index: number; live: bo
         <TruthChip kind={s.kind === 'rule' ? 'rule' : s.kind === 'audit' ? 'audit' : 'llm-offline'} />
         {s.kind === 'llm-offline' && (
           <Hint text={s.tokenNote ?? ''}>
-            <Badge className="border-indigo-400/30 bg-indigo-400/10 text-indigo-200">
+            <Badge className="border-indigo-200 bg-indigo-50 text-indigo-700">
               {s.tokens === null ? 'token 账未生成' : `${int0(s.tokens)} token`}
             </Badge>
           </Hint>
         )}
-        <span className="num text-[10px] text-slate-600">
+        <span className="num text-[10px] text-slate-500">
           {int0(s.items)} 条输入 · {(s.elapsedMs / Math.max(s.items, 1)).toFixed(4)} ms/条
         </span>
       </div>
@@ -142,7 +142,7 @@ export function ConsoleTab({
           <button
             onClick={onRerun}
             disabled={running}
-            className="flex items-center gap-1.5 rounded-lg border border-cyan-300/40 bg-cyan-400/10 px-3 py-1.5 text-[12px] text-cyan-100 transition-colors hover:bg-cyan-400/20 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg border border-live-300 bg-live-50 px-3 py-1.5 text-[12px] text-live-700 transition-colors hover:bg-live-100 disabled:opacity-50"
           >
             <Play size={12} />
             {running ? '运行中…' : '重跑流水线'}
@@ -154,16 +154,16 @@ export function ConsoleTab({
             <button
               key={b.brief_id}
               onClick={() => onBrief(i)}
-              className={`glass glass-hover px-3 py-2.5 text-left ${
-                i === briefIdx ? 'border-cyan-300/50 bg-cyan-400/[0.07] shadow-glow' : ''
+              className={`card card-hover px-3 py-2.5 text-left ${
+                i === briefIdx ? 'border-live-300 bg-live-50 shadow-lift' : ''
               }`}
             >
               <div className="flex items-center gap-1.5">
                 <span className="num text-[10px] text-slate-500">{b.brief_id}</span>
-                {i === briefIdx && <Badge className="border-cyan-400/30 bg-cyan-400/10 text-cyan-200">当前</Badge>}
-                <span className="num ml-auto text-[11px] text-slate-300">{usd0(b.spec.budget_usd)}</span>
+                {i === briefIdx && <Badge className="border-live-200 bg-live-50 text-live-700">当前</Badge>}
+                <span className="num ml-auto text-[11px] text-slate-700">{usd0(b.spec.budget_usd)}</span>
               </div>
-              <div className="mt-1 text-[12px] font-medium text-slate-100">{b.name}</div>
+              <div className="mt-1 text-[12px] font-medium text-slate-900">{b.name}</div>
               <div className="muted mt-1 line-clamp-2">{b.raw_text}</div>
             </button>
           ))}
@@ -171,39 +171,39 @@ export function ConsoleTab({
 
         {brief && (
           <div className="mt-3 grid gap-3 lg:grid-cols-[1.15fr_1fr]">
-            <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+            <div className="rounded-xl border border-slate-200 bg-slate-100 p-3">
               <div className="muted mb-1">brief 原文（A1 的输入）</div>
-              <p className="text-[12px] leading-relaxed text-slate-300">{brief.raw_text}</p>
+              <p className="text-[12px] leading-relaxed text-slate-700">{brief.raw_text}</p>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+            <div className="rounded-xl border border-slate-200 bg-slate-100 p-3">
               <div className="muted mb-1.5">A1 解析出的 CampaignSpec（判定与预算的唯一输入）</div>
               <div className="flex flex-wrap gap-1">
                 {brief.spec.target_categories.map((c) => (
-                  <Badge key={c} className="border-cyan-400/25 bg-cyan-400/10 text-cyan-200">
+                  <Badge key={c} className="border-live-200 bg-live-50 text-live-700">
                     品类 {CATEGORY_ZH[c] ?? c}
                   </Badge>
                 ))}
                 {brief.spec.platforms.map((p) => (
-                  <Badge key={p} className="border-white/15 text-slate-300">
+                  <Badge key={p} className="border-slate-300 text-slate-700">
                     {PLATFORM_LABEL[p] ?? p}
                   </Badge>
                 ))}
                 {brief.spec.target_markets.map((m) => (
-                  <Badge key={m} className="border-white/15 text-slate-300">
+                  <Badge key={m} className="border-slate-300 text-slate-700">
                     市场 {m}
                   </Badge>
                 ))}
-                <Badge className="border-indigo-400/25 bg-indigo-400/10 text-indigo-200">KPI {brief.spec.kpi}</Badge>
+                <Badge className="border-indigo-200 bg-indigo-50 text-indigo-700">KPI {brief.spec.kpi}</Badge>
                 {brief.spec.target_gender && (
-                  <Badge className="border-white/15 text-slate-300">人群 {brief.spec.target_gender} · {brief.spec.target_age_buckets.join('/')}</Badge>
+                  <Badge className="border-slate-300 text-slate-700">人群 {brief.spec.target_gender} · {brief.spec.target_age_buckets.join('/')}</Badge>
                 )}
                 {brief.spec.competitor_brands.map((c) => (
-                  <Badge key={c} className="border-rose-400/25 bg-rose-400/10 text-rose-200">
+                  <Badge key={c} className="border-rose-200 bg-rose-50 text-rose-700">
                     回避 {c}
                   </Badge>
                 ))}
                 {brief.spec.regulated_category && (
-                  <Badge className="border-amber-400/30 bg-amber-400/10 text-amber-200">
+                  <Badge className="border-amber-200 bg-amber-50 text-amber-700">
                     受管制口径 {brief.spec.regulated_category}
                   </Badge>
                 )}
@@ -240,7 +240,7 @@ export function ConsoleTab({
         subtitle="耗时是 performance.now() 实测值；带「浏览器内真算」标签的阶段现在就在你的机器上跑"
         right={
           result && (
-            <span className="num text-[11px] text-slate-400">
+            <span className="num text-[11px] text-slate-600">
               端到端 <CountUp value={result.totalMs} format={(v) => ms(v)} /> · 数据加载 {ms(loadMs)}
               {koxBytes !== null && ` · 数据集 ${(koxBytes / 1048576).toFixed(2)} MB`}
             </span>
@@ -253,8 +253,8 @@ export function ConsoleTab({
           ))}
           {running &&
             Array.from({ length: Math.max(0, 6 - stages.length) }).map((_, i) => (
-              <div key={`ph-${i}`} className="glass flex h-[168px] items-center justify-center px-3.5 py-3">
-                <span className="num text-[11px] text-slate-600">等待前序阶段…</span>
+              <div key={`ph-${i}`} className="card flex h-[168px] items-center justify-center px-3.5 py-3">
+                <span className="num text-[11px] text-slate-500">等待前序阶段…</span>
               </div>
             ))}
         </div>
@@ -272,7 +272,7 @@ export function ConsoleTab({
                 .map(([k, v]) => (
                   <div key={k} className="flex items-baseline justify-between gap-2">
                     <span className="text-[10.5px] text-slate-500">{SKIP_REASON_LABEL[k] ?? k}</span>
-                    <span className="num text-[10.5px] text-slate-400">{int0(v)}</span>
+                    <span className="num text-[10.5px] text-slate-600">{int0(v)}</span>
                   </div>
                 ))}
             </div>
@@ -291,9 +291,9 @@ export function ConsoleTab({
             />
             <div className="mt-3 grid grid-cols-2 gap-2">
               {(['G0', 'G1', 'G2', 'G3'] as const).map((g) => (
-                <div key={g} className="rounded-lg border border-white/10 bg-white/[0.02] px-2.5 py-1.5">
+                <div key={g} className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5">
                   <div className="text-[10px] text-slate-500">{g} 命中人数</div>
-                  <div className="num text-[14px] text-slate-100">{int0(result.gateHits[g] ?? 0)}</div>
+                  <div className="num text-[14px] text-slate-900">{int0(result.gateHits[g] ?? 0)}</div>
                 </div>
               ))}
             </div>
@@ -304,9 +304,9 @@ export function ConsoleTab({
             <div className="mt-2 max-h-[188px] space-y-1 overflow-y-auto pr-1">
               {result.ruleHits.map((r) => (
                 <div key={r.rule_id} className="flex items-center gap-2">
-                  <span className="num w-9 shrink-0 text-[10px] text-cyan-300">{r.rule_id}</span>
-                  <span className="truncate text-[10.5px] text-slate-400">{r.label}</span>
-                  <span className="num ml-auto text-[10.5px] text-slate-300">{int0(r.n)}</span>
+                  <span className="num w-9 shrink-0 text-[10px] text-live-600">{r.rule_id}</span>
+                  <span className="truncate text-[10.5px] text-slate-600">{r.label}</span>
+                  <span className="num ml-auto text-[10.5px] text-slate-700">{int0(r.n)}</span>
                 </div>
               ))}
               {result.ruleHits.length === 0 && <div className="muted">本候选池没有任何规则命中。</div>}
@@ -322,13 +322,13 @@ export function ConsoleTab({
           subtitle="点任意一行打开证据链抽屉：每条命中都给出信号、实际值、阈值、同组分布位置与阈值来源"
           right={
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1">
+              <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1">
                 <Search size={11} className="text-slate-500" />
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="搜 handle / ID"
-                  className="w-28 bg-transparent text-[11px] text-slate-200 outline-none placeholder:text-slate-600"
+                  className="w-28 bg-transparent text-[11px] text-slate-800 outline-none placeholder:text-slate-500"
                 />
               </div>
               <Segmented
@@ -348,7 +348,7 @@ export function ConsoleTab({
         >
           <div className="max-h-[520px] overflow-auto">
             <table className="w-full border-collapse">
-              <thead className="sticky top-0 z-10 bg-ink-800/95 backdrop-blur">
+              <thead className="sticky top-0 z-10 bg-white backdrop-blur">
                 <tr className="hairline">
                   <th className="th">达人</th>
                   <th className="th">平台 / 地区</th>
@@ -370,22 +370,22 @@ export function ConsoleTab({
                     <tr
                       key={r.kox_id}
                       onClick={() => setOpenId(r.kox_id)}
-                      className="hairline cursor-pointer transition-colors hover:bg-cyan-400/[0.06]"
+                      className="hairline cursor-pointer transition-colors hover:bg-live-50"
                     >
                       <td className="td">
-                        <div className="font-medium text-slate-200">{kox.handle}</div>
-                        <div className="num text-[10px] text-slate-600">{r.kox_id}</div>
+                        <div className="font-medium text-slate-800">{kox.handle}</div>
+                        <div className="num text-[10px] text-slate-500">{r.kox_id}</div>
                       </td>
-                      <td className="td text-[11px] text-slate-400">
+                      <td className="td text-[11px] text-slate-600">
                         {PLATFORM_LABEL[String(kox.platform)] ?? kox.platform}
-                        <span className="mx-1 text-slate-600">/</span>
+                        <span className="mx-1 text-slate-500">/</span>
                         {kox.country}
                       </td>
                       <td className="td num text-right">{compact(kox.followers ?? null)}</td>
                       <td className="td num text-right">{compact(kox.avg_views ?? null)}</td>
                       <td className="td num text-right">{fixed(r.authenticity_score, 3)}</td>
                       <td className="td num text-right">
-                        <span className={r.fraud_score > 0.4 ? 'text-rose-300' : r.fraud_score > 0.2 ? 'text-amber-300' : 'text-slate-400'}>
+                        <span className={r.fraud_score > 0.4 ? 'text-rose-600' : r.fraud_score > 0.2 ? 'text-amber-600' : 'text-slate-600'}>
                           {fixed(r.fraud_score, 3)}
                         </span>
                       </td>
@@ -395,27 +395,27 @@ export function ConsoleTab({
                       </td>
                       <td className="td">
                         <div className="flex flex-wrap gap-1">
-                          {r.reasons.length === 0 && <span className="text-[10px] text-emerald-300/80">无</span>}
+                          {r.reasons.length === 0 && <span className="text-[10px] text-emerald-600/80">无</span>}
                           {[...new Set(r.reasons.map((x) => x.rule_id))].slice(0, 4).map((id) => (
-                            <span key={id} className="num rounded border border-white/10 bg-white/[0.04] px-1 text-[9.5px] text-slate-400">
+                            <span key={id} className="num rounded border border-slate-200 bg-slate-50 px-1 text-[9.5px] text-slate-600">
                               {id}
                             </span>
                           ))}
-                          {r.reasons.length > 4 && <span className="text-[9.5px] text-slate-600">+{r.reasons.length - 4}</span>}
+                          {r.reasons.length > 4 && <span className="text-[9.5px] text-slate-500">+{r.reasons.length - 4}</span>}
                         </div>
                       </td>
                       <td className="td num text-right">
                         {alloc ? (
-                          <span className="text-cyan-200">
+                          <span className="text-live-700">
                             {usd0(alloc.amount_usd)}
                             <span className="ml-1 text-[10px] text-slate-500">{alloc.posts} 条</span>
                           </span>
                         ) : (
-                          <span className="text-slate-600">—</span>
+                          <span className="text-slate-500">—</span>
                         )}
                       </td>
                       <td className="td text-right">
-                        <ChevronRight size={13} className="text-slate-600" />
+                        <ChevronRight size={13} className="text-slate-500" />
                       </td>
                     </tr>
                   );

@@ -34,13 +34,13 @@ export function Funnel({
         return (
           <div key={s.key} className="group" title={s.note}>
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-[11px] text-slate-400 group-hover:text-slate-200">{s.label}</span>
-              <span className="num text-[11px] text-slate-300">
+              <span className="text-[11px] text-slate-600 group-hover:text-slate-800">{s.label}</span>
+              <span className="num text-[11px] text-slate-700">
                 {int0(s.value)}
-                {drop !== null && drop > 0 && <span className="ml-1.5 text-rose-300/80">−{int0(drop)}</span>}
+                {drop !== null && drop > 0 && <span className="ml-1.5 text-rose-600/80">−{int0(drop)}</span>}
               </span>
             </div>
-            <div className="mt-1 h-2.5 overflow-hidden rounded-[3px] bg-white/[0.05]">
+            <div className="mt-1 h-2.5 overflow-hidden rounded-[3px] bg-slate-50">
               <div
                 className="h-full rounded-[3px] transition-all duration-700"
                 style={{ width: `${w}%`, background: `linear-gradient(90deg, ${color}, ${color}88)` }}
@@ -93,14 +93,14 @@ export function ConfusionMatrix({
                   key={p}
                   onClick={() => onCell?.(g, p, n)}
                   className={`rounded-md border px-1 py-2.5 transition-all ${
-                    isHi ? 'border-cyan-300/70 ring-1 ring-cyan-300/40' : 'border-white/10 hover:border-white/30'
+                    isHi ? 'border-live-300 ring-1 ring-live-300' : 'border-slate-200 hover:border-slate-300'
                   }`}
                   style={{
                     background: diag ? `rgba(52,211,153,${a})` : `rgba(248,113,113,${a * 0.85})`,
                   }}
                 >
-                  <div className="num text-[13px] font-semibold text-white/95">{int0(n)}</div>
-                  <div className="num text-[9px] text-white/60">{pct1(total ? n / total : 0)}</div>
+                  <div className="num text-[13px] font-semibold text-slate-900">{int0(n)}</div>
+                  <div className="num text-[9px] text-slate-700">{pct1(total ? n / total : 0)}</div>
                 </button>
               );
             })}
@@ -108,7 +108,7 @@ export function ConfusionMatrix({
         ))}
       </div>
       <p className="muted mt-2">
-        绿=一致格，红=错判格。<b className="text-slate-400">点任意格</b>可看这批人被哪些规则打中（归因来自 metrics.json）。
+        绿=一致格，红=错判格。<b className="text-slate-600">点任意格</b>可看这批人被哪些规则打中（归因来自 metrics.json）。
       </p>
     </div>
   );
@@ -222,7 +222,7 @@ export function LineChart({
       </svg>
       <div className="mt-1 flex flex-wrap gap-3">
         {series.map((s) => (
-          <span key={s.name} className="flex items-center gap-1.5 text-[10px] text-slate-400">
+          <span key={s.name} className="flex items-center gap-1.5 text-[10px] text-slate-600">
             <span className="inline-block h-0.5 w-4 rounded" style={{ background: s.color }} />
             {s.name}
           </span>
@@ -323,15 +323,15 @@ export function BenchChart({
               {b.caution && (
                 <rect x={cx - bw / 2} y={top} width={bw} height={Math.max(1, sc.y(0) - top)} rx={3} fill="url(#caution)" opacity={0.28} />
               )}
-              <text x={cx} y={top - 5} textAnchor="middle" fontSize={10} className="fill-slate-100 font-mono">
+              <text x={cx} y={top - 5} textAnchor="middle" fontSize={10} className="fill-slate-900 font-mono">
                 {b.f1.toFixed(3)}
               </text>
               {!above && !b.isRule && (
-                <text x={cx} y={ny(baseline) - 5} textAnchor="middle" fontSize={9} className="fill-rose-300">
+                <text x={cx} y={ny(baseline) - 5} textAnchor="middle" fontSize={9} className="fill-rose-600">
                   ↓输给规则
                 </text>
               )}
-              <text x={cx} y={sc.y(0) + 13} textAnchor="middle" fontSize={9.5} className="fill-slate-300">
+              <text x={cx} y={sc.y(0) + 13} textAnchor="middle" fontSize={9.5} className="fill-slate-700">
                 {b.group}
               </text>
               <text x={cx} y={sc.y(0) + 25} textAnchor="middle" fontSize={8.5} className="fill-slate-500">
@@ -360,7 +360,7 @@ export function BenchChart({
         />
         <g>
           <rect x={pad.l + 4} y={ny(baseline) - 17} width={224} height={14} rx={3} fill="rgba(5,7,13,0.82)" />
-          <text x={pad.l + 8} y={ny(baseline) - 6} fontSize={9.5} className="fill-slate-200">
+          <text x={pad.l + 8} y={ny(baseline) - 6} fontSize={9.5} className="fill-slate-800">
             {baselineLabel}
           </text>
         </g>
@@ -394,13 +394,13 @@ export function Heatmap({
           onClick={() => onPick?.(r.cell)}
           title={`${r.cell}\nF1 ${fixed(r.f1)}｜精确率 ${fixed(r.precision)}｜召回 ${fixed(r.recall)}\n该格 ${int0(r.n)} 人，含 ${int0(r.positives)} 个真水号${r.lowSupport ? '\n⚠ 低支撑格（真水号 < 10），不参与弱项排序' : ''}`}
           className={`min-w-[74px] rounded-md border px-2 py-1.5 text-left transition-transform hover:scale-[1.03] ${
-            r.lowSupport ? 'border-dashed border-white/25' : 'border-white/10'
+            r.lowSupport ? 'border-dashed border-slate-300' : 'border-slate-200'
           }`}
           style={{ background: color(r.f1) }}
         >
-          <div className="truncate text-[10px] text-white/85">{r.cell}</div>
+          <div className="truncate text-[10px] text-slate-900">{r.cell}</div>
           <div className="num text-[13px] font-semibold text-white">{fixed(r.f1, 3)}</div>
-          <div className="num text-[9px] text-white/60">n={int0(r.n)} · pos={int0(r.positives)}</div>
+          <div className="num text-[9px] text-slate-700">n={int0(r.n)} · pos={int0(r.positives)}</div>
         </button>
       ))}
     </div>
@@ -424,7 +424,7 @@ export function MixBar({
   const keys = (order ?? Object.keys(mix)).filter((k) => (mix[k] ?? 0) > 0);
   return (
     <div>
-      <div className="flex h-4 w-full overflow-hidden rounded-md border border-white/10">
+      <div className="flex h-4 w-full overflow-hidden rounded-md border border-slate-200">
         {keys.map((k) => (
           <div
             key={k}
@@ -436,10 +436,10 @@ export function MixBar({
       </div>
       <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
         {keys.map((k) => (
-          <span key={k} className="flex items-center gap-1 text-[10px] text-slate-400">
+          <span key={k} className="flex items-center gap-1 text-[10px] text-slate-600">
             <span className="inline-block h-2 w-2 rounded-sm" style={{ background: catColor(k, 58, 52) }} />
             {labels?.[k] ?? k}
-            <span className="num text-slate-300">{pct1(mix[k] ?? 0)}</span>
+            <span className="num text-slate-700">{pct1(mix[k] ?? 0)}</span>
           </span>
         ))}
       </div>
@@ -448,9 +448,9 @@ export function MixBar({
         const ok = l.max !== undefined ? v <= l.max + 1e-9 : v >= (l.min ?? 0) - 1e-9;
         return (
           <div key={l.name} className="mt-1 flex items-center gap-2 text-[10px]">
-            <span className={ok ? 'text-emerald-300' : 'text-rose-300'}>{ok ? '✓' : '✕'}</span>
-            <span className="text-slate-400">{l.name}</span>
-            <span className="num text-slate-300">
+            <span className={ok ? 'text-emerald-600' : 'text-rose-600'}>{ok ? '✓' : '✕'}</span>
+            <span className="text-slate-600">{l.name}</span>
+            <span className="num text-slate-700">
               {pct1(v)} {l.max !== undefined ? `≤ ${pct1(l.max, 0)}` : `≥ ${pct1(l.min ?? 0, 0)}`}
             </span>
           </div>
@@ -481,26 +481,26 @@ export function RankStrip({
     <div>
       <div className="flex items-baseline justify-between text-[10px]">
         <span className="text-slate-500">{signal}</span>
-        <span className="num text-slate-300">
+        <span className="num text-slate-700">
           实际 {typeof actual === 'number' ? fixed(actual, 4) : (actual ?? '—')}
-          <span className="mx-1 text-slate-600">vs</span>
+          <span className="mx-1 text-slate-500">vs</span>
           阈值 {typeof threshold === 'number' ? fixed(threshold, 4) : (threshold ?? '—')}
         </span>
       </div>
-      <div className="relative mt-1 h-6 overflow-hidden rounded-md border border-white/10 bg-[linear-gradient(90deg,rgba(52,211,153,.16),rgba(251,191,36,.16),rgba(248,113,113,.22))]">
+      <div className="relative mt-1 h-6 overflow-hidden rounded-md border border-slate-200 bg-[linear-gradient(90deg,rgba(52,211,153,.16),rgba(251,191,36,.16),rgba(248,113,113,.22))]">
         {[0.25, 0.5, 0.75].map((t) => (
-          <div key={t} className="absolute top-0 h-full w-px bg-white/10" style={{ left: `${t * 100}%` }} />
+          <div key={t} className="absolute top-0 h-full w-px bg-slate-100" style={{ left: `${t * 100}%` }} />
         ))}
         {pos !== null && (
           <div className="absolute top-0 h-full" style={{ left: `${pos * 100}%` }}>
             <div className="h-full w-[2px] bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
           </div>
         )}
-        <div className="absolute inset-0 flex items-center justify-between px-1.5 text-[9px] text-white/55">
+        <div className="absolute inset-0 flex items-center justify-between px-1.5 text-[9px] text-slate-700">
           <span>同组分布 p0</span>
           <span>
             {pos === null ? '该信号无分位记录' : `百分位 ${pct1(pos, 1)}`}
-            <span className="ml-1 text-white/40">
+            <span className="ml-1 text-slate-500">
               （{direction === 'upper' ? '越靠右越异常' : direction === 'lower' ? '越靠左越异常' : '双侧'}）
             </span>
           </span>
@@ -531,7 +531,7 @@ export function DuoBars({
 }) {
   return (
     <div className="space-y-3">
-      <div className="flex gap-4 text-[10px] text-slate-400">
+      <div className="flex gap-4 text-[10px] text-slate-600">
         <span className="flex items-center gap-1">
           <span className="inline-block h-2 w-2 rounded-sm" style={{ background: leftColor }} />
           {leftName}
@@ -546,7 +546,7 @@ export function DuoBars({
         return (
           <div key={r.label} title={r.note}>
             <div className="flex items-baseline justify-between text-[11px]">
-              <span className="text-slate-400">{r.label}</span>
+              <span className="text-slate-600">{r.label}</span>
               <span className="num text-slate-500">
                 <span style={{ color: leftColor }}>{fmt(r.left)}</span>
                 <span className="mx-1">→</span>
@@ -554,10 +554,10 @@ export function DuoBars({
               </span>
             </div>
             <div className="mt-1 space-y-1">
-              <div className="h-2 overflow-hidden rounded-sm bg-white/[0.05]">
+              <div className="h-2 overflow-hidden rounded-sm bg-slate-50">
                 <div className="h-full rounded-sm" style={{ width: `${(r.left / max) * 100}%`, background: leftColor }} />
               </div>
-              <div className="h-2 overflow-hidden rounded-sm bg-white/[0.05]">
+              <div className="h-2 overflow-hidden rounded-sm bg-slate-50">
                 <div className="h-full rounded-sm" style={{ width: `${(r.right / max) * 100}%`, background: rightColor }} />
               </div>
             </div>
@@ -581,16 +581,16 @@ export function TokenBars({
       {rows.map((r) => (
         <div key={r.label}>
           <div className="flex items-baseline justify-between text-[11px]">
-            <span className="text-slate-300">
+            <span className="text-slate-700">
               {r.label}
               <span className="ml-1.5 text-[10px] text-slate-500">{r.model}</span>
             </span>
-            <span className="num text-[11px] text-slate-400">
+            <span className="num text-[11px] text-slate-600">
               {int0(r.prompt + r.completion)} token · {int0(r.calls)} 次调用
-              {r.failed > 0 && <span className="ml-1 text-rose-300">（失败 {r.failed}）</span>}
+              {r.failed > 0 && <span className="ml-1 text-rose-600">（失败 {r.failed}）</span>}
             </span>
           </div>
-          <div className="mt-1 flex h-3 overflow-hidden rounded-sm bg-white/[0.05]">
+          <div className="mt-1 flex h-3 overflow-hidden rounded-sm bg-slate-50">
             <div
               className="h-full"
               style={{ width: `${(r.prompt / max) * 100}%`, background: '#38bdf8' }}
@@ -693,14 +693,14 @@ export function DonutRing({
         })}
       </svg>
       <div className="min-w-0">
-        <div className="num text-[20px] font-semibold text-slate-100">{center}</div>
+        <div className="num text-[20px] font-semibold text-slate-900">{center}</div>
         {sub && <div className="muted">{sub}</div>}
         <div className="mt-1.5 space-y-1">
           {segments.map((s) => (
             <div key={s.key} className="flex items-center gap-1.5 text-[11px]">
               <span className="inline-block h-2 w-2 rounded-sm" style={{ background: s.color }} />
-              <span className="text-slate-400">{s.label}</span>
-              <span className="num text-slate-200">{int0(s.value)}</span>
+              <span className="text-slate-600">{s.label}</span>
+              <span className="num text-slate-800">{int0(s.value)}</span>
               <span className="num text-slate-500">{pct1(s.value / total)}</span>
             </div>
           ))}
@@ -742,8 +742,8 @@ export function ArmWaterfall({
         return (
           <div key={a.key}>
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-              <span className="text-[11.5px] text-slate-300">
-                <span className="num mr-1.5 text-[10px] text-slate-600">{i + 1}</span>
+              <span className="text-[11.5px] text-slate-700">
+                <span className="num mr-1.5 text-[10px] text-slate-500">{i + 1}</span>
                 {a.label}
               </span>
               <span className="num text-[11.5px]" style={{ color: a.color }}>
@@ -751,7 +751,7 @@ export function ArmWaterfall({
               </span>
             </div>
             {a.sub && <div className="muted mt-0.5 leading-relaxed">{a.sub}</div>}
-            <div className="mt-1 h-2.5 overflow-hidden rounded-sm bg-white/[0.05]">
+            <div className="mt-1 h-2.5 overflow-hidden rounded-sm bg-slate-50">
               <div
                 className="h-full rounded-sm transition-all duration-500"
                 style={{ width: `${(a.wasted / max) * 100}%`, background: a.color }}
@@ -764,7 +764,7 @@ export function ArmWaterfall({
                     {c.k}{' '}
                     <b
                       className={`num ${
-                        c.tone === 'good' ? 'text-emerald-300' : c.tone === 'bad' ? 'text-rose-300' : 'text-slate-300'
+                        c.tone === 'good' ? 'text-emerald-600' : c.tone === 'bad' ? 'text-rose-600' : 'text-slate-700'
                       }`}
                     >
                       {c.v}
@@ -775,12 +775,12 @@ export function ArmWaterfall({
             )}
             {contrib !== null && Number.isFinite(contrib) && (
               <div className="mt-1.5 flex items-center gap-1.5 pl-3">
-                <span className="text-[10px] text-slate-600">↳</span>
+                <span className="text-[10px] text-slate-500">↳</span>
                 <span
                   className={`num rounded px-1.5 py-0.5 text-[10.5px] ${
                     contrib >= 0
-                      ? 'border border-emerald-400/25 bg-emerald-400/10 text-emerald-200'
-                      : 'border border-rose-400/25 bg-rose-400/10 text-rose-200'
+                      ? 'border border-emerald-200 bg-emerald-50 text-emerald-700'
+                      : 'border border-rose-200 bg-rose-50 text-rose-700'
                   }`}
                 >
                   {a.contributionLabel ?? '相对上一臂'} {contrib >= 0 ? '−' : '+'}
@@ -890,7 +890,7 @@ export function SeedStrip({
         {ciLow != null && ciHigh != null && (
           <span className="num" style={{ color }}>
             95% CI [{fmt(ciLow)}, {fmt(ciHigh)}]
-            {ciLow < 0 && ciHigh > 0 && <span className="ml-1 text-rose-300">跨 0</span>}
+            {ciLow < 0 && ciHigh > 0 && <span className="ml-1 text-rose-600">跨 0</span>}
           </span>
         )}
         <span className="num text-slate-500">max {fmt(Math.max(...vals))}</span>
