@@ -1,0 +1,40 @@
+$SERVICE_BASE
+
+KOXPilot HTTP 服务（公开访问，不需要 token）
+契约：api/CONTRACT.md（v1，冻结）
+
+端点
+  GET  /api/health
+  POST /api/plan
+  GET  /api/kox/{kox_id}/explain
+  POST /api/gate/batch
+
+一分钟自己验一遍
+  curl -s $SERVICE_BASE/api/health
+
+  curl -s -X POST $SERVICE_BASE/api/plan \
+    -H 'Content-Type: application/json' \
+    -d '{"brief_text":"巴西和墨西哥的 Instagram 彩妆，18-24 女性，预算 8 万美金，避开 Focallure"}'
+
+  curl -s $SERVICE_BASE/api/kox/KOX-000002/explain
+
+  curl -s -X POST $SERVICE_BASE/api/gate/batch \
+    -H 'Content-Type: application/json' \
+    -d '{"kox_ids":["KOX-000002","KOX-000004","KOX-001146"]}'
+
+线上实测（部署后当场跑的，不是本地数字）
+  health            status=ready，kox_count=5000，dataset_sha256=29500afd5390f3fd93245c2247281ae1f311e92009c6f374a330ec08434338d1
+  plan（自由文本）  召回 182 → 通过门禁 7 → 进入清单 4，parity_payload 182 条，端到端 61 ms
+  plan（BRIEF-001） 召回 500（受 top_n 截断）→ 57 → 45
+  gate/batch        5000 个 id 一次判完，服务侧 836 ms
+  explain           与 CLI `koxpilot explain` 的证据句逐字一致（api/check_cli_parity.py，5 个 id，0 差异）
+  双实现对撞        web/scripts/verify-service-parity.mjs 打线上服务：1431 条判定逐条比对，0 差异
+
+口径说明（这些是边界，不是缺陷）
+  * A1 brief 解析：部署环境未配置模型凭据，所以线上走确定性规则解析。
+    响应里 brief.parse_path=rule，brief.notes 会写明原因；配上凭据即自动切模型路径，
+    调用失败/超时也只降级、不让接口报错。
+  * A4 语义适配：正式链路用 rule_fit_score（原因见 docs/05-boundaries.md §3.2），与 CLI 一致。
+  * 业务错误（brief 空/超长、id 不存在、超批量上限）一律 HTTP 200 + ok:false，
+    只有真正的崩溃才 5xx —— 前端据此区分「输入有问题」与「服务挂了」。
+  * 服务只读数据，不写任何东西；data/ 是固定种子的合成数据集，没有真实达人信息。
