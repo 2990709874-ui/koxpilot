@@ -9,6 +9,17 @@ import { EXAMPLE_BRIEFS, parseBrief, type BriefParseResult } from '../engine/bri
 import { Thresholds, type ThresholdsPayload } from '../engine/thresholds';
 import type { CampaignSpec, GateResult, Kox } from '../engine/types';
 import type { BriefEntry } from '../lib/artifacts';
+import { plan as requestPlan, type PlanPayload } from '../lib/api';
+import { reportServiceFailure, useComputeSource } from '../lib/computeSource';
+import { compareVerdicts, type ParityReport } from '../lib/parity';
+import {
+  ParityLine,
+  ServiceCandidates,
+  ServiceFields,
+  ServiceSpecChips,
+  ServiceStages,
+  ServiceSummary,
+} from './consoleService';
 import {
   SKIP_REASON_LABEL,
   VERDICT_COLOR,
@@ -23,6 +34,13 @@ import {
 } from '../lib/format';
 import { runPipeline, type PipelineResult, type StageReport } from '../lib/pipeline';
 
+/** 服务回的 `brief.parse_path` → 界面上的中文说法（未知取值按规则解析显示，不编新词）。 */
+const PARSE_PATH_LABEL: Record<string, string> = {
+  llm: '模型解析',
+  rule: '规则解析',
+  preset: '预置产物（构建期模型解析后固化）',
+};
+
 /* ------------------------------------------------------------------ */
 /* 自由输入 brief 的运行结果共享                                        */
 /* ------------------------------------------------------------------ */
@@ -30,16 +48,25 @@ import { runPipeline, type PipelineResult, type StageReport } from '../lib/pipel
 /**
  * 自定义 brief 跑出来的流水线结果。
  *
- * 为什么要一个模块级小仓库：App.tsx 由他人并行改动（要把 Console 与 Decision 合成
- * 一个「投放决策」tab），两个组件的 props 签名不能变，所以「读者自己敲的那条 brief」
- * 的运行结果没法从 App 往下传。这里用一个最小的订阅仓库把它共享给 Decision，
- * 保证同一页里上下两半看到的是同一次运行，而不是上半自定义、下半还是预置 brief。
+ * 为什么要一个模块级小仓库：Console 与 Decision 分属「投放决策」页的上下两半，
+ * 两个组件的 props 签名由 App 统一给定，「读者自己敲的那条 brief」的运行结果
+ * 没法从 App 往下传。这里用一个最小的订阅仓库把它共享给 Decision，
+ * 保证同一页里上下两半看到的是同一条 brief。
  */
 export interface LiveRun {
   result: PipelineResult;
   parse: BriefParseResult;
-  /** 这次运行的输入原文（Decision 用它标注「当前看的是自定义 brief」） */
+  /** 这次运行的输入原文（Decision 用它标注「当前看的是哪一条 brief」） */
   text: string;
+  /**
+   * 这份结果的来源：
+   * - `custom`：读者自己敲的 brief，浏览器引擎独立跑的全流程；
+   * - `service`：服务本次召回的候选集（受 `options.top_n` 上限约束），浏览器引擎对同一批 kox_id 重算。
+   * 两种情况都与「全量产物」口径不同，Decision 据此关闭与产物的逐项对数。
+   */
+  origin: 'custom' | 'service';
+  /** 展示用主体名（如「自由输入」或「BRIEF-001 · 3C 小家电新品」） */
+  label: string;
 }
 
 let liveRun: LiveRun | null = null;
@@ -214,6 +241,16 @@ function SpecChips({ spec }: { spec: CampaignSpec }): React.ReactElement {
 /* Console                                                            */
 /* ------------------------------------------------------------------ */
 
+/** 一次服务侧运行：服务响应 + 同一批 kox_id 的浏览器侧比对结果。 */
+interface ServiceRun {
+  data: PlanPayload;
+  parity: ParityReport;
+  /** 这次运行送出去的 brief 原文 */
+  text: string;
+  /** 展示用的来源标签（预置 id 或「自由输入」） */
+  label: string;
+}
+
 export function ConsoleTab({
   briefs,
   briefIdx,
@@ -249,6 +286,9 @@ export function ConsoleTab({
   loadMs: number;
   koxBytes: number | null;
 }): React.ReactElement {
+  const cs = useComputeSource();
+  const useService = cs.source === 'backend';
+
   const [verdictFilter, setVerdictFilter] = React.useState<'all' | 'pass' | 'review' | 'reject'>('all');
   const [q, setQ] = React.useState('');
   const [openId, setOpenId] = React.useState<string | null>(null);
@@ -261,6 +301,12 @@ export function ConsoleTab({
   const [customErr, setCustomErr] = React.useState<string | null>(null);
   const thrRef = React.useRef<Thresholds | null>(null);
 
+  // ---- 服务侧运行 ----
+  const [service, setService] = React.useState<ServiceRun | null>(null);
+  const [serviceBusy, setServiceBusy] = React.useState(false);
+  /** 服务返回的错误说明：如实展示，本次计算由浏览器引擎完成 */
+  const [serviceErr, setServiceErr] = React.useState<string | null>(null);
+
   // 切换预置 brief / 改参数 → 回到预置口径，避免同一页上下两半看的不是同一次运行
   React.useEffect(() => {
     setText(briefs[briefIdx]?.raw_text ?? '');
@@ -271,6 +317,29 @@ export function ConsoleTab({
 
   const records = React.useMemo(() => [...koxById.values()], [koxById]);
 
+  const ensureThresholds = React.useCallback(async (): Promise<Thresholds> => {
+    if (!thrRef.current) {
+      const res = await fetch(`${import.meta.env.BASE_URL}data/thresholds.json`, { cache: 'force-cache' });
+      if (!res.ok) throw new Error(`thresholds.json 加载失败：HTTP ${res.status}`);
+      thrRef.current = Thresholds.fromDict((await res.json()) as ThresholdsPayload);
+    }
+    return thrRef.current;
+  }, []);
+
+  /** 浏览器引擎跑完整 A1–A6（服务未连接时是唯一计算源，服务可达时是比对的第二实现）。 */
+  const runBrowser = React.useCallback(
+    async (spec: CampaignSpec, only?: Partial<Kox>[]): Promise<PipelineResult> => {
+      const thr = await ensureThresholds();
+      return runPipeline(only ?? records, spec, thr, {
+        includeReview,
+        decay,
+        llmPerTask: null,
+        primaryModelKey: null,
+      });
+    },
+    [ensureThresholds, records, includeReview, decay],
+  );
+
   /** 线上解析 → A2~A6 在浏览器里真重算一遍。 */
   const runCustom = React.useCallback(async (): Promise<void> => {
     if (customRunning) return;
@@ -278,18 +347,7 @@ export function ConsoleTab({
     setCustomErr(null);
     try {
       const parse = parseBrief(text, { campaignId: 'CUSTOM', name: '自定义 brief' });
-      if (!thrRef.current) {
-        const res = await fetch(`${import.meta.env.BASE_URL}data/thresholds.json`, { cache: 'force-cache' });
-        if (!res.ok) throw new Error(`thresholds.json 加载失败：HTTP ${res.status}`);
-        thrRef.current = Thresholds.fromDict((await res.json()) as ThresholdsPayload);
-      }
-      const r = await runPipeline(records, parse.spec, thrRef.current, {
-        includeReview,
-        decay,
-        // 自定义运行不附带预置 brief 的 token 账
-        llmPerTask: null,
-        primaryModelKey: null,
-      });
+      const r = await runBrowser(parse.spec);
       // 自定义模式下 A1 的输出即刚跑完的规则解析结果
       const hit = parse.evidence.filter((e) => e.status === 'hit').length;
       const derived = parse.evidence.filter((e) => e.status === 'derived').length;
@@ -316,7 +374,7 @@ export function ConsoleTab({
           st.tokenNote = '本次自定义运行不附带 token 账；切回预置 brief 可查看模型调用账目';
         }
       }
-      const run: LiveRun = { result: r, parse, text };
+      const run: LiveRun = { result: r, parse, text, origin: 'custom', label: '你自己敲的那条 brief' };
       setCustom(run);
       setLiveRun(run);
     } catch (e) {
@@ -326,12 +384,82 @@ export function ConsoleTab({
     } finally {
       setCustomRunning(false);
     }
-  }, [customRunning, text, records, includeReview, decay]);
+  }, [customRunning, text, runBrowser]);
+
+  /**
+   * 走 Python 服务跑一条 brief，拿到响应后**立刻**在浏览器引擎里对同一批 kox_id
+   * 重算一遍并逐条比对。服务返回 `ok:false` 或不可达时，本次改由浏览器引擎完成。
+   */
+  const runService = React.useCallback(
+    async (kind: 'preset' | 'free'): Promise<void> => {
+      const b = briefs[briefIdx];
+      if (kind === 'preset' && !b) return;
+      setServiceBusy(true);
+      setServiceErr(null);
+      // top_n 取契约允许的上限，让服务侧召回窗口尽量覆盖整个候选池；
+      // explain_limit 只影响返回多少条带完整证据链的候选，不影响判定与比对规模。
+      const options = { top_n: 500, explain_limit: 60 };
+      const res =
+        kind === 'preset'
+          ? await requestPlan({ brief_id: b.brief_id, options })
+          : await requestPlan({ brief_text: text, options });
+      if (!res.ok) {
+        setService(null);
+        setServiceErr(`${res.error.message}（错误码 ${res.error.code}）`);
+        reportServiceFailure(res.error.message);
+        setServiceBusy(false);
+        if (kind === 'free') await runCustom();
+        return;
+      }
+      try {
+        const parse = kind === 'free' ? parseBrief(text, { campaignId: 'CUSTOM', name: '自定义 brief' }) : null;
+        const spec = kind === 'free' ? (parse as BriefParseResult).spec : b.spec;
+        const label = kind === 'free' ? '自由输入' : `${b.brief_id} · ${b.name}`;
+        // 「同一批 kox_id」：只把服务本次召回的那批达人交给浏览器引擎重算，
+        // 这样两侧比的是同一个候选集，差异条数才是真的差异，而不是召回窗口不同带来的错位。
+        const ids = new Set(res.data.parity_payload.verdicts.map((v) => v.kox_id));
+        const subset = records.filter((r) => ids.has(String(r.kox_id)));
+        const local = await runBrowser(spec, subset);
+        const parity = compareVerdicts(res.data.parity_payload.verdicts, local.results, {
+          serviceMs: res.data.meta.elapsed_ms,
+          browserMs: local.totalMs,
+        });
+        setService({ data: res.data, parity, text: kind === 'free' ? text : b.raw_text, label });
+        // 下半页（名单与预算）跟着同一个候选集走，避免同一页上下两半口径不一致
+        setLiveRun({
+          result: local,
+          parse: parse ?? parseBrief(b.raw_text, { campaignId: b.spec.campaign_id, name: b.name }),
+          text: kind === 'free' ? text : b.raw_text,
+          origin: 'service',
+          label,
+        });
+      } catch (e) {
+        setServiceErr(e instanceof Error ? e.message : String(e));
+      } finally {
+        setServiceBusy(false);
+      }
+    },
+    [briefs, briefIdx, text, records, runBrowser, runCustom],
+  );
+
+  // 服务可达时，进入页面与切换预置 brief 都直接用服务算一遍
+  React.useEffect(() => {
+    if (!useService) return;
+    void runService('preset');
+    // runService 依赖 text，但预置运行不读它，避免每次输入都重新请求
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useService, briefIdx]);
+
+  const submit = React.useCallback((): void => {
+    if (useService) void runService('free');
+    else void runCustom();
+  }, [useService, runService, runCustom]);
 
   const result = custom?.result ?? appResult;
   const stages = custom ? custom.result.stages : appStages;
   const running = custom ? customRunning : appRunning;
   const isCustom = Boolean(custom);
+  const busy = serviceBusy || customRunning;
 
   /** 预置 brief 的字段解析证据（与自定义运行同一套解析器）。 */
   const presetParse = React.useMemo(() => {
@@ -367,52 +495,90 @@ export function ConsoleTab({
       : null;
   const activeParse = custom?.parse ?? presetParse;
 
+  const sd = service?.data ?? null;
+  const serviceCounts = React.useMemo(() => {
+    const c = { pass: 0, review: 0, reject: 0 } as Record<string, number>;
+    for (const v of sd?.parity_payload.verdicts ?? []) c[v.verdict] = (c[v.verdict] ?? 0) + 1;
+    return c;
+  }, [sd]);
+  const serviceTotalMs = (sd?.timings ?? []).reduce((a, t) => a + t.ms, 0);
+
   return (
     <div className="space-y-2">
       {/* ---- 本页结论 ---- */}
       <Verdict
         what="第一步：一句话需求 → 可投名单与预算"
         conclusion={
-          result ? (
+          sd ? (
+            <>
+              {service?.label}：全库 <b>{int0(sd.meta.kox_count)}</b> 条 → 召回{' '}
+              <b>{int0(sd.funnel.find((f) => f.stage === 'recall')?.count ?? 0)}</b> 人 → 判可投{' '}
+              <b>{int0(serviceCounts.pass ?? 0)}</b> 人 → 预算落到 <b>{int0(sd.allocation.picked)}</b> 人，
+              由 Python 服务执行；同一条 brief 在浏览器引擎里同步重算并逐条比对。
+            </>
+          ) : result ? (
             <>
               {isCustom ? '你刚敲的这条 brief' : `预置 ${brief?.brief_id ?? ''}`}：全库 <b>{int0(datasetN)}</b> 条 → 召回{' '}
               <b>{int0(result.pool.length)}</b> 人 → 判可投 <b>{int0(result.verdictCounts.pass)}</b> 人 → 预算落到{' '}
-              <b>{int0(result.plan.n_selected)}</b> 人 / {int0(result.plan.n_posts)} 条，全链路浏览器内实时计算。
+              <b>{int0(result.plan.n_selected)}</b> 人 / {int0(result.plan.n_posts)} 条，由浏览器引擎完成全链路计算。
             </>
           ) : (
             '流水线正在运行…'
           )
         }
-        stats={[
-          { label: '候选池', value: result ? int0(result.pool.length) : '—' },
-          { label: '门禁 ms/人', value: gateMsPerPerson === null ? '—' : gateMsPerPerson.toFixed(3) },
-          { label: 'pass 率', value: result ? pct1(result.verdictCounts.pass / Math.max(result.pool.length, 1)) : '—' },
-          { label: '端到端', value: result ? ms(result.totalMs) : '—', tone: 'good' },
-        ]}
-        right={<TruthChip kind="rule" />}
+        stats={
+          sd
+            ? [
+                { label: '候选池', value: int0(sd.parity_payload.verdicts.length) },
+                {
+                  label: 'pass 率',
+                  value: pct1((serviceCounts.pass ?? 0) / Math.max(sd.parity_payload.verdicts.length, 1)),
+                },
+                { label: '差异条数', value: `${int0(service?.parity.diff ?? 0)} 条`, tone: service && service.parity.diff === 0 ? 'good' : 'bad' },
+                { label: '服务端到端', value: ms(sd.meta.elapsed_ms), tone: 'good' },
+              ]
+            : [
+                { label: '候选池', value: result ? int0(result.pool.length) : '—' },
+                { label: '门禁 ms/人', value: gateMsPerPerson === null ? '—' : gateMsPerPerson.toFixed(3) },
+                { label: 'pass 率', value: result ? pct1(result.verdictCounts.pass / Math.max(result.pool.length, 1)) : '—' },
+                { label: '端到端', value: result ? ms(result.totalMs) : '—', tone: 'good' },
+              ]
+        }
+        right={
+          useService ? (
+            <Badge className="border-emerald-300 bg-emerald-50 text-emerald-700">Python 服务实时计算</Badge>
+          ) : (
+            <TruthChip kind="rule" />
+          )
+        }
       />
 
-      {/* ---- ① 投放需求：预置 + 自由输入 ---- */}
+      {/* ---- 投放需求 + 执行轨迹（合成一块，控制信息密度） ---- */}
       <Panel
-        title="① 投放需求（brief）：可以改预置原文，也可以自己写一条"
-        subtitle="敲完点「解析并重跑」→ 浏览器内规则解析出投放需求 → A2–A6 实时重算；原文未写明的竞品品牌不会被补全"
+        title="① 投放需求（brief）→ ② 六个 Agent 的执行轨迹与逐层结果"
+        subtitle={
+          useService
+            ? '可以改预置原文，也可以自己写一条；提交后由 Python 服务执行 A1–A6，浏览器引擎对同一批候选同步重算并逐条比对'
+            : '可以改预置原文，也可以自己写一条；提交后由浏览器引擎执行 A1–A6，耗时为实测值'
+        }
+        bodyClass="space-y-1.5"
         right={
           <div className="flex items-center gap-2">
             <button
-              onClick={onRerun}
-              disabled={appRunning}
+              onClick={useService ? () => void runService('preset') : onRerun}
+              disabled={busy || appRunning}
               className="focusable flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[12px] text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
             >
               <Play size={12} />
-              {appRunning ? '运行中…' : '重跑预置'}
+              {busy || appRunning ? '运行中…' : '重跑预置'}
             </button>
             <button
-              onClick={() => void runCustom()}
-              disabled={customRunning}
+              onClick={submit}
+              disabled={busy}
               className="focusable flex items-center gap-1.5 rounded-lg border border-brand-600 bg-brand-600 px-3 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-brand-500 disabled:opacity-50"
             >
               <Wand2 size={12} />
-              {customRunning ? '解析并重算中…' : '解析并重跑'}
+              {busy ? '运行中…' : '解析并重跑'}
             </button>
           </div>
         }
@@ -456,22 +622,33 @@ export function ConsoleTab({
                 </button>
               ))}
             </div>
-            {customErr && (
-              <Note tone="warn">
-                <AlertTriangle size={11} className="mr-1 inline" />
-                这条 brief 运行失败：{customErr}。页面保留上一次的结果。
-              </Note>
+            {serviceErr && (
+              <div className="mt-1.5 flex items-start gap-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-[11.5px] leading-snug text-amber-800">
+                <AlertTriangle size={11} className="mt-[2px] shrink-0" />
+                <span>服务未能返回结果：{serviceErr}。本次由浏览器引擎完成计算。</span>
+              </div>
             )}
-            {custom && custom.parse.warnings.length > 0 && (
+            {customErr && (
+              <div className="mt-1.5 flex items-start gap-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-[11.5px] leading-snug text-amber-800">
+                <AlertTriangle size={11} className="mt-[2px] shrink-0" />
+                <span>这条 brief 运行失败：{customErr}。页面保留上一次的结果。</span>
+              </div>
+            )}
+            {!sd && custom && custom.parse.warnings.length > 0 && (
               <Note tone="warn">
                 {custom.parse.warnings.map((w) => (
                   <div key={w}>· {w}</div>
                 ))}
               </Note>
             )}
-            {custom && custom.result.pool.length === 0 && (
+            {!sd && custom && custom.result.pool.length === 0 && (
               <Note tone="warn">
                 这条 brief 的候选池是 <b>0 人</b>：平台 / 品类 / 市场三条定向条件把全库筛空，下游名单与预算随之为空。放宽市场或去掉平台限定再试。
+              </Note>
+            )}
+            {sd && sd.parity_payload.verdicts.length === 0 && (
+              <Note tone="warn">
+                这条 brief 的候选池是 <b>0 人</b>：平台 / 品类 / 市场三条定向条件把全库筛空。放宽市场或去掉平台限定再试。
               </Note>
             )}
           </div>
@@ -479,14 +656,32 @@ export function ConsoleTab({
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[12.5px] font-medium text-slate-800">
-                {isCustom ? '解析出的投放需求' : `${brief?.brief_id ?? ''} 的投放需求`}
+                {sd ? '解析出的投放需求' : isCustom ? '解析出的投放需求' : `${brief?.brief_id ?? ''} 的投放需求`}
               </span>
               <Badge className="border-live-300 bg-live-50 text-live-700">
-                {isCustom ? '刚刚解析' : '预置产物'}
+                {sd
+                  ? `${PARSE_PATH_LABEL[sd.brief.parse_path] ?? '规则解析'} · ${sd.brief.fields.length} 字段`
+                  : isCustom
+                    ? '刚刚解析'
+                    : '预置产物'}
               </Badge>
             </div>
+            {/* 服务把「这次为什么没用上模型」如实写在 brief.notes 里，这里照实显示，不替它遮掩 */}
+            {sd && sd.brief.notes && sd.brief.notes.length > 0 && (
+              <div className="mt-1.5 space-y-0.5">
+                {sd.brief.notes.map((n) => (
+                  <div key={n} className="text-[11.5px] leading-snug text-slate-500">
+                    · {n}
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="mt-2">
-              <SpecChips spec={(result?.spec ?? brief?.spec) as CampaignSpec} />
+              {sd ? (
+                <ServiceSpecChips fields={sd.brief.fields} />
+              ) : (
+                <SpecChips spec={(result?.spec ?? brief?.spec) as CampaignSpec} />
+              )}
             </div>
             <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2">
               <Toggle
@@ -512,55 +707,39 @@ export function ConsoleTab({
           </div>
         </div>
 
-        {/* ---- 字段解析证据 ---- */}
-        <div className="mt-2">
-          {activeParse && (
-            <Collapse
-              title={`展开：${activeParse.evidence.length} 个字段各自命中了原文的哪个片段、以什么方式识别`}
-              hint={`原文命中 ${activeParse.evidence.filter((e) => e.status === 'hit').length} · 规则推导 ${
-                activeParse.evidence.filter((e) => e.status === 'derived').length
-              } · 未识别用默认值 ${activeParse.evidence.filter((e) => e.status === 'default').length}`}
-            >
-              <EvidenceTable parse={activeParse} />
-            </Collapse>
-          )}
-        </div>
-      </Panel>
-
-      {/* ---- ② 执行轨迹 + 逐层筛人结果（合并成一块，控制信息密度） ---- */}
-      <Panel
-        title="② 六个 Agent 的执行轨迹与逐层筛人结果"
-        subtitle={
-          result
-            ? `耗时为实测值；全库 ${int0(datasetN)} 条 → 候选 ${int0(result.pool.length)} 人 → 四层门禁判定分布`
-            : '耗时为实测值；每一步都在当前浏览器内计算'
-        }
-        bodyClass="space-y-2"
-        right={
-          result && (
-            <span className="num text-[12px] text-slate-600">
-              端到端 <CountUp value={result.totalMs} format={(v) => ms(v)} /> · 数据加载 {ms(loadMs)}
-              {koxBytes !== null && ` · 数据集 ${(koxBytes / 1048576).toFixed(2)} MB`}
-            </span>
-          )
-        }
-      >
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {stages.map((s, i) => (
-            <StageCard key={s.id} s={s} index={i} live={running && !isCustom && i === liveStage} />
-          ))}
-          {running &&
-            Array.from({ length: Math.max(0, 6 - stages.length) }).map((_, i) => (
-              <div key={`ph-${i}`} className="card flex h-[58px] items-center justify-center px-3 py-2">
-                <span className="num text-[11px] text-slate-600">等待前序阶段…</span>
-              </div>
-            ))}
-        </div>
-        {result && (
+        {/* ---- 执行轨迹 ---- */}
+        {sd ? (
           <>
-            <div className="grid gap-3 lg:grid-cols-[1fr_0.85fr_1fr]">
-              <Funnel steps={result.funnel} />
-              <div>
+            <ServiceStages timings={sd.timings} />
+            <ServiceSummary data={sd} />
+            {service && (
+              <ParityLine
+                parity={service.parity}
+                note={
+                  <>
+                    服务侧 A1–A6 合计 {ms(serviceTotalMs)} · 数据集 {int0(sd.meta.kox_count)} 条 ·{' '}
+                    {sd.meta.llm_runtime.available ? `A1 走模型解析（${sd.meta.llm_runtime.provider ?? '—'}）` : 'A1 走规则解析'}
+                  </>
+                }
+              />
+            )}
+          </>
+        ) : (
+          <>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              {stages.map((s, i) => (
+                <StageCard key={s.id} s={s} index={i} live={running && !isCustom && i === liveStage} />
+              ))}
+              {running &&
+                Array.from({ length: Math.max(0, 6 - stages.length) }).map((_, i) => (
+                  <div key={`ph-${i}`} className="card flex h-[58px] items-center justify-center px-3 py-2">
+                    <span className="num text-[11px] text-slate-600">等待前序阶段…</span>
+                  </div>
+                ))}
+            </div>
+            {result && (
+              <div className="grid gap-3 lg:grid-cols-[1fr_0.7fr_1.05fr]">
+                <Funnel steps={result.funnel} />
                 <DonutRing
                   segments={(['pass', 'review', 'reject'] as const).map((v) => ({
                     key: v,
@@ -572,64 +751,206 @@ export function ConsoleTab({
                   center={<CountUp value={result.pool.length} format={(v) => int0(v)} />}
                   sub="候选人数"
                 />
+                <div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {(
+                      [
+                        ['G0', '资料完整性'],
+                        ['G1', '真实性信号'],
+                        ['G2', '匹配一致性'],
+                        ['G3', '内容合规'],
+                      ] as const
+                    ).map(([g, zh]) => (
+                      <div key={g} className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1">
+                        <div className="text-[11px] text-slate-600">{zh}命中</div>
+                        <div className="num text-[13px] text-slate-900">{int0(result.gateHits[g] ?? 0)}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="num mt-1.5 text-[11.5px] text-slate-600">
+                    端到端 <CountUp value={result.totalMs} format={(v) => ms(v)} /> · 数据加载 {ms(loadMs)}
+                    {koxBytes !== null && ` · 数据集 ${(koxBytes / 1048576).toFixed(2)} MB`}
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {(
-                    [
-                      ['G0', '资料完整性'],
-                      ['G1', '真实性信号'],
-                      ['G2', '匹配一致性'],
-                      ['G3', '内容合规'],
-                    ] as const
-                  ).map(([g, zh]) => (
-                    <div key={g} className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1">
-                      <div className="text-[11px] text-slate-600">{zh}命中</div>
-                      <div className="num text-[14px] text-slate-900">{int0(result.gateHits[g] ?? 0)}</div>
+            )}
+          </>
+        )}
+
+
+        {/* ---- 明细折叠：字段解析证据 + 逐人判定表 ---- */}
+        {sd ? (
+          <>
+            <Collapse
+              title={`展开：${sd.brief.fields.length} 个字段各自命中了原文的哪个片段（原文命中 ${
+                sd.brief.fields.filter((f) => f.status === 'hit').length
+              } · 规则推导 ${sd.brief.fields.filter((f) => f.status === 'derived').length} · 默认值 ${
+                sd.brief.fields.filter((f) => f.status === 'default').length
+              }）`}
+            >
+              <ServiceFields fields={sd.brief.fields} />
+            </Collapse>
+            <Collapse
+              title={`展开：${int0(sd.candidates.length)} 条候选的判定、门禁命中、淘汰理由与分配金额（候选池共 ${int0(
+                sd.parity_payload.verdicts.length,
+              )} 人）`}
+            >
+              <ServiceCandidates candidates={sd.candidates} />
+            </Collapse>
+          </>
+        ) : (
+          <>
+            {activeParse && (
+              <Collapse
+                title={`展开：${activeParse.evidence.length} 个字段各自命中了原文的哪个片段（原文命中 ${
+                  activeParse.evidence.filter((e) => e.status === 'hit').length
+                } · 规则推导 ${activeParse.evidence.filter((e) => e.status === 'derived').length} · 默认值 ${
+                  activeParse.evidence.filter((e) => e.status === 'default').length
+                }）`}
+              >
+                <EvidenceTable parse={activeParse} />
+              </Collapse>
+            )}
+            {result && (
+              <Collapse
+                title={`展开：${int0(result.pool.length)} 人的逐人判定表与证据链、六个 Agent 的计算口径与逐项数字`}
+              >
+                <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
+                  <div className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-1">
+                    <Search size={11} className="text-slate-500" />
+                    <input
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                      placeholder="搜 handle / ID"
+                      className="focusable w-28 bg-transparent text-[12px] text-slate-800 outline-none placeholder:text-slate-500"
+                    />
+                  </div>
+                  <Segmented
+                    size="sm"
+                    value={verdictFilter}
+                    onChange={setVerdictFilter}
+                    options={[
+                      { value: 'all', label: `全部 ${result.pool.length}` },
+                      { value: 'pass', label: `可投 ${result.verdictCounts.pass}` },
+                      { value: 'review', label: `人核 ${result.verdictCounts.review}` },
+                      { value: 'reject', label: `拒绝 ${result.verdictCounts.reject}` },
+                    ]}
+                  />
+                </div>
+                <div className="max-h-[420px] overflow-auto">
+                  <table className="w-full border-collapse">
+                    <thead className="sticky top-0 z-10 bg-white">
+                      <tr className="hairline">
+                        <th className="th">达人</th>
+                        <th className="th">平台 / 地区</th>
+                        <th className="th text-right">粉丝</th>
+                        <th className="th text-right">平均播放</th>
+                        <th className="th text-right">真实性</th>
+                        <th className="th text-right">异常分</th>
+                        <th className="th text-right">适配</th>
+                        <th className="th">判定</th>
+                        <th className="th">命中</th>
+                        <th className="th text-right">分配</th>
+                        <th className="th" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map(({ kox, r }) => {
+                        const alloc = allocById.get(r.kox_id);
+                        return (
+                          <tr
+                            key={r.kox_id}
+                            onClick={() => setOpenId(r.kox_id)}
+                            className="hairline cursor-pointer transition-colors hover:bg-live-50"
+                          >
+                            <td className="td">
+                              <div className="font-medium text-slate-800">{kox.handle}</div>
+                              <div className="num text-[10px] text-slate-500">{r.kox_id}</div>
+                            </td>
+                            <td className="td text-[12px] text-slate-600">
+                              {PLATFORM_LABEL[String(kox.platform)] ?? kox.platform}
+                              <span className="mx-1 text-slate-500">/</span>
+                              {kox.country}
+                            </td>
+                            <td className="td num text-right">{compact(kox.followers ?? null)}</td>
+                            <td className="td num text-right">{compact(kox.avg_views ?? null)}</td>
+                            <td className="td num text-right">{fixed(r.authenticity_score, 3)}</td>
+                            <td className="td num text-right">
+                              <span className={r.fraud_score > 0.4 ? 'text-rose-600' : r.fraud_score > 0.2 ? 'text-amber-600' : 'text-slate-600'}>
+                                {fixed(r.fraud_score, 3)}
+                              </span>
+                            </td>
+                            <td className="td num text-right">{fixed(r.fit_score, 2)}</td>
+                            <td className="td">
+                              <Badge className={VERDICT_COLOR[r.verdict]}>{VERDICT_LABEL[r.verdict]}</Badge>
+                            </td>
+                            <td className="td">
+                              <div className="flex flex-wrap gap-1">
+                                {r.reasons.length === 0 && <span className="text-[11px] text-emerald-600">无</span>}
+                                {[...new Set(r.reasons.map((x) => x.rule_id))].slice(0, 4).map((id) => (
+                                  <span key={id} className="num rounded border border-slate-200 bg-slate-50 px-1 text-[10px] text-slate-600">
+                                    {id}
+                                  </span>
+                                ))}
+                                {r.reasons.length > 4 && <span className="text-[10px] text-slate-500">+{r.reasons.length - 4}</span>}
+                              </div>
+                            </td>
+                            <td className="td num text-right">
+                              {alloc ? (
+                                <span className="text-live-700">
+                                  {usd0(alloc.amount_usd)}
+                                  <span className="ml-1 text-[10px] text-slate-500">{alloc.posts} 条</span>
+                                </span>
+                              ) : (
+                                <span className="text-slate-500">—</span>
+                              )}
+                            </td>
+                            <td className="td text-right">
+                              <ChevronRight size={13} className="text-slate-500" />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {rows.length === 0 && (
+                    <div className="px-4 py-6 text-center text-[12px] text-slate-600">
+                      <Filter size={14} className="mx-auto mb-1.5 opacity-60" />
+                      没有符合筛选条件的达人
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 grid gap-2.5 lg:grid-cols-2">
+                  {stages.map((st) => (
+                    <div key={st.id} className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
+                      <div className="flex items-center gap-1.5 text-[12px] font-medium text-slate-800">
+                        {st.agent}
+                        <span className="num ml-auto text-[11px] text-slate-600">
+                          {int0(st.items)} 条输入 · {(st.elapsedMs / Math.max(st.items, 1)).toFixed(4)} ms/条
+                        </span>
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <TruthChip kind={st.kind} />
+                        {st.kind === 'llm-offline' && (
+                          <Hint text={st.tokenNote ?? ''}>
+                            <Badge className="border-indigo-200 bg-indigo-50 text-indigo-700">
+                              {st.tokens === null ? 'token 账本次未附带' : `${int0(st.tokens)} token`}
+                            </Badge>
+                          </Hint>
+                        )}
+                      </div>
+                      <ul className="mt-1 space-y-0.5">
+                        {st.detail.map((d) => (
+                          <li key={d} className="flex gap-1.5 text-[12px] leading-relaxed text-slate-600">
+                            <span className="mt-[6px] inline-block h-1 w-1 shrink-0 rounded-full bg-slate-400" />
+                            <span>{d}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   ))}
                 </div>
-                <div className="mt-1.5">
-                  <SparkBars items={result.ruleHits.slice(0, 6).map((r) => ({ key: r.rule_id, label: r.label, value: r.n }))} />
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-        <Collapse title="展开：六个 Agent 的计算口径与逐项数字、定向筛选原因分布、风控规则逐条命中人数">
-          <div className="space-y-3">
-            <div className="grid gap-2.5 lg:grid-cols-2">
-                    {stages.map((st) => (
-                      <div key={st.id} className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
-                        <div className="flex items-center gap-1.5 text-[12px] font-medium text-slate-800">
-                          {st.agent}
-                          <span className="num ml-auto text-[11px] text-slate-600">
-                            {int0(st.items)} 条输入 · {(st.elapsedMs / Math.max(st.items, 1)).toFixed(4)} ms/条
-                          </span>
-                        </div>
-                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                          <TruthChip kind={st.kind} />
-                          {st.kind === 'llm-offline' && (
-                            <Hint text={st.tokenNote ?? ''}>
-                              <Badge className="border-indigo-200 bg-indigo-50 text-indigo-700">
-                                {st.tokens === null ? 'token 账本次未附带' : `${int0(st.tokens)} token`}
-                              </Badge>
-                            </Hint>
-                          )}
-                        </div>
-                        <ul className="mt-1 space-y-0.5">
-                          {st.detail.map((d) => (
-                            <li key={d} className="flex gap-1.5 text-[12px] leading-relaxed text-slate-600">
-                              <span className="mt-[6px] inline-block h-1 w-1 shrink-0 rounded-full bg-slate-400" />
-                              <span>{d}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-            </div>
-            {result && (
-              <div className="grid gap-3 lg:grid-cols-2">
+                <div className="mt-3 grid gap-3 lg:grid-cols-2">
                   <div>
                     <div className="muted mb-1">定向筛选（平台 / 品类 / 市场）</div>
                     <div className="space-y-1">
@@ -657,123 +978,14 @@ export function ConsoleTab({
                       ))}
                       {result.ruleHits.length === 0 && <div className="muted">本候选池没有任何规则命中。</div>}
                     </div>
+                    <div className="mt-1.5">
+                      <SparkBars items={result.ruleHits.slice(0, 6).map((r) => ({ key: r.rule_id, label: r.label, value: r.n }))} />
+                    </div>
                   </div>
-              </div>
-            )}
-          </div>
-        </Collapse>
-        {/* ---- ⑥ 候选清单（折叠，接住下半页的名单与预算） ---- */}
-        {result && (
-          <Collapse
-            title={`展开：${int0(result.pool.length)} 人的逐人判定表与证据链（点任意一行看信号、实际值、阈值、同组分位）`}
-            hint="下半页「名单与预算」只列被买下的人；这张表是他们被判成什么、为什么的完整底稿"
-          >
-            <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-              <div className="flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-1">
-                <Search size={11} className="text-slate-500" />
-                <input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="搜 handle / ID"
-                  className="focusable w-28 bg-transparent text-[12px] text-slate-800 outline-none placeholder:text-slate-500"
-                />
-              </div>
-              <Segmented
-                size="sm"
-                value={verdictFilter}
-                onChange={setVerdictFilter}
-                options={[
-                  { value: 'all', label: `全部 ${result.pool.length}` },
-                  { value: 'pass', label: `可投 ${result.verdictCounts.pass}` },
-                  { value: 'review', label: `人核 ${result.verdictCounts.review}` },
-                  { value: 'reject', label: `拒绝 ${result.verdictCounts.reject}` },
-                ]}
-              />
-            </div>
-            <div className="max-h-[420px] overflow-auto">
-              <table className="w-full border-collapse">
-                <thead className="sticky top-0 z-10 bg-white">
-                  <tr className="hairline">
-                    <th className="th">达人</th>
-                    <th className="th">平台 / 地区</th>
-                    <th className="th text-right">粉丝</th>
-                    <th className="th text-right">平均播放</th>
-                    <th className="th text-right">真实性</th>
-                    <th className="th text-right">异常分</th>
-                    <th className="th text-right">适配</th>
-                    <th className="th">判定</th>
-                    <th className="th">命中</th>
-                    <th className="th text-right">分配</th>
-                    <th className="th" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map(({ kox, r }) => {
-                    const alloc = allocById.get(r.kox_id);
-                    return (
-                      <tr
-                        key={r.kox_id}
-                        onClick={() => setOpenId(r.kox_id)}
-                        className="hairline cursor-pointer transition-colors hover:bg-live-50"
-                      >
-                        <td className="td">
-                          <div className="font-medium text-slate-800">{kox.handle}</div>
-                          <div className="num text-[10px] text-slate-500">{r.kox_id}</div>
-                        </td>
-                        <td className="td text-[12px] text-slate-600">
-                          {PLATFORM_LABEL[String(kox.platform)] ?? kox.platform}
-                          <span className="mx-1 text-slate-500">/</span>
-                          {kox.country}
-                        </td>
-                        <td className="td num text-right">{compact(kox.followers ?? null)}</td>
-                        <td className="td num text-right">{compact(kox.avg_views ?? null)}</td>
-                        <td className="td num text-right">{fixed(r.authenticity_score, 3)}</td>
-                        <td className="td num text-right">
-                          <span className={r.fraud_score > 0.4 ? 'text-rose-600' : r.fraud_score > 0.2 ? 'text-amber-600' : 'text-slate-600'}>
-                            {fixed(r.fraud_score, 3)}
-                          </span>
-                        </td>
-                        <td className="td num text-right">{fixed(r.fit_score, 2)}</td>
-                        <td className="td">
-                          <Badge className={VERDICT_COLOR[r.verdict]}>{VERDICT_LABEL[r.verdict]}</Badge>
-                        </td>
-                        <td className="td">
-                          <div className="flex flex-wrap gap-1">
-                            {r.reasons.length === 0 && <span className="text-[11px] text-emerald-600">无</span>}
-                            {[...new Set(r.reasons.map((x) => x.rule_id))].slice(0, 4).map((id) => (
-                              <span key={id} className="num rounded border border-slate-200 bg-slate-50 px-1 text-[10px] text-slate-600">
-                                {id}
-                              </span>
-                            ))}
-                            {r.reasons.length > 4 && <span className="text-[10px] text-slate-500">+{r.reasons.length - 4}</span>}
-                          </div>
-                        </td>
-                        <td className="td num text-right">
-                          {alloc ? (
-                            <span className="text-live-700">
-                              {usd0(alloc.amount_usd)}
-                              <span className="ml-1 text-[10px] text-slate-500">{alloc.posts} 条</span>
-                            </span>
-                          ) : (
-                            <span className="text-slate-500">—</span>
-                          )}
-                        </td>
-                        <td className="td text-right">
-                          <ChevronRight size={13} className="text-slate-500" />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {rows.length === 0 && (
-                <div className="px-4 py-6 text-center text-[12px] text-slate-600">
-                  <Filter size={14} className="mx-auto mb-1.5 opacity-60" />
-                  没有符合筛选条件的达人
                 </div>
-              )}
-            </div>
-          </Collapse>
+              </Collapse>
+            )}
+          </>
         )}
       </Panel>
 

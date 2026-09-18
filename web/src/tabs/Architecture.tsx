@@ -1,10 +1,17 @@
 import React from 'react';
-import { CheckCircle2, Cpu, GitCompare, ShieldCheck, XCircle } from 'lucide-react';
+import { CheckCircle2, Cpu, GitCompare, Server, ShieldCheck, XCircle } from 'lucide-react';
 import { Boundaries, Collapse, Verdict } from '../components/Collapse';
 import { Badge, KV, Note, Panel, TruthChip } from '../components/ui';
 import type { ConsistencyReport, Loose, Manifest } from '../lib/artifacts';
+import type { Kox } from '../engine/types';
+import { NEUTRAL_SPEC } from '../engine/types';
+import { evaluate } from '../engine/engine';
+import type { Thresholds } from '../engine/thresholds';
 import { fixed, int0, ms, pct1 } from '../lib/format';
 import type { PipelineResult } from '../lib/pipeline';
+import { API_BASE, gateBatch } from '../lib/api';
+import { SOURCE_LABEL, useComputeSource } from '../lib/computeSource';
+import { compareVerdicts, type ParityReport } from '../lib/parity';
 
 const AGENTS = [
   {
@@ -209,17 +216,99 @@ function HybridCard(): React.ReactElement {
   );
 }
 
+/**
+ * 实时核对：抽一批达人交给服务的批量判定端点，浏览器侧用同一套中性口径现算一遍，逐条对撞。
+ *
+ * 两侧口径必须一致才有意义：该端点按库级中性画像判定（与全量产物同口径），
+ * 因此浏览器侧这里也用中性画像，而不是复用「投放决策」页那次带 brief 的判定结果。
+ * 单次上限 5,000 条由客户端自动分批。
+ */
+function LiveGateParity({
+  records,
+  thresholds,
+}: {
+  records: Partial<Kox>[];
+  thresholds: Thresholds;
+}): React.ReactElement {
+  const cs = useComputeSource();
+  const [state, setState] = React.useState<{ busy: boolean; report: ParityReport | null; err: string | null }>({
+    busy: false,
+    report: null,
+    err: null,
+  });
+
+  const run = React.useCallback(async () => {
+    setState({ busy: true, report: null, err: null });
+    const ids = records.map((k) => String(k.kox_id));
+    const res = await gateBatch(ids);
+    if (!res.ok) {
+      setState({ busy: false, report: null, err: res.error.message });
+      return;
+    }
+    // 浏览器侧同一批人、同一套阈值、同一个中性画像现算
+    const t0 = performance.now();
+    const local = new Map<string, ReturnType<typeof evaluate>>();
+    for (const kox of records) local.set(String(kox.kox_id), evaluate(kox, NEUTRAL_SPEC, thresholds));
+    const browserMs = performance.now() - t0;
+    setState({
+      busy: false,
+      err: null,
+      report: compareVerdicts(res.data.verdicts, local, { serviceMs: res.data.meta.elapsed_ms ?? null, browserMs }),
+    });
+  }, [records, thresholds]);
+
+  if (cs.source !== 'backend') {
+    return (
+      <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] text-slate-700">
+        本次由浏览器引擎计算，实时核对需要服务在线；下面这份全量核对结果由构建期两侧跑完落盘，仍然有效。
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+      <button
+        onClick={() => void run()}
+        disabled={state.busy || records.length === 0}
+        className="focusable rounded-lg border border-brand-600 bg-brand-600 px-2.5 py-1 text-[12px] font-medium text-white transition-colors hover:bg-brand-500 disabled:opacity-50"
+      >
+        {state.busy ? '核对中…' : `现在核对一遍（全库 ${int0(records.length)} 人）`}
+      </button>
+      {state.report && (
+        <span className={`num text-[12px] ${state.report.diff === 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+          逐条比对 {int0(state.report.compared)} 条 · 差异 {int0(state.report.diff)} 条 · 服务{' '}
+          {state.report.serviceMs === null ? '—' : ms(state.report.serviceMs)} · 浏览器 {ms(state.report.browserMs)}
+        </span>
+      )}
+      {state.report && state.report.diff > 0 && (
+        <span className="num text-[11px] text-rose-700">
+          {state.report.diffRows.map((r) => `${r.kox_id} 服务 ${r.service} / 浏览器 ${r.browser}`).join('；')}
+        </span>
+      )}
+      {state.err && <span className="text-[12px] text-amber-700">本次核对没有完成：{state.err}</span>}
+      {!state.report && !state.err && (
+        <span className="muted">两侧均按库级中性画像判定，与下方全量核对同口径；单批上限 5,000 条，超出自动分批</span>
+      )}
+    </div>
+  );
+}
+
 export function ArchitectureTab({
   manifest,
   consistency,
   result,
   thresholdsMeta,
+  records,
+  thresholds,
 }: {
   manifest: Manifest;
   consistency: ConsistencyReport | null;
   result: PipelineResult | null;
   thresholdsMeta: Loose;
+  records: Partial<Kox>[];
+  thresholds: Thresholds;
 }): React.ReactElement {
+  const cs = useComputeSource();
   const stageMs = new Map((result?.stages ?? []).map((s) => [s.id, s.elapsedMs]));
   const c = consistency;
   /** 一致性面板里"覆盖了哪些臂"一律从产物读，不写死臂数与臂名。 */
@@ -331,7 +420,7 @@ export function ArchitectureTab({
         title="双实现一致性：同一份阈值下，TS 与 Python 判定完全相同"
         subtitle={
           c
-            ? `TS 侧只读 Python 落盘的 thresholds.json，不做二次标定；比对由 scripts/verify-parity.mjs 每次刷新数据时重新生成（耗时 ${c.elapsed_ms} ms）`
+            ? `全量 ${int0(c.verdict.total)} 条的离线核对（耗时 ${c.elapsed_ms} ms）；「投放决策」页每次运行还会对该次候选做一次实时逐条比对`
             : 'consistency.json 未生成'
         }
         tone={c?.status === 'pass' ? 'accent' : 'danger'}
@@ -352,7 +441,8 @@ export function ArchitectureTab({
       >
         {c ? (
           <>
-            <div className="grid gap-2 lg:grid-cols-3">
+            <LiveGateParity records={records} thresholds={thresholds} />
+            <div className="mt-2 grid gap-2 lg:grid-cols-3">
               <ParityCard
                 ok={c.verdict.diff_count === 0}
                 title={`判定级（全量 ${int0(c.verdict.total)} 条）`}
@@ -445,25 +535,110 @@ export function ArchitectureTab({
         )}
       </Panel>
 
-      {/* ============ 数据链路 ============ */}
-      <Panel title="数据链路：从合成数据到浏览器内实时重算" subtitle="离线一次成型的产物 + 浏览器内的 TypeScript 引擎">
+      {/* ============ 运行链路：双通道 ============ */}
+      <Panel
+        title="运行链路：请求打给 Python 服务，浏览器引擎同时作为第二实现"
+        subtitle="同一条 brief、同一批候选走两条通道；服务未连接时通道 B 独立完成全流程，功能不缺项"
+        right={
+          <Badge
+            className={
+              cs.source === 'backend'
+                ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                : cs.source === 'browser'
+                  ? 'border-slate-400 bg-slate-100 text-slate-700'
+                  : 'border-slate-300 bg-white text-slate-600'
+            }
+          >
+            当前 {SOURCE_LABEL[cs.source].replace('计算源：', '')}
+          </Badge>
+        }
+      >
         <div className="grid gap-2 lg:grid-cols-2">
-          {[
-            ['合成数据集（固定种子）', `data/kox_5000.json · ${int0(manifest.dataset.n)} 人`, '含真值块，仅用于评测与审计', 'border-slate-200'],
-            ['Python 阈值标定', 'output/thresholds.json', `按平台 × 粉丝量级分组标定分位阈值，${int0(Number(thresholdsMeta.n_groups ?? 0))} 组`, 'border-emerald-200'],
-            ['Python 判定 / 预算 / 审计', 'output/verdicts · budget · audit · metrics.json', '全量离线跑，作为参考实现', 'border-emerald-200'],
-            ['LLM 结果固化', 'output/llm_bench.json · prompt_bench.json', 'A1 / A4 的模型输出与真实用量落盘', 'border-indigo-200'],
-            ['产物瘦身', 'public/data/*.json', '字段白名单 + 体积与校验值记录', 'border-live-200'],
-            ['浏览器 TS 引擎', '本页与决策页的全部实时数字', '读同一份阈值，现场跑门禁 / 预算 / 审计 / 评测', 'border-live-200'],
-          ].map(([stage, out, desc, border]) => (
-            <div key={String(stage)} className={`rounded-lg border ${border} bg-slate-50 px-2.5 py-2`}>
-              <div className="flex flex-wrap items-baseline gap-1.5">
-                <span className="text-[12px] font-medium text-slate-800">{stage}</span>
-                <span className="num text-[11px] text-live-600">→ {out}</span>
-              </div>
-              <div className="muted mt-0.5">{desc}</div>
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2.5">
+            <div className="flex items-center gap-1.5">
+              <Server size={12} className="text-emerald-600" />
+              <span className="text-[12.5px] font-medium text-slate-900">通道 A · Python FastAPI 服务</span>
+              <span className="num ml-auto text-[10.5px] text-slate-600">默认路径</span>
             </div>
-          ))}
+            <div className="mt-1.5 space-y-0.5">
+              {[
+                ['POST /api/plan', 'brief 原文或预置 id → A1–A6 全链路，返回字段证据、漏斗、候选证据链、预算与耗时'],
+                ['GET /api/kox/{id}/explain', '单个达人的逐条门禁理由与同组分位'],
+                ['POST /api/gate/batch', '批量判定（单次上限 5,000 条，超出自动分批）'],
+                ['GET /api/health', '首屏探活 800ms；status=warming 表示服务正在加载数据集'],
+              ].map(([ep, desc]) => (
+                <div key={ep}>
+                  <span className="num text-[11px] text-emerald-700">{ep}</span>
+                  <span className="muted ml-1.5">{desc}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              <Badge className="border-slate-300 bg-white text-slate-700">服务地址 {API_BASE.replace(/^https?:\/\//, '')}</Badge>
+              {cs.meta && (
+                <>
+                  <Badge className="border-slate-300 bg-white text-slate-700">达人 {int0(Number(cs.meta.kox_count ?? 0))} 条</Badge>
+                  <Badge className="border-slate-300 bg-white text-slate-700">
+                    数据集 sha256 {String(cs.meta.dataset_sha256 ?? '').slice(0, 10)}…
+                    {String(cs.meta.dataset_sha256 ?? '') === String(manifest.dataset.sha256) ? '（与本页产物同源）' : ''}
+                  </Badge>
+                  <Badge className="border-slate-300 bg-white text-slate-700">
+                    A1/A4 {cs.meta.llm_runtime?.available ? `模型可用（${String(cs.meta.llm_runtime.provider ?? '—')}）` : '走规则实现'}
+                  </Badge>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="rounded-xl border border-live-200 bg-live-50/70 px-3 py-2.5">
+            <div className="flex items-center gap-1.5">
+              <Cpu size={12} className="text-live-600" />
+              <span className="text-[12.5px] font-medium text-slate-900">通道 B · 浏览器 TypeScript 引擎</span>
+              <span className="num ml-auto text-[10.5px] text-slate-600">第二实现 / 接管</span>
+            </div>
+            <div className="mt-1.5 space-y-0.5">
+              {[
+                ['服务可达时', '对服务返回的同一批 kox_id 重算判定，与 parity_payload 逐条比对，界面直接给出比对条数、差异条数与两侧耗时'],
+                ['服务未连接时', '读同一份阈值与数据集产物，在浏览器内完成 A1–A6、评测复算、消融与灵敏度扫描'],
+                ['阈值来源', 'Python 标定后落盘的 thresholds.json，两侧共用，TS 侧不做二次标定'],
+              ].map(([k, desc]) => (
+                <div key={k}>
+                  <span className="text-[11px] font-medium text-live-700">{k}</span>
+                  <span className="muted ml-1.5">{desc}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              <Badge className="border-slate-300 bg-white text-slate-700">
+                本页产物 {int0(manifest.dataset.n)} 条 · 种子 {String(manifest.dataset.seed)}
+              </Badge>
+              {result && <Badge className="border-slate-300 bg-white text-slate-700">上次浏览器端到端 {ms(result.totalMs)}</Badge>}
+            </div>
+          </div>
+        </div>
+        <div className="mt-2">
+          <Collapse
+            title="离线产物是怎么来的：合成数据 → 阈值标定 → 全量判定 / 预算 / 审计 → LLM 结果固化"
+            hint="服务与浏览器读的是同一批产物，校验值记录在 manifest 中"
+          >
+            <div className="grid gap-2 lg:grid-cols-2">
+              {[
+                ['合成数据集（固定种子）', `data/kox_5000.json · ${int0(manifest.dataset.n)} 人`, '含真值块，仅用于评测与审计', 'border-slate-200'],
+                ['Python 阈值标定', 'output/thresholds.json', `按平台 × 粉丝量级分组标定分位阈值，${int0(Number(thresholdsMeta.n_groups ?? 0))} 组`, 'border-emerald-200'],
+                ['Python 判定 / 预算 / 审计', 'output/verdicts · budget · audit · metrics.json', '全量离线跑，作为参考实现', 'border-emerald-200'],
+                ['LLM 结果固化', 'output/llm_bench.json · prompt_bench.json', 'A1 / A4 的模型输出与真实用量落盘', 'border-indigo-200'],
+                ['服务侧数据加载', 'api/ 读同一份 data/ 与 output/', '首个请求时懒加载，health 返回 warming 表示尚在加载', 'border-emerald-200'],
+                ['前端产物', 'public/data/*.json', '供浏览器引擎实时重算，附体积与校验值', 'border-live-200'],
+              ].map(([stage, out, desc, border]) => (
+                <div key={String(stage)} className={`rounded-lg border ${border} bg-slate-50 px-2.5 py-2`}>
+                  <div className="flex flex-wrap items-baseline gap-1.5">
+                    <span className="text-[12px] font-medium text-slate-800">{stage}</span>
+                    <span className="num text-[11px] text-live-600">→ {out}</span>
+                  </div>
+                  <div className="muted mt-0.5">{desc}</div>
+                </div>
+              ))}
+            </div>
+          </Collapse>
         </div>
         <Note tone="good">
           <GitCompare size={11} className="mr-1 inline" />
@@ -473,8 +648,8 @@ export function ArchitectureTab({
 
       <Boundaries
         items={[
-          '线上无后端服务：全部判定、预算与审计由浏览器内的 TypeScript 引擎对静态产物实时重算。',
-          'A1 brief 解析与 A4 语义适配的 LLM 结果为离线固化产物；线上不调用模型 endpoint，缺省路径走规则实现。',
+          '服务实例为演示规格：首个请求需要几秒加载数据集，此时 health 返回 warming；未就绪则由浏览器引擎完成本次计算。',
+          'A1 brief 解析与 A4 语义适配是否调用模型取决于服务侧凭据；未配置时两侧都走规则实现，界面会标出本次实际路径。',
           `数据为合成数据集（${int0(manifest.dataset.n)} 条，固定种子 ${manifest.dataset.seed}），绝对数值仅在该生成假设内成立。`,
           '阈值按平台 × 粉丝量级分组标定，样本不足的分组回退至平台级或全局分位。',
         ]}

@@ -9,6 +9,8 @@ import { TabErrorBoundary } from './components/TabErrorBoundary';
 import { GATE_ROLES, ablationVariant, evaluateDataset, runPipeline, sensitivityScan } from './lib/pipeline';
 import type { AblationRow, EvalReport, PipelineResult, SensitivityPoint, StageReport } from './lib/pipeline';
 import { loadArtifacts, type Artifacts } from './lib/artifacts';
+import { API_BASE } from './lib/api';
+import { SOURCE_LABEL, startProbe, useComputeSource } from './lib/computeSource';
 import type { Kox } from './engine/types';
 import { ALL_GATES } from './engine/policy';
 import { int0, pct1 } from './lib/format';
@@ -28,8 +30,44 @@ const scrollToAnchor = (anchor: string): void => {
   });
 };
 
+/**
+ * 计算源仍在确认时的骨架态。
+ *
+ * 之所以不先把浏览器引擎的结果渲染出来：那会让读者先看到一份结论、再在服务响应后
+ * 整页跳变成另一份。骨架态只占位、不给数字。
+ */
+function RunSkeleton(): React.ReactElement {
+  return (
+    <div className="space-y-3" aria-busy="true">
+      <div className="card px-4 py-4">
+        <div className="h-2.5 w-40 animate-pulse rounded bg-slate-200" />
+        <div className="mt-2.5 h-3.5 w-3/4 animate-pulse rounded bg-slate-200" />
+        <div className="mt-4 flex gap-7">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i}>
+              <div className="h-2 w-16 animate-pulse rounded bg-slate-200" />
+              <div className="mt-2 h-5 w-14 animate-pulse rounded bg-slate-200" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="card px-4 py-4">
+        <div className="h-2.5 w-64 animate-pulse rounded bg-slate-200" />
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-[52px] animate-pulse rounded-lg bg-slate-100" />
+          ))}
+        </div>
+        <div className="mt-3 h-[132px] animate-pulse rounded-xl bg-slate-100" />
+      </div>
+      <div className="muted px-1">正在确认计算源：优先使用 Python 服务，未连接时由浏览器引擎完成同样的流程。</div>
+    </div>
+  );
+}
+
 export default function App(): React.ReactElement {
   const [art, setArt] = React.useState<Artifacts | null>(null);
+  const cs = useComputeSource();
   const [loadErr, setLoadErr] = React.useState<string | null>(null);
   const [tab, setTab] = React.useState<TabId>(() => resolveHash(window.location.hash).tab);
   /** 旧 hash 落地时要滚到的段落 */
@@ -81,6 +119,11 @@ export default function App(): React.ReactElement {
   const [busy, setBusy] = React.useState<string | null>(null);
   const [ablation, setAblation] = React.useState<AblationRow[]>([]);
   const [sens, setSens] = React.useState<SensitivityPoint[]>([]);
+
+  // 探活一次 /api/health，决定这一次访问的计算源（probing → backend / browser）
+  React.useEffect(() => {
+    startProbe();
+  }, []);
 
   React.useEffect(() => {
     loadArtifacts()
@@ -235,6 +278,39 @@ export default function App(): React.ReactElement {
             </div>
 
             <div className="ml-auto flex flex-wrap items-center gap-1.5">
+              {/* 计算源：这一次访问的名单/预算数字由谁算出来的 */}
+              <Hint
+                text={
+                  cs.source === 'backend'
+                    ? `服务地址 ${API_BASE}｜服务侧数据集 sha256 ${String(cs.meta?.dataset_sha256 ?? '—').slice(0, 16)}…，共 ${int0(Number(cs.meta?.kox_count ?? 0))} 条｜探活往返 ${Math.round(cs.probeMs ?? 0)} ms`
+                    : cs.source === 'browser'
+                      ? `${cs.note ?? '服务未响应'}。本次的解析、门禁、预算与审计由浏览器内的 TypeScript 引擎完成，功能与服务侧一致。`
+                      : cs.warming
+                        ? '服务正在加载数据集，3 秒后重试一次。'
+                        : `正在确认 Python 服务是否可用（${API_BASE}）。`
+                }
+              >
+                <Badge
+                  className={
+                    cs.source === 'backend'
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                      : cs.source === 'browser'
+                        ? 'border-slate-400 bg-slate-100 text-slate-700'
+                        : 'border-slate-300 bg-white text-slate-600'
+                  }
+                >
+                  <span
+                    className={`mr-1 inline-block h-1.5 w-1.5 rounded-full ${
+                      cs.source === 'backend'
+                        ? 'bg-emerald-500'
+                        : cs.source === 'browser'
+                          ? 'bg-slate-500'
+                          : 'animate-pulse bg-live-500'
+                    }`}
+                  />
+                  {SOURCE_LABEL[cs.source]}
+                </Badge>
+              </Hint>
               <Hint
                 text={
                   c
@@ -291,26 +367,34 @@ export default function App(): React.ReactElement {
                 id={SECTION.briefInput}
                 step="第 1 步"
                 title="输入 brief，看它怎么一层层筛人"
-                question="一句话需求 → A1–A6 执行轨迹，逐阶段在浏览器内实时计算"
+                question={
+                  cs.source === 'backend'
+                    ? '一句话需求 → Python 服务执行 A1–A6，浏览器引擎对同一批候选同步重算并逐条比对'
+                    : '一句话需求 → A1–A6 执行轨迹，逐阶段实时计算'
+                }
               >
-                <ConsoleTab
-                  briefs={art.briefs}
-                  briefIdx={briefIdx}
-                  onBrief={setBriefIdx}
-                  result={result}
-                  stages={stages}
-                  running={running}
-                  liveStage={liveStage}
-                  koxById={koxById}
-                  includeReview={includeReview}
-                  onIncludeReview={setIncludeReview}
-                  decay={decay}
-                  onDecay={setDecay}
-                  onRerun={() => setRunToken((x) => x + 1)}
-                  datasetN={art.manifest.dataset.n}
-                  loadMs={art.loadMs}
-                  koxBytes={art.bytes.kox}
-                />
+                {cs.source === 'probing' ? (
+                  <RunSkeleton />
+                ) : (
+                  <ConsoleTab
+                    briefs={art.briefs}
+                    briefIdx={briefIdx}
+                    onBrief={setBriefIdx}
+                    result={result}
+                    stages={stages}
+                    running={running}
+                    liveStage={liveStage}
+                    koxById={koxById}
+                    includeReview={includeReview}
+                    onIncludeReview={setIncludeReview}
+                    decay={decay}
+                    onDecay={setDecay}
+                    onRerun={() => setRunToken((x) => x + 1)}
+                    datasetN={art.manifest.dataset.n}
+                    loadMs={art.loadMs}
+                    koxBytes={art.bytes.kox}
+                  />
+                )}
               </SectionBlock>
               <SectionBlock
                 id={SECTION.roster}
@@ -318,15 +402,19 @@ export default function App(): React.ReactElement {
                 title="拿到名单与预算，并与「凭粉丝量选人」对照"
                 question="选谁、每人预算多少、依据是什么；以及相比粉丝量基线少浪费多少预算"
               >
-                <DecisionTab
-                  result={result}
-                  koxById={koxById}
-                  budgetArtifact={art.budget}
-                  auditArtifact={art.audit}
-                  metricsArtifact={art.metrics}
-                  includeReview={includeReview}
-                  decay={decay}
-                />
+                {cs.source === 'probing' ? (
+                  <div className="card h-[240px] animate-pulse bg-slate-50" />
+                ) : (
+                  <DecisionTab
+                    result={result}
+                    koxById={koxById}
+                    budgetArtifact={art.budget}
+                    auditArtifact={art.audit}
+                    metricsArtifact={art.metrics}
+                    includeReview={includeReview}
+                    decay={decay}
+                  />
+                )}
               </SectionBlock>
             </div>
           )}
@@ -355,6 +443,8 @@ export default function App(): React.ReactElement {
                   consistency={art.consistency}
                   result={result}
                   thresholdsMeta={art.manifest.thresholds_meta}
+                  records={art.records}
+                  thresholds={art.thresholds}
                 />
               </SectionBlock>
             </div>
@@ -371,13 +461,10 @@ export default function App(): React.ReactElement {
             </span>
             <span className="muted">阈值版本 {String(art.manifest.thresholds_meta.thresholds_version ?? '—')}</span>
             <span className="muted">
-              产物生成于 unix {art.manifest.generated_at_unix}（prepare-data.mjs）
+              数据集 {String(art.manifest.dataset.version ?? '—')} · {int0(art.manifest.dataset.n)} 位达人
             </span>
-            {c && <span className="muted">一致性校验耗时 {c.elapsed_ms} ms · {c.engine.runtime}</span>}
+            {c && <span className="muted">一致性校验耗时 {c.elapsed_ms} ms</span>}
           </div>
-          <p className="muted mt-1.5">
-            {art.manifest.note ?? (art.manifest.notes ?? []).join('　')}
-          </p>
         </div>
       </footer>
     </div>

@@ -4,16 +4,15 @@
 
 > 把一句话投放 brief，变成一份可执行、可追责、带预算分配和风险证据链的达人投放清单，并用可复现的实验说清这份清单比"凭粉丝量选人"少浪费多少钱——以及这个结论有多稳。
 
-### 🔗 [在线 Demo](https://185ab87138d0.aime-site.bytedance.net) &nbsp;·&nbsp; 四个页签支持直达
+### 🔗 [在线 Demo](https://185ab87138d0.aime-site.bytedance.net) &nbsp;·&nbsp; 三个页签支持直达
 
 [**投放决策**](https://185ab87138d0.aime-site.bytedance.net/#run) 输入 brief，出名单和预算 ·
 [**效果验证**](https://185ab87138d0.aime-site.bytedance.net/#proof) 它准不准、稳不稳 ·
-[**成本账**](https://185ab87138d0.aime-site.bytedance.net/#cost) 花了多少 token，值不值 ·
-[**工程实现**](https://185ab87138d0.aime-site.bytedance.net/#build) 怎么编排的、踩过哪些坑
+[**技术实现**](https://185ab87138d0.aime-site.bytedance.net/#build) 六 Agent 怎么编排、双实现怎么对撞、token 花了多少
 
-> 打开就能**自己敲一条投放需求**（不是从预置项里挑），下游召回、四层门禁、预算分配全部在你的浏览器里重算一遍。
+> 打开就能**自己敲一条投放需求**（不是从预置项里挑），A1 解析 → A2 召回 → A3 四层门禁 → A5 预算分配全流程当场重算。
 
-Demo 不是播放预录结果：**四层门禁在浏览器里用 TypeScript 重算一遍**，与 Python 实现读同一份阈值表、逐条比对 0 差异（[实时校验产物](https://185ab87138d0.aime-site.bytedance.net/data/consistency.json)）。
+Demo 不是播放预录结果，而是**两条通道同时在跑**：首屏先探活 [Python 服务](./api/CONTRACT.md)（[部署地址](./api/DEPLOYED_URL.txt)），连上就由服务用 `src/koxpilot` 真算；同一批达人再由浏览器里的 TypeScript 引擎独立算一遍，界面当场给出比对条数与差异条数。服务未连接时，浏览器引擎独立完成全流程、功能不缺项（[全库离线比对产物](https://185ab87138d0.aime-site.bytedance.net/data/consistency.json)，5,000 条 0 差异）。
 
 ---
 
@@ -35,10 +34,11 @@ Demo 不是播放预录结果：**四层门禁在浏览器里用 TypeScript 重�
 | [`AI应用能力文档_KOXPilot_纪辉.pdf`](./AI应用能力文档_KOXPilot_纪辉.pdf) | 提交用的完整文档 | 想一次读完就看这个 |
 | [`docs/`](./docs) | 六篇技术分册 | 架构 / 门禁 / 评测 / Prompt 与成本 / 边界 / 稳健性 |
 | `src/koxpilot/` | Python 核心：6 个 Agent + 评测 + 审计 | 所有数字的来源 |
+| `api/` | 线上 HTTP 服务（FastAPI），import 上面那份核心链路 | 契约冻结在 [`api/CONTRACT.md`](./api/CONTRACT.md)，地址在 [`api/DEPLOYED_URL.txt`](./api/DEPLOYED_URL.txt) |
 | `web/` | 前端（React + TS），含**门禁的第二套独立实现** | 双实现一致性校验就在这里 |
 | `output/` | 全部指标产物（**已入库**） | clone 完不跑任何命令，就能核对本文件里的每个数字 |
 | `data/` | 合成达人库 + 3 个 brief（**已入库**） | 固定种子，`make data` 可逐字节重建 |
-| `tests/` | 745 个测试 | 含反数据泄漏 AST 扫描、文档数字防漂移 |
+| `tests/` | 766 个测试 | 含反数据泄漏 AST 扫描、文档数字防漂移 |
 
 
 ---
@@ -185,7 +185,7 @@ git clone <这个仓库>
 cd koxpilot
 
 make all        # data -> gate -> budget -> eval，约 1 分钟
-make test       # 745 个测试，含反数据泄漏的 AST 静态扫描与哨兵测试
+make test       # 766 个测试，含反数据泄漏的 AST 静态扫描与哨兵测试
 ```
 
 跑完看 `output/metrics.json`——本文件里的每个数字都在里面。固定种子 `SEED=20270919`，任何人任何机器跑出的结果应当完全一致（数据集 sha256 会打印在日志里，当前是 `29500afd5390f3fd…`）。
@@ -219,9 +219,32 @@ make web    # = cd web && pnpm install --frozen-lockfile && pnpm run refresh
 预算/审计级：分配臂 9/9 一致，反事实审计 3/3 一致
 ```
 
-### 第三步（可选）：需要 LLM 的部分
+### 第三步（可选）：本地起 HTTP 服务
 
-构建期真调模型，结果固化后线上零外部依赖。**不做这一步不影响任何核心数字**——`output/` 里已有真实调用的记录。
+线上那个服务就是这么跑的，代码在 `api/`，业务逻辑一行都没重写——它 import 的是 `src/koxpilot`。
+
+```bash
+make api-bundle   # 把 src/koxpilot + data/ + output/thresholds.json 打进 api/_bundle/
+make api-serve    # uvicorn 起在 http://127.0.0.1:8399，默认公开、不需要 token
+
+curl -s http://127.0.0.1:8399/api/health | python3 -m json.tool
+curl -s -X POST http://127.0.0.1:8399/api/plan \
+  -H 'Content-Type: application/json' \
+  -d '{"brief_text":"沙特市场 3C 耳机新品，预算 12 万美元，需要阿语内容"}' | python3 -m json.tool
+```
+
+`make api-bundle` 这一步是必须的：部署时只上传 `api/` 这一个目录，`_bundle/` 是那份核心代码被带上飞机的唯一方式（并且会顺手做 Python 3.8 语法降级，因为运行时可能是 3.8）。降级后是否还等价，由 `api/verify_bundle.py` 用同一份指纹比对。
+
+服务在跑的时候可以验一致性：
+
+```bash
+make api-parity   # ① 服务 vs 浏览器 TS 引擎：对同一批 kox_id 逐条比对判定
+                  # ② 服务 vs CLI explain：证据句逐字比对（reason_human 必须出自同一个 humanize）
+```
+
+### 第四步（可选）：需要 LLM 的部分
+
+构建期真调模型，结果固化进 `output/`；线上服务只在配了凭据时才会为 A1 实时调一次（失败即回落规则版，返回里标 `parse_path`）。**不做这一步不影响任何核心数字**——`output/` 里已有真实调用的记录。
 
 ```bash
 cp .env.example .env    # 填入自己的 endpoint 与 key
@@ -260,35 +283,38 @@ TikTok 的 nano 达人和 YouTube 的 mega 达人，互动率基线天然差一�
 
 ## 前端和后端是怎么连的（先把这件事说清楚）
 
-这个问题值得单独一节，因为答案既不是"前端调后端 API"，也不是"前端播录像"，而是第三种。
+这个问题值得单独一节，因为答案不是"前端调后端 API"这么一句话就说完的：线上**同时**跑着两条通道，而且它们的结果被逐条对撞。
 
 ```
 Python 核心链路（src/koxpilot/）
    │  终端跑 make all，固定种子 SEED=20270919
    ▼
 data/*.json + output/*.json          ← 真实计算产物，已入库
-   │  构建期：web/scripts/prepare-data.mjs 派生
-   ▼
-web/public/data/*.json（11 个）       ← 静态文件
-   │  浏览器：全站唯一 1 处 fetch()，零 API endpoint
-   ▼
-TS 引擎在浏览器里【把门禁和预算重新算一遍】
-   src/engine/（~1,500 行）+ src/budget/（~1,100 行）
+   │                                    │  构建期：web/scripts/prepare-data.mjs 派生
+   │ api/build_bundle.py 复制进 _bundle  ▼
+   ▼                                 web/public/data/*.json（11 个）
+通道 A：Python FastAPI 服务              │
+   api/ 直接 import src/koxpilot        ▼
+   A1→A6 全链路真算                   通道 B：TS 引擎在浏览器里把门禁和预算再算一遍
+   4 个端点，见 api/CONTRACT.md          src/engine/（~1,500 行）+ src/budget/（~1,100 行）
 ```
 
-**所以：线上没有跑着的后端服务，一个都没有。** 全站只有 `src/lib/artifacts.ts` 里一处 `fetch()`，拉的是静态 JSON。
+**通道 A 是真服务，不是壳。** `api/koxpilot_service/` 不重写任何业务逻辑，它 import 的是 `src/koxpilot` 里那份被 766 个测试盯着的代码：门禁走 `gates.engine.evaluate`，预算走 `budget.planner.plan_campaign`，审计走 `eval.audit.counterfactual_report`，证据句走 `gates.humanize`。接口契约冻结在 `api/CONTRACT.md`（4 个端点：`/api/health`、`/api/plan`、`/api/kox/{id}/explain`、`/api/gate/batch`），默认公开、无需 token。部署地址在 [`api/DEPLOYED_URL.txt`](api/DEPLOYED_URL.txt)。
 
-**但前端也不是在放录像。** `src/engine/` 与 `src/budget/` 是四层门禁与预算分配的**独立第二实现**——你在页面上换 brief、开关 review、拖动衰减系数，5,000 条达人是在你自己的浏览器里当场重算的，耗时用 `performance.now()` 实测显示。这也正是下一节那个"0 差异"有意义的原因：它是两套独立写出来的实现互相对撞的结果，而不是同一份代码自己跟自己比。
+**通道 B 也不是放录像。** `src/engine/` 与 `src/budget/` 是四层门禁与预算分配的**独立第二实现**——服务没连上时它独立跑完全流程，功能不缺项；服务在线时它就变成一台**校对机**：`/api/plan` 会在 `parity_payload.verdicts` 里把这次召回集里每个达人的判定都带回来，浏览器对同一批 `kox_id` 现算一遍，界面直接显示比对条数与差异条数。
 
-这么设计是有意的：静态部署、不暴露任何 key、任何人 clone 下来都能得到逐位相同的结果。代价写在明处：
+于是"0 差异"这件事有了两层证据：构建期全库 5,000 条的离线比对（下一节），以及**运行期**每次点击的实时比对。两者都是两套独立写出来的实现互撞，不是同一份代码自己跟自己比。
 
-| 能力 | 线上 | 说明 |
+代价与边界照旧写在明处：
+
+| 能力 | 通道 A（Python 服务） | 通道 B（浏览器） |
 | --- | --- | --- |
-| A2 召回 / A3 四层门禁 / A5 预算分配 / A6 审计 | ✅ 浏览器内真算 | 换输入就重算，不查表 |
-| A1 brief 解析 | ⚠️ 线上是**规则解析** | LLM 版在构建期真调过（`output/llm_bench.json` 有真实 token 账），线上不调 endpoint |
-| A4 语义适配 | ⚠️ 构建期真调后固化 | 同上，原因见 Demo「工程实现」页 |
+| A2 召回 / A3 四层门禁 / A5 预算分配 / A6 审计 | ✅ 真算，复用核心链路 | ✅ 真算，独立第二实现 |
+| A1 brief 解析 | ✅ 有凭据时**真调 LLM**，无凭据/超时回落规则版，返回里标 `parse_path` | ⚠️ 只有规则版 |
+| A4 语义适配 | ⚠️ 构建期真调后固化，正式链路用 `rule_fit_score` | ⚠️ 同左 |
+| 数据集 | 同一份 `kox_5000.json`，两侧 `dataset_sha256` 相同 | 同左 |
 
-**这不是"前后端联动"，我也不打算这么讲。** 准确的说法是：同一套业务逻辑写了两遍，前端那一遍在浏览器里真跑，两遍的结果被逐条比对并公开。
+**为什么两条通道都留着，而不是砍掉一条。** 砍掉 A，A1 就永远只有规则版、也没有"服务端真跑"这回事；砍掉 B，就失去了唯一能证伪 A 的东西。留着两条，代价是我得保证它们不漂移——这正是 `make api-parity` 每次要跑的事。
 
 ---
 
@@ -350,7 +376,7 @@ total 5000 · matched 5000 · diff_count 0 · match_rate 1.0
 - **泄漏哨兵测试**：断言朴素 Jaccard 规则的 F1 必须 < 0.95，且正例的 Jaccard 分布不得退化成双峰。
 - **文档数字防漂移测试**（`tests/test_doc_numbers.py`）：本文件里的招牌数字——F1 / AUC / 少浪费金额与占比 / 95% CI / 两段归因 / 方差与极端频次 / 分层交付人数金额 / PromptBench 四个 F1 与 token / 调用次数——逐条对到 `output/*.json` 的具体字段上，**格式也按人眼看到的那串字符断言**。产物重跑后数值变了而这里的字没跟着改，测试就红。
   写这条测试的起因是我发现原来这段写着一句站不住的话：「没有一个数字是手写进文档的」。数字当然是手打进 markdown 的，它们只是**来源**于产物；真正的风险恰恰是产物变了、文档不会自己改。这个项目已经在同一个毛病上栽过两次（`POST_DECAY_SCAN` 的注释替一段不存在的输出背书、`decay_scan` 的 `caveats` 算完没进产物），所以这次不改口气、改机制。
-- 全套 **745 个测试**，覆盖数据可复现性、门禁判定、反泄漏、预算约束、评测指标、多种子、价值归因、decay 分层交付、模型标识、端到端冒烟。
+- 全套 **766 个测试**，覆盖数据可复现性、门禁判定、反泄漏、预算约束、评测指标、多种子、价值归因、decay 分层交付、模型标识、HTTP 接口契约、端到端冒烟。
 
 ---
 
@@ -395,9 +421,10 @@ total 5000 · matched 5000 · diff_count 0 · match_rate 1.0
 | --- | --- |
 | 达人数据 | **合成数据**，5,000 条，固定种子可复现。真实达人数据涉及商业敏感与隐私 |
 | 四层门禁 / 预算分配 / 评测 | **确定性计算**，无 API key 即可完整复跑 |
-| brief 解析 / 标签错配判定 | **构建期真调 LLM**，结果固化进 `output/llm_cache.json`；线上 Demo 读固化结果，公网零外部依赖 |
+| brief 解析 / 标签错配判定 | **构建期真调 LLM**，结果固化进 `output/llm_cache.json`；线上服务配了凭据时 A1 实时真调、无凭据/超时回落规则版（`parse_path` 字段写明本次走的哪条），浏览器通道只有规则版 |
 | 语义适配打分（A4） | **正式链路走规则版 `rule_fit_score`**；LLM 版真调过、只作离线对照。不升格的三条判据（覆盖率 14.9% / 双算率 97.1% / 覆盖子集上只降不升）由 `eval/llm_fit.py` 现算，落在 `metrics.json.table_6_llm_vs_rule.semantic_fit_llm_vs_rule` |
-| 前端门禁引擎 | **浏览器内实时计算**（TypeScript），与 Python 版逐条比对 0 差异 |
+| 前端门禁引擎 | **浏览器内实时计算**（TypeScript），与 Python 版逐条比对 0 差异；服务在线时它同时充当运行期校对机 |
+| 线上 HTTP 服务（`api/`） | **复用 `src/koxpilot`**，不重写业务逻辑；契约冻结于 `api/CONTRACT.md`，默认公开、业务错误一律 HTTP 200 + `ok:false` |
 
 **合成数据能证明什么**：方法论、工程完整度、评测严谨度、能否发现自己的错误。
 **不能证明什么**：真实分布下的绝对指标。这一点我不打算含糊。
@@ -419,6 +446,11 @@ koxpilot/
 │   ├── llm/              provider 适配 / prompts / 构建期 runner / Prompt 横评
 │   └── cli.py            统一入口
 ├── tests/                pytest（含反数据泄漏静态扫描与哨兵）
+├── api/                  线上 HTTP 服务（FastAPI）
+│   ├── CONTRACT.md       接口契约（冻结）
+│   ├── koxpilot_service/ 编排层：只做参数校验与形状转换，业务逻辑全部来自 src/koxpilot
+│   ├── build_bundle.py   把核心代码与数据打进 _bundle/（部署只上传 api/），并做 3.8 语法降级
+│   └── verify_bundle.py  证明降级后的 _bundle 与源码算出来的东西逐位相同
 ├── web/                  React + TypeScript 前端 Demo（含 TS 门禁引擎与一致性校验脚本）
 ├── docs/                 架构 / 门禁规则手册 / 评测方法 / Prompt 与成本 / 工程边界
 ├── data/                 合成数据集（已入库，`make data` 可逐字节重建）

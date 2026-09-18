@@ -100,13 +100,15 @@ kox_5000.json ──A3(标定)──▶ thresholds.json          │
 | --- | --- | --- | --- | --- |
 | **构建期（我跑，一次性）** | `make llm` / `make promptbench` | **是** | 是 | `llm_cache.json` / `llm_bench.json` / `prompt_bench.json` |
 | **离线确定性（任何人可复跑）** | `make all`（= `data`→`gate`→`budget`→`eval`） | 否 | **否** | `kox_5000.json` / `thresholds.json` / `verdicts.json` / `budget.json` / `metrics.json` / `audit.json` |
-| **浏览器（访客打开页面）** | `make web` 构建后的静态站 | 否 | 否 | 前端实时重算门禁与预算 |
+| **线上 HTTP 服务（访客点一次「开始计算」）** | `api/`（FastAPI，4 个端点，契约见 `api/CONTRACT.md`） | **A1 可选**：服务端配了凭据才调，失败即回落规则版 | 访客不需要；服务端可配可不配 | `plan` / `explain` / `gate.batch` 响应，附 `parity_payload.verdicts` 供浏览器对撞 |
+| **浏览器（访客打开页面）** | `make web` 构建后的静态站 | 否 | 否 | 前端实时重算门禁与预算；服务不可达时独立完成全流程 |
 
-三条设计后果：
+四条设计后果：
 
 1. **评审不需要任何 key 就能验证核心结论。** 门禁、预算、六张表全是确定性的，clone 下来 `make all` 应得到逐字节相同的产物。
 2. **LLM 能力不是"我说有"，而是有账。** 构建期 172 次调用、1,103,473 tokens 全部来自各 API 返回的 `usage` 字段（`cost_audit.token_account.source` 明写"非估算"）。
-3. **踩过的坑，写在这里而不是藏起来**：`make llm` 跑完**必须重跑 `make eval`**，否则 `cost_audit.status` 停在 `llm_not_run`，成本账是空的。Makefile 的 `llm` target 现在末尾自动串了一次 `cli eval`；手工调 `python -m koxpilot.llm.runner` 的人得自己补这一步。
+3. **线上两条通道不是冗余，是互为证据。** 服务侧 `api/koxpilot_service/` 不含任何门禁/预算判定逻辑，它 import 的就是本表第二行那套代码；浏览器侧是独立的 TS 第二实现。`/api/plan` 把本次召回集里每个 `kox_id` 的判定放在 `parity_payload.verdicts` 里回传，浏览器重算后逐条比对——线上每次点击都在做 §8 那件事，而不只是构建期做一次。
+4. **踩过的坑，写在这里而不是藏起来**：`make llm` 跑完**必须重跑 `make eval`**，否则 `cost_audit.status` 停在 `llm_not_run`，成本账是空的。Makefile 的 `llm` target 现在末尾自动串了一次 `cli eval`；手工调 `python -m koxpilot.llm.runner` 的人得自己补这一步。
 
 ---
 
@@ -273,7 +275,8 @@ koxpilot/
 │   └── llm/                # ← A1+A4：runner / promptbench / prompts / prompt_variants / provider / identity
 ├── data/                   # 合成数据集 + 3 个 brief（产物，可由 make data 重建）
 ├── output/                 # 全部指标与判定产物（可由 make all 重建，逐字节可复现）
-├── tests/                  # 745 项，含反数据泄漏的 AST 静态扫描 + 运行期哨兵 + 文档数字防漂移
+├── tests/                  # 766 项，含反数据泄漏的 AST 静态扫描 + 运行期哨兵 + 文档数字防漂移
+├── api/                    # ← 线上 HTTP 服务：CONTRACT.md（冻结契约）+ koxpilot_service/（只做编排）+ build_bundle/verify_bundle
 ├── web/                    # TS 独立实现 + 一致性比对脚本
 └── docs/                   # 你正在读的这 6 份
 ```

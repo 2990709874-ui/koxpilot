@@ -30,7 +30,8 @@
 | A4 语义适配打分 | **真实 LLM，构建期** | `llm_cache.json.fit_scores`（每 brief 260 条）、`llm_bench.json` 中 `fit::ark` 66 calls | `make llm` |
 | 标签错配横评 | **真实 LLM，构建期** | `output/prompt_bench.json`（600 样本 × 3 版 prompt × 2 模型） | `make promptbench` |
 | token / 成本数字 | **真实 usage** | `metrics.json.cost_audit.token_account.source` 明写「各 API 返回的 usage 字段，非估算」 | `make eval` 后读该字段 |
-| 生产环境部署 / 真实投放回收 | **没有** | —— | —— |
+| 线上 HTTP 服务（4 个端点） | **真实计算** | `api/` 直接 import `src/koxpilot`；服务 vs CLI `explain` 逐字比对、服务 vs 浏览器 TS 引擎逐条比对 | `make api-serve` 后 `make api-parity` |
+| 真实投放回收 / 效果归因 | **没有** | —— | —— |
 
 **读表方法**：凡是"真实计算"，任何人 clone 下来跑 `make all` 都应该得到**逐字节相同**的产物；凡是"真实 LLM"，需要自己配 endpoint 才能复跑，仓库里留的是调用代码 + 固化结果 + 真实 usage 账；凡是"合成"，数字只在这份数据集的假设下成立。
 
@@ -58,7 +59,7 @@
 
 ---
 
-## 3. 边界二：LLM 只在构建期跑，运行期是确定性的
+## 3. 边界二：LLM 基本只在构建期跑；线上唯一可能实时调的是 A1
 
 ### 3.1 事实
 
@@ -66,13 +67,16 @@
 | --- | --- | --- |
 | `make data` / `gate` / `budget` / `eval` | **否** | 全确定性，零外部依赖，无 key 也能跑完 |
 | `make llm` / `make promptbench` | **是** | 构建期批量推理，结果固化到 `output/llm_cache.json`、`output/llm_bench.json`、`output/prompt_bench.json` |
-| 前端 Demo | **否** | 读固化产物 + 浏览器内重算门禁与预算 |
+| 前端 Demo（浏览器通道） | **否** | 读固化产物 + 浏览器内重算门禁与预算，A1 只有规则版 |
+| 线上 HTTP 服务（`api/`） | **A1 可选** | 服务端配了凭据时 A1 实时真调（超时/报错/无凭据即回落规则版，响应里 `parse_path` 写明走的哪条）；A2/A3/A5/A6 全确定性，A4 仍用 `rule_fit_score` |
 
 三个理由（主动交代，不是被追问才说）：
 
 1. 我用的模型 endpoint 在内网，公网访问者调不通——**在线调用会让 Demo 对评审直接不可用**。
 2. 真实广告系统同样把语义类判定做离线批处理 + 缓存，这是成本与延迟约束下的生产实践。
 3. 仓库提供 provider 无关适配层，配任意 OpenAI 兼容 endpoint 即可复跑全流程（`.env.example` 里只有占位符，内网域名与 key 一行都没进仓库）。
+
+**本轮唯一的例外是 A1。** `api/` 上线后，brief 解析在服务端配了凭据时会实时调一次模型；但它被设计成"**可有可无**"：无凭据、超时（默认 8s）、报错、返回不可解析，一律回落到规则版，且响应里 `brief.parse_path` 会写明本次是 `llm` 还是 `rule`——接口不会因为模型不可用而失败。A2/A3/A5/A6 在服务端依旧全确定性，A4 依旧是 `rule_fit_score`（原因见 §3.2）。这条例外之所以可接受：A1 的输出是一个 `CampaignSpec`，它会被下游确定性链路完整消费，任何解析差异都能在 `parity_payload` 与证据链里被看见。
 
 ### 3.2 这里有一个我必须点明的落差（本轮已量化，并给出不予升格的判据）
 

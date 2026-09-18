@@ -59,12 +59,12 @@ export function Badge({
   );
 }
 
-/** 真实性标签：整个产品的诚实性靠它到处出现。 */
+/** 计算来源标签：标明这块数字由哪条路径产出。 */
 export function TruthChip({ kind }: { kind: 'rule' | 'llm-offline' | 'audit' | 'synthetic' | 'python' }) {
   const map: Record<string, [string, string]> = {
     rule: ['浏览器内真算', 'border-live-300 bg-live-50 text-live-700'],
     'llm-offline': ['构建期真调 LLM · 结果固化', 'border-indigo-300 bg-indigo-50 text-indigo-700'],
-    audit: ['以 gt 为裁判的审计', 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700'],
+    audit: ['以标注结果为裁判', 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700'],
     synthetic: ['合成数据（固定种子）', 'border-slate-400 bg-slate-100 text-slate-700'],
     python: ['Python 离线全量', 'border-emerald-300 bg-emerald-50 text-emerald-700'],
   };

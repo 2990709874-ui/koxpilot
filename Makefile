@@ -3,7 +3,7 @@ PYTHONPATH := src
 
 export PYTHONPATH
 
-.PHONY: all data gate budget eval multiseed llm promptbench test lint web clean clean-llm help
+.PHONY: all data gate budget eval multiseed llm promptbench test lint web api-bundle api-serve api-parity clean clean-llm help
 
 help:
 	@echo "KOXPilot —— 出海达人营销投前决策智能体"
@@ -17,12 +17,17 @@ help:
 	@echo "  make multiseed   12 个种子的稳健性实验：给核心价值主张一个 mean ± std（约 30s，只写 output/multiseed.json）"
 	@echo "  make test        pytest 全量（含反数据泄漏的静态扫描与哨兵测试）"
 	@echo ""
-	@echo "需要 LLM API key 的部分（构建期真调，结果固化进 output/，线上 Demo 零外部依赖）："
+	@echo "需要 LLM API key 的部分（构建期真调，结果固化进 output/；线上服务只在配了凭据时才为 A1 实时调）："
 	@echo "  make llm         批量推理：brief 解析 / 标签错配判定 / 语义适配打分"
 	@echo "  make promptbench Prompt v1/v2/v3 x 双模型横评，产出 output/prompt_bench.json"
 	@echo "  （先按 .env.example 配置环境变量；不配也不影响上面所有确定性步骤）"
 	@echo ""
 	@echo "  make web         构建前端 Demo（需 pnpm）"
+	@echo ""
+	@echo "HTTP 服务（api/，契约见 api/CONTRACT.md）："
+	@echo "  make api-bundle  把 src/koxpilot 与必要数据打进 api/_bundle/（部署只上传 api/，不打包就跑不起来）"
+	@echo "  make api-serve   本地起服务：http://127.0.0.1:8399（读 api/_bundle 或仓库根，两者等价）"
+	@echo "  make api-parity  服务 vs 浏览器 TS 引擎逐条比对 + 服务 vs CLI explain 逐字比对（需服务已在跑）"
 	@echo "  make clean       清空确定性产物（data/ 与 output/ 里可重算的那些）"
 	@echo "  make clean-llm   另外清 LLM 产物（llm_cache/llm_bench/prompt_bench —— 真花过 token，删了要重新花钱）"
 
@@ -71,6 +76,21 @@ lint:
 
 web:
 	cd web && pnpm install --frozen-lockfile && pnpm run refresh
+
+# ---------------------------------------------------------------------------
+# HTTP 服务
+# ---------------------------------------------------------------------------
+# 部署侧只上传 api/ 目录，所以真源码与真数据必须先复制进 api/_bundle/。
+# 打完包记得 git add api/_bundle（它是部署产物，必须提交，否则线上没有 koxpilot 包可 import）。
+api-bundle:
+	$(PY) api/build_bundle.py
+
+api-serve:
+	cd api && $(PY) -m uvicorn main:app --host 127.0.0.1 --port 8399
+
+api-parity:
+	$(PY) api/check_cli_parity.py http://127.0.0.1:8399
+	cd web && node scripts/verify-service-parity.mjs --base http://127.0.0.1:8399
 
 clean:
 	rm -rf data/kox_5000.json data/kox_sample_50.json data/briefs.json \

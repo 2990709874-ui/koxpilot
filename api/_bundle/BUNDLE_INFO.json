@@ -1,0 +1,40 @@
+{
+  "generated_by": "api/build_bundle.py",
+  "note": "本目录整体为生成产物，勿手改；改源码后重跑 `make api-bundle`。",
+  "python_source_files": 43,
+  "py38_rewrites": {
+    "dataclass_kwargs": 14,
+    "zip_strict": 2,
+    "runtime_generics": 1
+  },
+  "data": {
+    "data/kox_5000.json": {
+      "from": "data/kox_5000.json",
+      "mode": "copy",
+      "bytes": 6702087,
+      "sha256": "29500afd5390f3fd93245c2247281ae1f311e92009c6f374a330ec08434338d1",
+      "source_sha256": "29500afd5390f3fd93245c2247281ae1f311e92009c6f374a330ec08434338d1"
+    },
+    "data/briefs.json": {
+      "from": "data/briefs.json",
+      "mode": "copy",
+      "bytes": 4269,
+      "sha256": "d3bc7c2c7a39b8806327165c9935c896b92b07b3a9b25ab6b8ca2ec7ef6f639b",
+      "source_sha256": "d3bc7c2c7a39b8806327165c9935c896b92b07b3a9b25ab6b8ca2ec7ef6f639b"
+    },
+    "output/thresholds.json": {
+      "from": "output/thresholds.json",
+      "mode": "copy",
+      "bytes": 378931,
+      "sha256": "15f9b60201338b16c7eacbbcefca1b819737257b15083cd9c57488c82b6d9729",
+      "source_sha256": "15f9b60201338b16c7eacbbcefca1b819737257b15083cd9c57488c82b6d9729"
+    },
+    "output/llm_cache.json": {
+      "from": "output/llm_cache.json",
+      "mode": "slim_llm_cache",
+      "bytes": 184811,
+      "sha256": "b0576fc62fb961a475b478de212214bc494028543848f455cc739f615714a0d6",
+      "source_sha256": "80d79e126b6ee108ce8c6a1f0574655d0e12e339387113f67b6d0f3ecf14abb9"
+    }
+  }
+}

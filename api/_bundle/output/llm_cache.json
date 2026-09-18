@@ -1,0 +1,5482 @@
+{
+ "_meta": {
+  "generated_at": "2026-09-17T22:39:31+0800",
+  "models": {
+   "ark": "ep-20260308011145-z5d47",
+   "azure": "gpt-5.5-2026-04-24"
+  },
+  "primary_model_key": "ark",
+  "tag_sample_n": 600,
+  "fit_sample_n": 260,
+  "seed": 20270919,
+  "_bundle_note": "由 api/build_bundle.py 生成：只保留服务侧真正会读的 _meta 与 fit_scores 两段，构建期 prompt 响应缓存（entries / tag_judge / brief_specs 等）未随包发布。分数一个没改，完整版在仓库的 output/llm_cache.json。"
+ },
+ "fit_scores": {
+  "BRIEF-001": {
+   "KOX-000020": {
+    "kox_id": "KOX-000020",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.3,
+    "angle": "受众几乎全部不在目标美国市场，语言不符合要求，仅少量内容涉及3C数码品类，适配度低"
+   },
+   "KOX-000029": {
+    "kox_id": "KOX-000029",
+    "fit_score": 0.38,
+    "audience_fit": 0.5,
+    "content_fit": 0.6,
+    "angle": "投放平台为Instagram，不符合要求的TikTok/YouTube主平台要求，品类与目标3C数码邻近，受众部分符合目标"
+   },
+   "KOX-000030": {
+    "kox_id": "KOX-000030",
+    "fit_score": 0.3,
+    "audience_fit": 0.25,
+    "content_fit": 0.4,
+    "angle": "美国目标市场受众占比极低，女性受众占比低，仅品类与目标3C数码邻近，适配度低"
+   },
+   "KOX-000036": {
+    "kox_id": "KOX-000036",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众全部不在美国目标市场，语言不符合要求，不适配"
+   },
+   "KOX-000038": {
+    "kox_id": "KOX-000038",
+    "fit_score": 0.55,
+    "audience_fit": 0.65,
+    "content_fit": 0.85,
+    "angle": "内容品类符合目标3C数码，受众符合美国目标人群要求，但投放平台为Instagram，不符合TikTok/YouTube主平台要求"
+   },
+   "KOX-000040": {
+    "kox_id": "KOX-000040",
+    "fit_score": 0.08,
+    "audience_fit": 0.05,
+    "content_fit": 0.1,
+    "angle": "受众地域不明，语言不符合要求，内容品类与3C数码完全不相关，完全不适配"
+   },
+   "KOX-000042": {
+    "kox_id": "KOX-000042",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众全部不在美国目标市场，语言不符合要求，不适配"
+   },
+   "KOX-000053": {
+    "kox_id": "KOX-000053",
+    "fit_score": 0.45,
+    "audience_fit": 0.5,
+    "content_fit": 0.9,
+    "angle": "内容品类符合目标3C数码，受众大部分在美国目标市场，但投放平台为X，不符合TikTok/YouTube主平台要求"
+   },
+   "KOX-000081": {
+    "kox_id": "KOX-000081",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.4,
+    "angle": "受众全部不在美国目标市场，语言不符合要求，仅品类与3C数码邻近，不适配"
+   },
+   "KOX-000084": {
+    "kox_id": "KOX-000084",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众全部不在美国目标市场，语言不符合要求，不适配"
+   },
+   "KOX-000091": {
+    "kox_id": "KOX-000091",
+    "fit_score": 0.25,
+    "audience_fit": 0.15,
+    "content_fit": 0.6,
+    "angle": "受众全部不在美国目标市场，语言不符合要求，不适配"
+   },
+   "KOX-000093": {
+    "kox_id": "KOX-000093",
+    "fit_score": 0.22,
+    "audience_fit": 0.15,
+    "content_fit": 0.35,
+    "angle": "美国目标市场受众占比极低，女性受众占比低，仅品类与目标3C数码邻近，适配度低"
+   },
+   "KOX-000112": {
+    "kox_id": "KOX-000112",
+    "fit_score": 0.7,
+    "audience_fit": 0.22,
+    "content_fit": 0.9,
+    "angle": "从3C数码产品的游戏使用场景切入测评，仅触达小部分美国目标受众，女性受众占比偏低"
+   },
+   "KOX-000124": {
+    "kox_id": "KOX-000124",
+    "fit_score": 0.59,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "品类匹配，但受众集中在法国，语言为法语不符合目标市场要求，受众错位"
+   },
+   "KOX-000142": {
+    "kox_id": "KOX-000142",
+    "fit_score": 0.58,
+    "audience_fit": 0.08,
+    "content_fit": 0.8,
+    "angle": "品类相关，但受众集中在南美，语言为葡萄牙语不符合目标要求，几乎无美国受众"
+   },
+   "KOX-000156": {
+    "kox_id": "KOX-000156",
+    "fit_score": 0.72,
+    "audience_fit": 0.3,
+    "content_fit": 0.9,
+    "angle": "做3C数码产品开箱体验，有小部分美国目标受众，女性受众占比偏低"
+   },
+   "KOX-000168": {
+    "kox_id": "KOX-000168",
+    "fit_score": 0.51,
+    "audience_fit": 0.05,
+    "content_fit": 0.7,
+    "angle": "品类相关，但语言为日语，无美国受众分布，不符合目标市场要求"
+   },
+   "KOX-000171": {
+    "kox_id": "KOX-000171",
+    "fit_score": 0.68,
+    "audience_fit": 0.4,
+    "content_fit": 0.8,
+    "angle": "以女性向平价3C数码好物推荐切入，覆盖部分美国目标受众，适配度中等"
+   },
+   "KOX-000196": {
+    "kox_id": "KOX-000196",
+    "fit_score": 0.64,
+    "audience_fit": 0.25,
+    "content_fit": 0.8,
+    "angle": "从家居场景下的3C数码使用体验切入，仅覆盖少量美国目标受众"
+   },
+   "KOX-000206": {
+    "kox_id": "KOX-000206",
+    "fit_score": 0.62,
+    "audience_fit": 0.2,
+    "content_fit": 0.8,
+    "angle": "品类相关，但语言为西班牙语，年轻受众占比偏高，仅覆盖小部分美国目标受众"
+   },
+   "KOX-000290": {
+    "kox_id": "KOX-000290",
+    "fit_score": 0.44,
+    "audience_fit": 0.05,
+    "content_fit": 0.6,
+    "angle": "仅品类弱相关，语言为俄语，无美国目标受众，受众错位"
+   },
+   "KOX-000333": {
+    "kox_id": "KOX-000333",
+    "fit_score": 0.71,
+    "audience_fit": 0.28,
+    "content_fit": 0.9,
+    "angle": "做3C数码产品深度测评，平台符合要求，仅覆盖少量美国目标受众，女性占比偏低"
+   },
+   "KOX-000337": {
+    "kox_id": "KOX-000337",
+    "fit_score": 0.68,
+    "audience_fit": 0.15,
+    "content_fit": 0.9,
+    "angle": "品类匹配，但受众集中在欧洲，无足够美国目标受众，地域适配度低"
+   },
+   "KOX-000346": {
+    "kox_id": "KOX-000346",
+    "fit_score": 0.83,
+    "audience_fit": 0.65,
+    "content_fit": 0.9,
+    "angle": "从美国本土女性适用3C数码好物分享切入带货，受众精准度高，适合转化"
+   },
+   "KOX-000349": {
+    "kox_id": "KOX-000349",
+    "fit_score": 0.68,
+    "audience_fit": 0.45,
+    "content_fit": 0.8,
+    "angle": "达人深耕3C数码内容，适合做产品实测带货，但平台不符合TikTok/YouTube投放要求，女性受众占比偏低"
+   },
+   "KOX-000355": {
+    "kox_id": "KOX-000355",
+    "fit_score": 0.26,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众几乎都分布在南美市场，语言为西班牙语不符合要求，受众完全错位"
+   },
+   "KOX-000357": {
+    "kox_id": "KOX-000357",
+    "fit_score": 0.63,
+    "audience_fit": 0.3,
+    "content_fit": 0.8,
+    "angle": "内容包含3C数码相关内容，仅少量美国受众，可作为预算充足时的补充投放"
+   },
+   "KOX-000386": {
+    "kox_id": "KOX-000386",
+    "fit_score": 0.66,
+    "audience_fit": 0.45,
+    "content_fit": 0.8,
+    "angle": "内容覆盖3C数码品类，平台不符合TikTok/YouTube投放要求，仅可作为补充投放"
+   },
+   "KOX-000390": {
+    "kox_id": "KOX-000390",
+    "fit_score": 0.24,
+    "audience_fit": 0.08,
+    "content_fit": 0.8,
+    "angle": "受众主要在泰国等东南亚市场，语言为泰语不符合要求，受众错位"
+   },
+   "KOX-000400": {
+    "kox_id": "KOX-000400",
+    "fit_score": 0.7,
+    "audience_fit": 0.37,
+    "content_fit": 0.85,
+    "angle": "内容主打3C数码与游戏相关，仅少量美国受众，适合做3C产品种草转化"
+   },
+   "KOX-000402": {
+    "kox_id": "KOX-000402",
+    "fit_score": 0.73,
+    "audience_fit": 0.65,
+    "content_fit": 0.75,
+    "angle": "超八成受众为美国用户，25-44岁女性占比符合要求，可从家居场景切入推广3C数码产品"
+   },
+   "KOX-000405": {
+    "kox_id": "KOX-000405",
+    "fit_score": 0.23,
+    "audience_fit": 0.09,
+    "content_fit": 0.8,
+    "angle": "受众主要在德国等欧洲市场，语言为德语不符合要求，受众错位"
+   },
+   "KOX-000427": {
+    "kox_id": "KOX-000427",
+    "fit_score": 0.22,
+    "audience_fit": 0.08,
+    "content_fit": 0.8,
+    "angle": "受众主要在法国等欧洲法语区，语言为法语不符合要求，受众错位"
+   },
+   "KOX-000434": {
+    "kox_id": "KOX-000434",
+    "fit_score": 0.31,
+    "audience_fit": 0.1,
+    "content_fit": 0.4,
+    "angle": "受众主要在中东地区，实际内容品类偏离3C数码核心，不符合投放要求"
+   },
+   "KOX-000453": {
+    "kox_id": "KOX-000453",
+    "fit_score": 0.65,
+    "audience_fit": 0.32,
+    "content_fit": 0.8,
+    "angle": "内容包含3C数码相关，仅少量美国受众，可作为预算充足时的补充投放"
+   },
+   "KOX-000468": {
+    "kox_id": "KOX-000468",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众主要在乌克兰等东欧地区，语言为乌克兰语不符合要求，受众错位"
+   },
+   "KOX-000477": {
+    "kox_id": "KOX-000477",
+    "fit_score": 0.2,
+    "audience_fit": 0.15,
+    "content_fit": 0.9,
+    "angle": "受众以墨西哥男性西班牙语用户为主，不符合目标美国英语女性受众要求"
+   },
+   "KOX-000483": {
+    "kox_id": "KOX-000483",
+    "fit_score": 0.15,
+    "audience_fit": 0.08,
+    "content_fit": 0.9,
+    "angle": "无美国受众，语言为西班牙语，完全不符合目标受众要求"
+   },
+   "KOX-000497": {
+    "kox_id": "KOX-000497",
+    "fit_score": 0.72,
+    "audience_fit": 0.39,
+    "content_fit": 1.0,
+    "angle": "本身深耕3C数码内容，语言符合要求，可针对美国受众做产品测评带货，仅美国受众占比较低"
+   },
+   "KOX-000503": {
+    "kox_id": "KOX-000503",
+    "fit_score": 0.22,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众以日本日语用户为主，无足够美国英语受众，不符合要求"
+   },
+   "KOX-000523": {
+    "kox_id": "KOX-000523",
+    "fit_score": 0.52,
+    "audience_fit": 0.47,
+    "content_fit": 1.0,
+    "angle": "内容为3C数码品类，过半受众为美国英语用户，仅目标女性占比偏低，投放平台不符合要求"
+   },
+   "KOX-000524": {
+    "kox_id": "KOX-000524",
+    "fit_score": 0.18,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众以中国台湾中文用户为主，无足够美国英语受众，不符合要求"
+   },
+   "KOX-000527": {
+    "kox_id": "KOX-000527",
+    "fit_score": 0.3,
+    "audience_fit": 0.1,
+    "content_fit": 1.0,
+    "angle": "内容符合3C数码品类，但无美国受众，不符合目标市场要求"
+   },
+   "KOX-000544": {
+    "kox_id": "KOX-000544",
+    "fit_score": 0.7,
+    "audience_fit": 0.33,
+    "content_fit": 0.95,
+    "angle": "做3C数码及相邻品类内容，语言符合要求，可做体验测评带货，仅美国受众占比较低"
+   },
+   "KOX-000551": {
+    "kox_id": "KOX-000551",
+    "fit_score": 0.32,
+    "audience_fit": 0.2,
+    "content_fit": 0.8,
+    "angle": "内容以游戏为主，和3C数码品类相邻，但语言为韩语，美国受众占比低，不符合要求"
+   },
+   "KOX-000566": {
+    "kox_id": "KOX-000566",
+    "fit_score": 0.76,
+    "audience_fit": 0.48,
+    "content_fit": 0.95,
+    "angle": "内容包含3C数码品类，为美国本土英语创作者，可做产品种草带货，仅受众地域数据缺失"
+   },
+   "KOX-000572": {
+    "kox_id": "KOX-000572",
+    "fit_score": 0.24,
+    "audience_fit": 0.05,
+    "content_fit": 0.85,
+    "angle": "受众以欧洲波兰语用户为主，无美国受众，不符合目标要求"
+   },
+   "KOX-000578": {
+    "kox_id": "KOX-000578",
+    "fit_score": 0.28,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容符合3C数码品类，但无美国受众，不符合目标市场要求"
+   },
+   "KOX-000587": {
+    "kox_id": "KOX-000587",
+    "fit_score": 0.28,
+    "audience_fit": 0.15,
+    "content_fit": 0.95,
+    "angle": "达人核心受众位于英国，美国受众占比极低，不符合本次美国市场的投放要求"
+   },
+   "KOX-000597": {
+    "kox_id": "KOX-000597",
+    "fit_score": 0.8,
+    "audience_fit": 0.55,
+    "content_fit": 0.9,
+    "angle": "内容品类贴合3C数码，核心受众大部分位于美国，可从产品测评切入带货，需侧重设计吸引女性受众的内容场景"
+   },
+   "KOX-000598": {
+    "kox_id": "KOX-000598",
+    "fit_score": 0.82,
+    "audience_fit": 0.5,
+    "content_fit": 0.95,
+    "angle": "可从游戏玩家日常使用3C数码产品的体验切入，适合面向美国受众带货"
+   },
+   "KOX-000600": {
+    "kox_id": "KOX-000600",
+    "fit_score": 0.81,
+    "audience_fit": 0.6,
+    "content_fit": 0.9,
+    "angle": "内容结合3C数码与游戏场景，受众贴合度较高，可直接做产品测评带货推广"
+   },
+   "KOX-000620": {
+    "kox_id": "KOX-000620",
+    "fit_score": 0.82,
+    "audience_fit": 0.4,
+    "content_fit": 1.0,
+    "angle": "专注3C数码内容创作，受众大部分位于美国，需针对性打造女性感兴趣的内容场景适配投放"
+   },
+   "KOX-000623": {
+    "kox_id": "KOX-000623",
+    "fit_score": 0.22,
+    "audience_fit": 0.05,
+    "content_fit": 0.5,
+    "angle": "核心受众位于马来西亚，语言为马来语，无足够美国受众，不符合投放要求"
+   },
+   "KOX-000627": {
+    "kox_id": "KOX-000627",
+    "fit_score": 0.2,
+    "audience_fit": 0.05,
+    "content_fit": 0.95,
+    "angle": "核心受众位于巴西，语言为葡萄牙语，无美国受众，不符合投放要求"
+   },
+   "KOX-000647": {
+    "kox_id": "KOX-000647",
+    "fit_score": 0.44,
+    "audience_fit": 0.3,
+    "content_fit": 0.5,
+    "angle": "受众绝大多数为女性，仅小部分位于美国，语言为日语，仅适合预算充足时作为备选，可从女性日常使用场景切入推广"
+   },
+   "KOX-000652": {
+    "kox_id": "KOX-000652",
+    "fit_score": 0.74,
+    "audience_fit": 0.35,
+    "content_fit": 0.9,
+    "angle": "内容品类贴合需求，核心受众大部分在美国，但受众以年轻男性为主，需要针对性创作吸引目标女性受众的内容"
+   },
+   "KOX-000716": {
+    "kox_id": "KOX-000716",
+    "fit_score": 0.18,
+    "audience_fit": 0.05,
+    "content_fit": 0.6,
+    "angle": "核心受众位于巴西，语言为葡萄牙语，不符合美国英语投放要求"
+   },
+   "KOX-000730": {
+    "kox_id": "KOX-000730",
+    "fit_score": 0.78,
+    "audience_fit": 0.5,
+    "content_fit": 0.9,
+    "angle": "受众以女性为主，内容品类贴合需求，由于地域数据缺失，可创作带货内容测试投放"
+   },
+   "KOX-000743": {
+    "kox_id": "KOX-000743",
+    "fit_score": 0.21,
+    "audience_fit": 0.05,
+    "content_fit": 0.9,
+    "angle": "核心受众位于北欧国家，无足够美国受众，不符合美国市场投放要求"
+   },
+   "KOX-000749": {
+    "kox_id": "KOX-000749",
+    "fit_score": 0.32,
+    "audience_fit": 0.1,
+    "content_fit": 0.5,
+    "angle": "受众绝大多数位于欧洲，不符合美国目标市场要求，仅品类与目标品类邻接，受众错位"
+   },
+   "KOX-000762": {
+    "kox_id": "KOX-000762",
+    "fit_score": 0.1,
+    "audience_fit": 0.05,
+    "content_fit": 0.15,
+    "angle": "受众不在美国目标市场，语言不符合要求，实际内容品类与3C数码偏离"
+   },
+   "KOX-000785": {
+    "kox_id": "KOX-000785",
+    "fit_score": 0.74,
+    "audience_fit": 0.6,
+    "content_fit": 0.8,
+    "angle": "受众多数位于美国符合目标市场要求，可从3C数码产品结合家居场景使用切入带货"
+   },
+   "KOX-000821": {
+    "kox_id": "KOX-000821",
+    "fit_score": 0.28,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众均位于欧洲，不符合美国目标市场，语言也不匹配，仅品类适配"
+   },
+   "KOX-000830": {
+    "kox_id": "KOX-000830",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "内容品类符合3C数码要求，但受众几乎都不在美国目标市场，语言不符合要求，受众错位"
+   },
+   "KOX-000833": {
+    "kox_id": "KOX-000833",
+    "fit_score": 0.72,
+    "audience_fit": 0.4,
+    "content_fit": 0.85,
+    "angle": "内容符合3C数码品类，受众地域信息未知，可从3C数码搭配游戏使用场景切入带货"
+   },
+   "KOX-000847": {
+    "kox_id": "KOX-000847",
+    "fit_score": 0.31,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众均位于欧洲，不符合美国目标市场，语言不匹配，仅内容品类符合要求"
+   },
+   "KOX-000854": {
+    "kox_id": "KOX-000854",
+    "fit_score": 0.28,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众不在美国目标市场，目标年龄群体占比低，女性受众占比低，仅品类适配"
+   },
+   "KOX-000886": {
+    "kox_id": "KOX-000886",
+    "fit_score": 0.21,
+    "audience_fit": 0.08,
+    "content_fit": 0.7,
+    "angle": "受众不在美国目标市场，语言不匹配，受众错位"
+   },
+   "KOX-000916": {
+    "kox_id": "KOX-000916",
+    "fit_score": 0.29,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众均位于日本，不符合美国目标市场，语言不匹配，仅品类适配"
+   },
+   "KOX-000980": {
+    "kox_id": "KOX-000980",
+    "fit_score": 0.81,
+    "audience_fit": 0.7,
+    "content_fit": 0.85,
+    "angle": "超六成受众位于美国，年龄符合目标要求，可从3C数码结合游戏、潮流场景切入带货"
+   },
+   "KOX-000987": {
+    "kox_id": "KOX-000987",
+    "fit_score": 0.3,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众均位于东南亚，不符合美国目标市场，语言不匹配，仅内容品类符合要求"
+   },
+   "KOX-000988": {
+    "kox_id": "KOX-000988",
+    "fit_score": 0.28,
+    "audience_fit": 0.2,
+    "content_fit": 0.8,
+    "angle": "受众无美国目标市场覆盖，语言不符合要求，受众错位不适配"
+   },
+   "KOX-000992": {
+    "kox_id": "KOX-000992",
+    "fit_score": 0.26,
+    "audience_fit": 0.18,
+    "content_fit": 0.9,
+    "angle": "受众主要分布在印度，非目标美国市场，语言不符合，不适配"
+   },
+   "KOX-001004": {
+    "kox_id": "KOX-001004",
+    "fit_score": 0.52,
+    "audience_fit": 0.58,
+    "content_fit": 0.6,
+    "angle": "多数受众位于目标美国市场，内容以家居家电为主，可从3C数码融入日常家居场景切入推广，平台不符合投放要求"
+   },
+   "KOX-001015": {
+    "kox_id": "KOX-001015",
+    "fit_score": 0.22,
+    "audience_fit": 0.15,
+    "content_fit": 0.5,
+    "angle": "受众主要分布在泰国，非目标美国市场，语言不符合，不适配"
+   },
+   "KOX-001030": {
+    "kox_id": "KOX-001030",
+    "fit_score": 0.3,
+    "audience_fit": 0.16,
+    "content_fit": 0.95,
+    "angle": "受众主要分布在欧洲，非目标美国市场，语言不符合，不适配"
+   },
+   "KOX-001050": {
+    "kox_id": "KOX-001050",
+    "fit_score": 0.74,
+    "audience_fit": 0.5,
+    "content_fit": 0.85,
+    "angle": "平台符合投放要求，内容覆盖3C数码品类，可通过产品实测体验种草带动转化"
+   },
+   "KOX-001053": {
+    "kox_id": "KOX-001053",
+    "fit_score": 0.24,
+    "audience_fit": 0.12,
+    "content_fit": 0.9,
+    "angle": "语言非目标英语，无美国目标受众覆盖，不适配"
+   },
+   "KOX-001068": {
+    "kox_id": "KOX-001068",
+    "fit_score": 0.18,
+    "audience_fit": 0.1,
+    "content_fit": 0.85,
+    "angle": "受众主要分布在马来西亚，非目标美国市场，女性受众占比极低，不适配"
+   },
+   "KOX-001075": {
+    "kox_id": "KOX-001075",
+    "fit_score": 0.21,
+    "audience_fit": 0.14,
+    "content_fit": 0.7,
+    "angle": "受众主要分布在日本，非目标美国市场，语言不符合，不适配"
+   },
+   "KOX-001086": {
+    "kox_id": "KOX-001086",
+    "fit_score": 0.25,
+    "audience_fit": 0.17,
+    "content_fit": 0.9,
+    "angle": "受众主要分布在印度，非目标美国市场，语言不符合，不适配"
+   },
+   "KOX-001104": {
+    "kox_id": "KOX-001104",
+    "fit_score": 0.2,
+    "audience_fit": 0.12,
+    "content_fit": 0.65,
+    "angle": "语言非目标英语，无足够美国目标受众覆盖，不适配"
+   },
+   "KOX-001115": {
+    "kox_id": "KOX-001115",
+    "fit_score": 0.26,
+    "audience_fit": 0.18,
+    "content_fit": 0.85,
+    "angle": "受众主要分布在南美，非目标美国市场，语言不符合，不适配"
+   },
+   "KOX-001126": {
+    "kox_id": "KOX-001126",
+    "fit_score": 0.77,
+    "audience_fit": 0.65,
+    "content_fit": 0.85,
+    "angle": "从游戏数码爱好者的日常使用场景切入，推广3C数码产品"
+   },
+   "KOX-001135": {
+    "kox_id": "KOX-001135",
+    "fit_score": 0.28,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众主要集中在德国地区，不符合美国目标市场要求"
+   },
+   "KOX-001139": {
+    "kox_id": "KOX-001139",
+    "fit_score": 0.24,
+    "audience_fit": 0.2,
+    "content_fit": 0.3,
+    "angle": "受众多位于韩国，语言为韩语，仅偶尔涉及3C内容，不符合目标市场与语言要求"
+   },
+   "KOX-001148": {
+    "kox_id": "KOX-001148",
+    "fit_score": 0.26,
+    "audience_fit": 0.08,
+    "content_fit": 0.8,
+    "angle": "受众主要在西班牙及拉美地区，语言为西班牙语，不符合目标市场与语言要求"
+   },
+   "KOX-001157": {
+    "kox_id": "KOX-001157",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.78,
+    "angle": "受众主要集中在印度，不符合美国目标市场要求"
+   },
+   "KOX-001179": {
+    "kox_id": "KOX-001179",
+    "fit_score": 0.7,
+    "audience_fit": 0.7,
+    "content_fit": 0.7,
+    "angle": "面向美国年轻女性受众，从家庭日常使用3C数码的场景切入推广"
+   },
+   "KOX-001191": {
+    "kox_id": "KOX-001191",
+    "fit_score": 0.29,
+    "audience_fit": 0.12,
+    "content_fit": 0.8,
+    "angle": "受众多位于欧洲，语言为法语，不符合目标市场与语言要求"
+   },
+   "KOX-001203": {
+    "kox_id": "KOX-001203",
+    "fit_score": 0.23,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众主要位于韩国，语言为韩语，不符合目标市场与语言要求"
+   },
+   "KOX-001220": {
+    "kox_id": "KOX-001220",
+    "fit_score": 0.16,
+    "audience_fit": 0.08,
+    "content_fit": 0.3,
+    "angle": "受众主要位于波兰，语言为波兰语，不符合目标市场与语言要求"
+   },
+   "KOX-001238": {
+    "kox_id": "KOX-001238",
+    "fit_score": 0.15,
+    "audience_fit": 0.07,
+    "content_fit": 0.3,
+    "angle": "受众主要位于意大利，语言为意大利语，不符合目标市场与语言要求"
+   },
+   "KOX-001243": {
+    "kox_id": "KOX-001243",
+    "fit_score": 0.48,
+    "audience_fit": 0.4,
+    "content_fit": 0.8,
+    "angle": "受众女性占比极低，平台不符合要求的投放平台，仅可在预算充足时考虑"
+   },
+   "KOX-001251": {
+    "kox_id": "KOX-001251",
+    "fit_score": 0.18,
+    "audience_fit": 0.1,
+    "content_fit": 0.35,
+    "angle": "无明确美国受众占比，语言为希伯来语，仅偶尔涉及3C内容，不符合目标要求"
+   },
+   "KOX-001260": {
+    "kox_id": "KOX-001260",
+    "fit_score": 0.22,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众几乎无美国目标人群，语言不符合要求，不适合本次投放"
+   },
+   "KOX-001274": {
+    "kox_id": "KOX-001274",
+    "fit_score": 0.2,
+    "audience_fit": 0.12,
+    "content_fit": 0.65,
+    "angle": "受众无美国目标人群，不符合目标市场要求"
+   },
+   "KOX-001282": {
+    "kox_id": "KOX-001282",
+    "fit_score": 0.32,
+    "audience_fit": 0.2,
+    "content_fit": 0.9,
+    "angle": "仅约7%受众在美国，语言不符合要求，仅小部分受众匹配目标人群"
+   },
+   "KOX-001289": {
+    "kox_id": "KOX-001289",
+    "fit_score": 0.18,
+    "audience_fit": 0.1,
+    "content_fit": 0.75,
+    "angle": "无美国目标受众，语言不符合要求，不适合本次投放"
+   },
+   "KOX-001312": {
+    "kox_id": "KOX-001312",
+    "fit_score": 0.82,
+    "audience_fit": 0.92,
+    "content_fit": 0.78,
+    "angle": "以美国年轻女性日常家居场景下的3C数码产品使用体验切入，做测评带货促进转化"
+   },
+   "KOX-001348": {
+    "kox_id": "KOX-001348",
+    "fit_score": 0.12,
+    "audience_fit": 0.05,
+    "content_fit": 0.9,
+    "angle": "无美国目标受众，语言不符合要求，不匹配目标性别要求"
+   },
+   "KOX-001363": {
+    "kox_id": "KOX-001363",
+    "fit_score": 0.35,
+    "audience_fit": 0.25,
+    "content_fit": 0.9,
+    "angle": "仅约11%受众在美国，语言不符合要求，受众性别匹配度低"
+   },
+   "KOX-001369": {
+    "kox_id": "KOX-001369",
+    "fit_score": 0.76,
+    "audience_fit": 0.55,
+    "content_fit": 0.95,
+    "angle": "围绕美国女性感兴趣的3C数码产品做开箱测评，突出卖点带动转化"
+   },
+   "KOX-001386": {
+    "kox_id": "KOX-001386",
+    "fit_score": 0.52,
+    "audience_fit": 0.3,
+    "content_fit": 0.85,
+    "angle": "仅约18%受众在美国，性别匹配度低，仅适合预算充足时做补充触达"
+   },
+   "KOX-001387": {
+    "kox_id": "KOX-001387",
+    "fit_score": 0.14,
+    "audience_fit": 0.05,
+    "content_fit": 0.6,
+    "angle": "无美国目标受众，语言不符合要求，不适合本次投放"
+   },
+   "KOX-001398": {
+    "kox_id": "KOX-001398",
+    "fit_score": 0.16,
+    "audience_fit": 0.05,
+    "content_fit": 0.8,
+    "angle": "无美国目标受众，语言不符合要求，不适合本次投放"
+   },
+   "KOX-001449": {
+    "kox_id": "KOX-001449",
+    "fit_score": 0.28,
+    "audience_fit": 0.2,
+    "content_fit": 0.8,
+    "angle": "仅约21%受众在美国，性别匹配度极低，语言不符合要求，适配性差"
+   },
+   "KOX-001474": {
+    "kox_id": "KOX-001474",
+    "fit_score": 0.74,
+    "audience_fit": 0.35,
+    "content_fit": 0.9,
+    "angle": "内容聚焦3C数码与游戏领域，可从3C产品开箱测评切入推广，存在部分美国受众，但受众以西班牙语为主，女性占比偏低，需做创意适配"
+   },
+   "KOX-001489": {
+    "kox_id": "KOX-001489",
+    "fit_score": 0.66,
+    "audience_fit": 0.2,
+    "content_fit": 0.85,
+    "angle": "内容覆盖3C数码品类，语言符合要求，可从家用场景下的3C产品推广切入，美国受众占比低，女性占比偏低，需创意适配"
+   },
+   "KOX-001501": {
+    "kox_id": "KOX-001501",
+    "fit_score": 0.66,
+    "audience_fit": 0.22,
+    "content_fit": 0.85,
+    "angle": "内容覆盖3C数码品类，语言符合要求，可从3C产品测评切入推广，美国受众占比较低，需创意适配"
+   },
+   "KOX-001507": {
+    "kox_id": "KOX-001507",
+    "fit_score": 0.65,
+    "audience_fit": 0.05,
+    "content_fit": 0.9,
+    "angle": "内容品类匹配3C数码，但无美国受众，语言为阿拉伯语不符合要求，仅可在预算充足时勉强考虑"
+   },
+   "KOX-001532": {
+    "kox_id": "KOX-001532",
+    "fit_score": 0.09,
+    "audience_fit": 0.05,
+    "content_fit": 0.1,
+    "angle": "实际内容为服饰鞋包品类，与3C数码不相关，无美国受众，语言不符合要求，完全不适配"
+   },
+   "KOX-001534": {
+    "kox_id": "KOX-001534",
+    "fit_score": 0.61,
+    "audience_fit": 0.05,
+    "content_fit": 0.85,
+    "angle": "内容品类匹配3C数码，但无美国受众，语言为意大利语不符合要求，仅可在预算充足时勉强考虑"
+   },
+   "KOX-001578": {
+    "kox_id": "KOX-001578",
+    "fit_score": 0.65,
+    "audience_fit": 0.05,
+    "content_fit": 0.9,
+    "angle": "内容品类匹配3C数码，但无美国受众，语言为土耳其语不符合要求，仅可在预算充足时勉强考虑"
+   },
+   "KOX-001583": {
+    "kox_id": "KOX-001583",
+    "fit_score": 0.72,
+    "audience_fit": 0.3,
+    "content_fit": 0.9,
+    "angle": "内容聚焦3C数码与游戏领域，语言符合要求，可从游戏设备测评角度切入推广，美国受众占比不高，需创意适配"
+   },
+   "KOX-001590": {
+    "kox_id": "KOX-001590",
+    "fit_score": 0.65,
+    "audience_fit": 0.3,
+    "content_fit": 0.8,
+    "angle": "内容聚焦游戏领域，与3C数码品类相关，语言符合要求，可从游戏设备测评角度切入推广，美国受众占比不高，需创意适配"
+   },
+   "KOX-001593": {
+    "kox_id": "KOX-001593",
+    "fit_score": 0.79,
+    "audience_fit": 0.75,
+    "content_fit": 0.8,
+    "angle": "内容覆盖3C数码品类，超六成受众为美国用户，语言符合要求，女性占比高，可结合美妆场景切入推广3C数码产品"
+   },
+   "KOX-001599": {
+    "kox_id": "KOX-001599",
+    "fit_score": 0.37,
+    "audience_fit": 0.05,
+    "content_fit": 0.5,
+    "angle": "仅少量内容涉及3C数码，无美国受众，受众错位，不适配投放需求"
+   },
+   "KOX-001615": {
+    "kox_id": "KOX-001615",
+    "fit_score": 0.89,
+    "audience_fit": 0.85,
+    "content_fit": 0.9,
+    "angle": "内容聚焦3C数码与游戏领域，近八成受众为美国用户，语言符合要求，女性占比符合目标，可从3C产品开箱测评切入推广，适配转化需求"
+   },
+   "KOX-001620": {
+    "kox_id": "KOX-001620",
+    "fit_score": 0.79,
+    "audience_fit": 0.56,
+    "content_fit": 0.9,
+    "angle": "结合游戏使用场景测评面向女性用户的3C数码产品，促进带货转化"
+   },
+   "KOX-001629": {
+    "kox_id": "KOX-001629",
+    "fit_score": 0.22,
+    "audience_fit": 0.08,
+    "content_fit": 0.8,
+    "angle": "受众几乎无美国目标人群，语言不符，不适配"
+   },
+   "KOX-001640": {
+    "kox_id": "KOX-001640",
+    "fit_score": 0.21,
+    "audience_fit": 0.12,
+    "content_fit": 0.4,
+    "angle": "美国目标受众占比极低，核心品类为母婴，不适配"
+   },
+   "KOX-001642": {
+    "kox_id": "KOX-001642",
+    "fit_score": 0.25,
+    "audience_fit": 0.05,
+    "content_fit": 0.85,
+    "angle": "受众几乎无美国目标人群，语言不符，不适配"
+   },
+   "KOX-001670": {
+    "kox_id": "KOX-001670",
+    "fit_score": 0.15,
+    "audience_fit": 0.04,
+    "content_fit": 0.2,
+    "angle": "受众无美国目标人群，核心品类不符，不适配"
+   },
+   "KOX-001695": {
+    "kox_id": "KOX-001695",
+    "fit_score": 0.26,
+    "audience_fit": 0.05,
+    "content_fit": 0.88,
+    "angle": "受众几乎无美国目标人群，语言不符，不适配"
+   },
+   "KOX-001697": {
+    "kox_id": "KOX-001697",
+    "fit_score": 0.23,
+    "audience_fit": 0.03,
+    "content_fit": 0.82,
+    "angle": "受众无美国目标人群，不适配"
+   },
+   "KOX-001698": {
+    "kox_id": "KOX-001698",
+    "fit_score": 0.21,
+    "audience_fit": 0.04,
+    "content_fit": 0.75,
+    "angle": "受众无美国目标人群，语言不符，不适配"
+   },
+   "KOX-001703": {
+    "kox_id": "KOX-001703",
+    "fit_score": 0.7,
+    "audience_fit": 0.31,
+    "content_fit": 0.9,
+    "angle": "开箱测评美国女性受众感兴趣的3C数码产品，实现带货转化"
+   },
+   "KOX-001704": {
+    "kox_id": "KOX-001704",
+    "fit_score": 0.78,
+    "audience_fit": 0.55,
+    "content_fit": 0.9,
+    "angle": "结合游戏场景推广3C数码产品，面向美国目标女性受众带货"
+   },
+   "KOX-001717": {
+    "kox_id": "KOX-001717",
+    "fit_score": 0.22,
+    "audience_fit": 0.04,
+    "content_fit": 0.78,
+    "angle": "受众无美国目标人群，语言不符，不适配"
+   },
+   "KOX-001726": {
+    "kox_id": "KOX-001726",
+    "fit_score": 0.35,
+    "audience_fit": 0.15,
+    "content_fit": 0.45,
+    "angle": "美国目标受众占比极低，核心品类为服饰，适配度低"
+   },
+   "KOX-001731": {
+    "kox_id": "KOX-001731",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "达人受众集中在东南亚，几乎没有美国受众，不符合目标市场要求"
+   },
+   "KOX-001732": {
+    "kox_id": "KOX-001732",
+    "fit_score": 0.72,
+    "audience_fit": 0.45,
+    "content_fit": 0.9,
+    "angle": "以美国受众感兴趣的3C数码产品实测体验切入，分享产品优缺点带动转化"
+   },
+   "KOX-001735": {
+    "kox_id": "KOX-001735",
+    "fit_score": 0.18,
+    "audience_fit": 0.08,
+    "content_fit": 0.85,
+    "angle": "受众集中在南美地区，几乎没有美国受众，不符合目标市场要求"
+   },
+   "KOX-001740": {
+    "kox_id": "KOX-001740",
+    "fit_score": 0.15,
+    "audience_fit": 0.05,
+    "content_fit": 0.9,
+    "angle": "受众集中在南亚地区，几乎没有美国受众，不符合目标市场要求"
+   },
+   "KOX-001768": {
+    "kox_id": "KOX-001768",
+    "fit_score": 0.16,
+    "audience_fit": 0.06,
+    "content_fit": 0.9,
+    "angle": "受众集中在意大利，几乎没有美国受众，不符合目标市场要求"
+   },
+   "KOX-001781": {
+    "kox_id": "KOX-001781",
+    "fit_score": 0.19,
+    "audience_fit": 0.09,
+    "content_fit": 0.9,
+    "angle": "受众集中在非洲地区，几乎没有美国受众，不符合目标市场要求"
+   },
+   "KOX-001805": {
+    "kox_id": "KOX-001805",
+    "fit_score": 0.68,
+    "audience_fit": 0.48,
+    "content_fit": 0.85,
+    "angle": "从家居日常场景切入，分享实用3C数码产品的使用体验带动转化"
+   },
+   "KOX-001844": {
+    "kox_id": "KOX-001844",
+    "fit_score": 0.65,
+    "audience_fit": 0.3,
+    "content_fit": 0.9,
+    "angle": "主打美国女性受众感兴趣的便携数码、数码配件开箱测评，吸引转化"
+   },
+   "KOX-001847": {
+    "kox_id": "KOX-001847",
+    "fit_score": 0.21,
+    "audience_fit": 0.12,
+    "content_fit": 0.9,
+    "angle": "受众集中在英国，美国受众占比极低，不符合目标市场要求"
+   },
+   "KOX-001853": {
+    "kox_id": "KOX-001853",
+    "fit_score": 0.45,
+    "audience_fit": 0.8,
+    "content_fit": 0.3,
+    "angle": "从美国25-44岁女性的家庭、母婴日常场景切入，分享场景中用到的3C数码产品"
+   },
+   "KOX-001882": {
+    "kox_id": "KOX-001882",
+    "fit_score": 0.17,
+    "audience_fit": 0.08,
+    "content_fit": 0.7,
+    "angle": "受众集中在墨西哥，美国受众占比极低，不符合目标市场要求"
+   },
+   "KOX-001884": {
+    "kox_id": "KOX-001884",
+    "fit_score": 0.5,
+    "audience_fit": 0.2,
+    "content_fit": 0.8,
+    "angle": "从游戏数码外设的角度切入，面向美国受众推广3C数码产品"
+   },
+   "KOX-001900": {
+    "kox_id": "KOX-001900",
+    "fit_score": 0.56,
+    "audience_fit": 0.47,
+    "content_fit": 0.6,
+    "angle": "可围绕家居使用场景植入，向美国女性受众种草推广3C数码产品"
+   },
+   "KOX-001949": {
+    "kox_id": "KOX-001949",
+    "fit_score": 0.52,
+    "audience_fit": 0.57,
+    "content_fit": 0.5,
+    "angle": "面向美国适龄女性母婴受众，种草适合带娃场景使用的便携3C数码产品"
+   },
+   "KOX-001964": {
+    "kox_id": "KOX-001964",
+    "fit_score": 0.71,
+    "audience_fit": 0.15,
+    "content_fit": 0.95,
+    "angle": "内容本身非常适配3C数码推广，仅能覆盖少量美国目标受众，可作为补充投放"
+   },
+   "KOX-001965": {
+    "kox_id": "KOX-001965",
+    "fit_score": 0.2,
+    "audience_fit": 0.05,
+    "content_fit": 0.85,
+    "angle": "品类内容适配，但受众为非美国葡萄牙语受众，完全不符合目标人群要求"
+   },
+   "KOX-001977": {
+    "kox_id": "KOX-001977",
+    "fit_score": 0.19,
+    "audience_fit": 0.05,
+    "content_fit": 0.85,
+    "angle": "品类内容适配，但受众为非美国葡萄牙语受众，不符合目标人群要求"
+   },
+   "KOX-001983": {
+    "kox_id": "KOX-001983",
+    "fit_score": 0.66,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容适配3C数码推广，仅可覆盖少量美国目标受众"
+   },
+   "KOX-002016": {
+    "kox_id": "KOX-002016",
+    "fit_score": 0.18,
+    "audience_fit": 0.05,
+    "content_fit": 0.6,
+    "angle": "受众为印度印地语受众，不符合美国英语目标人群要求"
+   },
+   "KOX-002018": {
+    "kox_id": "KOX-002018",
+    "fit_score": 0.21,
+    "audience_fit": 0.05,
+    "content_fit": 0.9,
+    "angle": "品类内容适配，但受众不符合美国英语目标人群要求"
+   },
+   "KOX-002030": {
+    "kox_id": "KOX-002030",
+    "fit_score": 0.2,
+    "audience_fit": 0.05,
+    "content_fit": 0.9,
+    "angle": "品类内容适配，但受众几乎都在欧洲，不符合美国目标市场要求"
+   },
+   "KOX-002034": {
+    "kox_id": "KOX-002034",
+    "fit_score": 0.57,
+    "audience_fit": 0.15,
+    "content_fit": 0.75,
+    "angle": "内容适配3C数码推广，仅可覆盖少量美国目标受众"
+   },
+   "KOX-002097": {
+    "kox_id": "KOX-002097",
+    "fit_score": 0.56,
+    "audience_fit": 0.45,
+    "content_fit": 0.6,
+    "angle": "可从美国女性游戏玩家场景切入，推广适合游戏使用的3C数码产品"
+   },
+   "KOX-002105": {
+    "kox_id": "KOX-002105",
+    "fit_score": 0.19,
+    "audience_fit": 0.05,
+    "content_fit": 0.95,
+    "angle": "品类内容适配，但受众为中文亚洲受众，不符合美国英语目标人群要求"
+   },
+   "KOX-002127": {
+    "kox_id": "KOX-002127",
+    "fit_score": 0.78,
+    "audience_fit": 0.6,
+    "content_fit": 0.9,
+    "angle": "测评种草3C数码产品，结合游戏场景展示产品性能，面向美国受众带货转化"
+   },
+   "KOX-002153": {
+    "kox_id": "KOX-002153",
+    "fit_score": 0.42,
+    "audience_fit": 0.15,
+    "content_fit": 0.9,
+    "angle": "受众多为日本日语用户，美国目标受众占比低，仅能覆盖少量受众"
+   },
+   "KOX-002172": {
+    "kox_id": "KOX-002172",
+    "fit_score": 0.24,
+    "audience_fit": 0.05,
+    "content_fit": 0.9,
+    "angle": "受众集中在法国法语区，几乎没有美国目标受众，不符合投放要求"
+   },
+   "KOX-002174": {
+    "kox_id": "KOX-002174",
+    "fit_score": 0.58,
+    "audience_fit": 0.4,
+    "content_fit": 0.7,
+    "angle": "结合家居生活场景展示3C数码产品的使用体验，面向女性受众种草带货"
+   },
+   "KOX-002182": {
+    "kox_id": "KOX-002182",
+    "fit_score": 0.46,
+    "audience_fit": 0.6,
+    "content_fit": 0.4,
+    "angle": "结合出行穿搭场景展示3C数码产品的实用性，面向美国受众种草"
+   },
+   "KOX-002203": {
+    "kox_id": "KOX-002203",
+    "fit_score": 0.19,
+    "audience_fit": 0.05,
+    "content_fit": 0.85,
+    "angle": "受众集中在中东阿拉伯语地区，无足够美国目标受众，不符合要求"
+   },
+   "KOX-002211": {
+    "kox_id": "KOX-002211",
+    "fit_score": 0.72,
+    "audience_fit": 0.75,
+    "content_fit": 0.7,
+    "angle": "结合家居带娃日常场景展示3C数码产品功能，面向美国女性受众带货"
+   },
+   "KOX-002227": {
+    "kox_id": "KOX-002227",
+    "fit_score": 0.21,
+    "audience_fit": 0.05,
+    "content_fit": 0.9,
+    "angle": "受众集中在欧洲法语区，无足够美国目标受众，语言不符合要求"
+   },
+   "KOX-002238": {
+    "kox_id": "KOX-002238",
+    "fit_score": 0.16,
+    "audience_fit": 0.03,
+    "content_fit": 0.8,
+    "angle": "受众集中在东欧乌克兰语区，无足够美国目标受众，不符合要求"
+   },
+   "KOX-002279": {
+    "kox_id": "KOX-002279",
+    "fit_score": 0.19,
+    "audience_fit": 0.04,
+    "content_fit": 0.85,
+    "angle": "受众集中在德语区欧洲，无足够美国目标受众，语言不符合要求"
+   },
+   "KOX-002284": {
+    "kox_id": "KOX-002284",
+    "fit_score": 0.19,
+    "audience_fit": 0.06,
+    "content_fit": 0.7,
+    "angle": "受众集中在南美西班牙语区，无足够美国目标受众，不符合要求"
+   },
+   "KOX-002289": {
+    "kox_id": "KOX-002289",
+    "fit_score": 0.6,
+    "audience_fit": 0.3,
+    "content_fit": 0.8,
+    "angle": "可做3C数码产品测评种草，仅能触达少量美国目标受众"
+   },
+   "KOX-002305": {
+    "kox_id": "KOX-002305",
+    "fit_score": 0.2,
+    "audience_fit": 0.05,
+    "content_fit": 0.9,
+    "angle": "内容品类符合3C数码，但所有受众均不在目标美国市场，语言不符合要求，适配度低"
+   },
+   "KOX-002306": {
+    "kox_id": "KOX-002306",
+    "fit_score": 0.15,
+    "audience_fit": 0.03,
+    "content_fit": 0.8,
+    "angle": "内容品类包含3C数码，但所有受众均不在目标美国市场，女性受众占比极低，语言不符合要求"
+   },
+   "KOX-002313": {
+    "kox_id": "KOX-002313",
+    "fit_score": 0.35,
+    "audience_fit": 0.15,
+    "content_fit": 0.9,
+    "angle": "内容品类符合3C数码，仅约11%受众位于目标美国市场，语言不符合要求"
+   },
+   "KOX-002322": {
+    "kox_id": "KOX-002322",
+    "fit_score": 0.05,
+    "audience_fit": 0.05,
+    "content_fit": 0.05,
+    "angle": "实际内容品类与目标3C数码完全不相关，受众均不在目标美国市场，不适配"
+   },
+   "KOX-002323": {
+    "kox_id": "KOX-002323",
+    "fit_score": 0.73,
+    "audience_fit": 0.8,
+    "content_fit": 0.7,
+    "angle": "受众大部分位于目标美国市场，语言、年龄、性别均符合要求，内容涵盖3C数码，可从家居场景下的3C数码好物推荐切入带货"
+   },
+   "KOX-002347": {
+    "kox_id": "KOX-002347",
+    "fit_score": 0.23,
+    "audience_fit": 0.05,
+    "content_fit": 0.6,
+    "angle": "内容实际涉及3C数码，但所有受众均位于欧洲非目标市场，语言不符合要求"
+   },
+   "KOX-002362": {
+    "kox_id": "KOX-002362",
+    "fit_score": 0.82,
+    "audience_fit": 0.55,
+    "content_fit": 0.95,
+    "angle": "内容品类完全符合3C数码，语言符合要求，近半数受众位于目标美国市场，年龄结构匹配，可通过产品开箱测评实现带货转化"
+   },
+   "KOX-002366": {
+    "kox_id": "KOX-002366",
+    "fit_score": 0.75,
+    "audience_fit": 0.45,
+    "content_fit": 0.9,
+    "angle": "内容品类符合3C数码，语言符合要求，近半数受众位于目标美国市场，适合做3C产品带货推广"
+   },
+   "KOX-002367": {
+    "kox_id": "KOX-002367",
+    "fit_score": 0.57,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "内容品类符合3C数码，仅不到5%受众位于目标美国市场，语言不符合要求，仅适合预算充足时作为补充"
+   },
+   "KOX-002383": {
+    "kox_id": "KOX-002383",
+    "fit_score": 0.28,
+    "audience_fit": 0.05,
+    "content_fit": 0.4,
+    "angle": "仅少量内容涉及3C数码，所有受众均位于东欧非目标市场，语言不符合要求"
+   },
+   "KOX-002399": {
+    "kox_id": "KOX-002399",
+    "fit_score": 0.48,
+    "audience_fit": 0.05,
+    "content_fit": 0.7,
+    "angle": "内容品类涉及3C数码，所有受众均位于东南亚非目标市场，语言不符合要求，仅勉强可用"
+   },
+   "KOX-002431": {
+    "kox_id": "KOX-002431",
+    "fit_score": 0.35,
+    "audience_fit": 0.05,
+    "content_fit": 0.5,
+    "angle": "实际内容为家居家电，仅与目标3C数码相邻，所有受众均位于南美非目标市场，不适配"
+   },
+   "KOX-002441": {
+    "kox_id": "KOX-002441",
+    "fit_score": 0.82,
+    "audience_fit": 0.69,
+    "content_fit": 0.9,
+    "angle": "面向美国目标受众做热门3C数码产品测评，结合日常使用场景分享带货"
+   },
+   "KOX-002447": {
+    "kox_id": "KOX-002447",
+    "fit_score": 0.46,
+    "audience_fit": 0.03,
+    "content_fit": 0.75,
+    "angle": "受众核心地域为意大利，语言为意大利语，不符合目标美国市场及英语要求，受众错位"
+   },
+   "KOX-002456": {
+    "kox_id": "KOX-002456",
+    "fit_score": 0.52,
+    "audience_fit": 0.02,
+    "content_fit": 0.85,
+    "angle": "受众核心地域为秘鲁等南美国家，语言为西班牙语，不符合目标美国市场及英语要求，受众错位"
+   },
+   "KOX-002499": {
+    "kox_id": "KOX-002499",
+    "fit_score": 0.46,
+    "audience_fit": 0.02,
+    "content_fit": 0.75,
+    "angle": "受众核心地域为意大利等欧洲国家，语言为意大利语，不符合目标美国市场及英语要求，受众错位"
+   },
+   "KOX-002511": {
+    "kox_id": "KOX-002511",
+    "fit_score": 0.72,
+    "audience_fit": 0.6,
+    "content_fit": 0.8,
+    "angle": "结合美国年轻女性关注的时尚场景分享3C数码产品，适配带货转化"
+   },
+   "KOX-002537": {
+    "kox_id": "KOX-002537",
+    "fit_score": 0.66,
+    "audience_fit": 0.29,
+    "content_fit": 0.9,
+    "angle": "仅小部分受众为美国目标人群，可侧重面向美国受众做3C数码产品种草带货"
+   },
+   "KOX-002555": {
+    "kox_id": "KOX-002555",
+    "fit_score": 0.52,
+    "audience_fit": 0.03,
+    "content_fit": 0.85,
+    "angle": "受众核心地域为欧洲国家，语言为波兰语，不符合目标美国市场及英语要求，受众错位"
+   },
+   "KOX-002572": {
+    "kox_id": "KOX-002572",
+    "fit_score": 0.49,
+    "audience_fit": 0.03,
+    "content_fit": 0.8,
+    "angle": "受众核心地域为泰国，语言为泰语，不符合目标美国市场及英语要求，受众错位"
+   },
+   "KOX-002573": {
+    "kox_id": "KOX-002573",
+    "fit_score": 0.77,
+    "audience_fit": 0.66,
+    "content_fit": 0.85,
+    "angle": "面向美国目标受众分享家居场景下的3C数码产品使用体验，带货转化"
+   },
+   "KOX-002581": {
+    "kox_id": "KOX-002581",
+    "fit_score": 0.61,
+    "audience_fit": 0.56,
+    "content_fit": 0.65,
+    "angle": "可结合家居场景推广3C数码产品，面向美国受众种草带货"
+   },
+   "KOX-002608": {
+    "kox_id": "KOX-002608",
+    "fit_score": 0.52,
+    "audience_fit": 0.02,
+    "content_fit": 0.85,
+    "angle": "无明确美国受众地域分布，语言为荷兰语，不符合目标要求，受众错位"
+   },
+   "KOX-002611": {
+    "kox_id": "KOX-002611",
+    "fit_score": 0.5,
+    "audience_fit": 0.04,
+    "content_fit": 0.8,
+    "angle": "仅小部分受众在美国，语言为西班牙语，不符合目标英语要求，受众错位"
+   },
+   "KOX-002619": {
+    "kox_id": "KOX-002619",
+    "fit_score": 0.68,
+    "audience_fit": 0.65,
+    "content_fit": 0.7,
+    "angle": "结合日常生活场景，分享3C数码产品实际使用体验，面向美国女性受众带货"
+   },
+   "KOX-002633": {
+    "kox_id": "KOX-002633",
+    "fit_score": 0.53,
+    "audience_fit": 0.35,
+    "content_fit": 0.65,
+    "angle": "美国受众占比偏低，可从家居场景切入推荐3C数码产品，覆盖小众美国女性受众"
+   },
+   "KOX-002653": {
+    "kox_id": "KOX-002653",
+    "fit_score": 0.55,
+    "audience_fit": 0.18,
+    "content_fit": 0.8,
+    "angle": "美国受众占比极低，女性受众占比低，仅适合预算充足时作为补充备选"
+   },
+   "KOX-002667": {
+    "kox_id": "KOX-002667",
+    "fit_score": 0.76,
+    "audience_fit": 0.55,
+    "content_fit": 0.9,
+    "angle": "通过专业3C数码测评结合游戏使用场景，面向美国受众带货转化"
+   },
+   "KOX-002687": {
+    "kox_id": "KOX-002687",
+    "fit_score": 0.38,
+    "audience_fit": 0.05,
+    "content_fit": 0.6,
+    "angle": "几乎无美国受众，不符合目标市场要求，适配度低"
+   },
+   "KOX-002695": {
+    "kox_id": "KOX-002695",
+    "fit_score": 0.52,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "语言为西班牙语，无大量美国受众，不符合目标市场与语言要求，仅预算充足可考虑"
+   },
+   "KOX-002742": {
+    "kox_id": "KOX-002742",
+    "fit_score": 0.48,
+    "audience_fit": 0.08,
+    "content_fit": 0.75,
+    "angle": "语言为印尼语，无大量美国受众，不符合目标市场与语言要求"
+   },
+   "KOX-002746": {
+    "kox_id": "KOX-002746",
+    "fit_score": 0.57,
+    "audience_fit": 0.3,
+    "content_fit": 0.75,
+    "angle": "美国受众占比偏低，可从家居场景切入推荐3C数码产品，覆盖小众美国受众"
+   },
+   "KOX-002750": {
+    "kox_id": "KOX-002750",
+    "fit_score": 0.37,
+    "audience_fit": 0.1,
+    "content_fit": 0.55,
+    "angle": "无大量美国受众，女性受众占比低，适配度低"
+   },
+   "KOX-002753": {
+    "kox_id": "KOX-002753",
+    "fit_score": 0.68,
+    "audience_fit": 0.35,
+    "content_fit": 0.9,
+    "angle": "通过3C数码测评结合游戏场景推广，需调整内容吸引女性受众促进转化"
+   },
+   "KOX-002764": {
+    "kox_id": "KOX-002764",
+    "fit_score": 0.7,
+    "audience_fit": 0.78,
+    "content_fit": 0.65,
+    "angle": "从女性日常穿搭美妆场景切入，分享3C数码产品的实用体验，契合目标女性受众"
+   },
+   "KOX-002829": {
+    "kox_id": "KOX-002829",
+    "fit_score": 0.38,
+    "audience_fit": 0.05,
+    "content_fit": 0.6,
+    "angle": "语言为德语，无美国受众，不符合目标市场与语言要求，适配度低"
+   },
+   "KOX-002834": {
+    "kox_id": "KOX-002834",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众几乎不在目标市场US，语言也不符合要求，适配度低"
+   },
+   "KOX-002884": {
+    "kox_id": "KOX-002884",
+    "fit_score": 0.25,
+    "audience_fit": 0.2,
+    "content_fit": 0.9,
+    "angle": "受众主要在西班牙等非目标市场，不符合目标市场US要求"
+   },
+   "KOX-002927": {
+    "kox_id": "KOX-002927",
+    "fit_score": 0.15,
+    "audience_fit": 0.05,
+    "content_fit": 0.7,
+    "angle": "受众集中在香港等中文地区，不符合目标市场US和语言要求"
+   },
+   "KOX-002929": {
+    "kox_id": "KOX-002929",
+    "fit_score": 0.2,
+    "audience_fit": 0.15,
+    "content_fit": 0.85,
+    "angle": "受众主要在菲律宾等非目标市场，女性受众占比极低，不符合要求"
+   },
+   "KOX-002939": {
+    "kox_id": "KOX-002939",
+    "fit_score": 0.86,
+    "audience_fit": 0.82,
+    "content_fit": 0.9,
+    "angle": "可直接做3C数码产品的开箱测评、种草带货，面向美国目标女性受众推广"
+   },
+   "KOX-002945": {
+    "kox_id": "KOX-002945",
+    "fit_score": 0.15,
+    "audience_fit": 0.05,
+    "content_fit": 0.8,
+    "angle": "受众集中在台湾等中文地区，不符合目标市场US和语言要求"
+   },
+   "KOX-002952": {
+    "kox_id": "KOX-002952",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众主要在土耳其等非目标市场，语言不符合要求"
+   },
+   "KOX-002954": {
+    "kox_id": "KOX-002954",
+    "fit_score": 0.18,
+    "audience_fit": 0.08,
+    "content_fit": 0.85,
+    "angle": "受众主要在泰国等非目标市场，语言不符合要求"
+   },
+   "KOX-002964": {
+    "kox_id": "KOX-002964",
+    "fit_score": 0.16,
+    "audience_fit": 0.07,
+    "content_fit": 0.8,
+    "angle": "受众主要在印尼等非目标市场，语言不符合要求"
+   },
+   "KOX-002965": {
+    "kox_id": "KOX-002965",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.85,
+    "angle": "受众主要在巴西等拉美非目标市场，语言不符合要求"
+   },
+   "KOX-002983": {
+    "kox_id": "KOX-002983",
+    "fit_score": 0.15,
+    "audience_fit": 0.05,
+    "content_fit": 0.8,
+    "angle": "受众主要在泰国等非目标市场，语言不符合要求"
+   },
+   "KOX-002991": {
+    "kox_id": "KOX-002991",
+    "fit_score": 0.63,
+    "audience_fit": 0.5,
+    "content_fit": 0.7,
+    "angle": "可结合游戏内容植入3C数码产品，面向美国目标受众推广"
+   },
+   "KOX-003000": {
+    "kox_id": "KOX-003000",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众主要分布在巴西等拉美地区，无美国受众，语言不匹配，不符合投放要求"
+   },
+   "KOX-003018": {
+    "kox_id": "KOX-003018",
+    "fit_score": 0.15,
+    "audience_fit": 0.05,
+    "content_fit": 0.8,
+    "angle": "无公开美国受众分布，语言为阿拉伯语，不符合目标市场和语言要求"
+   },
+   "KOX-003039": {
+    "kox_id": "KOX-003039",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众主要分布在土耳其，无美国受众，语言为土耳其语，不符合投放要求"
+   },
+   "KOX-003054": {
+    "kox_id": "KOX-003054",
+    "fit_score": 0.22,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众主要分布在西班牙等拉美地区，无美国受众，语言为西班牙语，不符合投放要求"
+   },
+   "KOX-003058": {
+    "kox_id": "KOX-003058",
+    "fit_score": 0.21,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众主要分布在韩国，无美国受众，语言为韩语，不符合投放要求"
+   },
+   "KOX-003095": {
+    "kox_id": "KOX-003095",
+    "fit_score": 0.79,
+    "audience_fit": 0.4,
+    "content_fit": 0.95,
+    "angle": "可从美国本土3C数码产品开箱实测、性能评测切入，面向美国受众种草带货"
+   },
+   "KOX-003119": {
+    "kox_id": "KOX-003119",
+    "fit_score": 0.18,
+    "audience_fit": 0.08,
+    "content_fit": 0.85,
+    "angle": "受众主要分布在巴西，无美国受众，语言为葡萄牙语，不符合投放要求"
+   },
+   "KOX-003128": {
+    "kox_id": "KOX-003128",
+    "fit_score": 0.08,
+    "audience_fit": 0.05,
+    "content_fit": 0.1,
+    "angle": "内容实际为美妆个护、食品保健，偏离目标3C数码品类，且无美国受众，不符合要求"
+   },
+   "KOX-003130": {
+    "kox_id": "KOX-003130",
+    "fit_score": 0.25,
+    "audience_fit": 0.15,
+    "content_fit": 0.6,
+    "angle": "受众主要分布在乌克兰等欧洲地区，无美国受众，语言为乌克兰语，不符合投放要求"
+   },
+   "KOX-003133": {
+    "kox_id": "KOX-003133",
+    "fit_score": 0.18,
+    "audience_fit": 0.05,
+    "content_fit": 0.9,
+    "angle": "受众主要分布在新加坡等东南亚地区，无美国受众，不符合目标市场要求"
+   },
+   "KOX-003140": {
+    "kox_id": "KOX-003140",
+    "fit_score": 0.16,
+    "audience_fit": 0.05,
+    "content_fit": 0.9,
+    "angle": "受众主要分布在南亚、中东地区，无美国受众，语言为乌尔都语，不符合投放要求"
+   },
+   "KOX-003156": {
+    "kox_id": "KOX-003156",
+    "fit_score": 0.81,
+    "audience_fit": 0.6,
+    "content_fit": 0.9,
+    "angle": "可结合日常家居场景展示3C数码产品的使用体验，面向美国本土受众种草带货"
+   },
+   "KOX-003158": {
+    "kox_id": "KOX-003158",
+    "fit_score": 0.83,
+    "audience_fit": 0.55,
+    "content_fit": 0.95,
+    "angle": "面向美国受众做3C数码产品测评种草，结合日常使用场景安利转化"
+   },
+   "KOX-003180": {
+    "kox_id": "KOX-003180",
+    "fit_score": 0.22,
+    "audience_fit": 0.1,
+    "content_fit": 0.6,
+    "angle": "受众主要集中在墨西哥，语言为西班牙语，美国目标受众占比极低"
+   },
+   "KOX-003184": {
+    "kox_id": "KOX-003184",
+    "fit_score": 0.56,
+    "audience_fit": 0.05,
+    "content_fit": 0.9,
+    "angle": "内容品类契合目标，但几乎无美国受众，不符合目标市场要求"
+   },
+   "KOX-003205": {
+    "kox_id": "KOX-003205",
+    "fit_score": 0.32,
+    "audience_fit": 0.03,
+    "content_fit": 0.9,
+    "angle": "受众集中在南亚，语言为印地语，无足够美国英语目标受众"
+   },
+   "KOX-003213": {
+    "kox_id": "KOX-003213",
+    "fit_score": 0.68,
+    "audience_fit": 0.35,
+    "content_fit": 0.85,
+    "angle": "内容品类契合，美国受众占比过半，可从男性用户影响女性选购的角度切入"
+   },
+   "KOX-003216": {
+    "kox_id": "KOX-003216",
+    "fit_score": 0.51,
+    "audience_fit": 0.3,
+    "content_fit": 0.6,
+    "angle": "女性受众占比契合，但美国目标受众占比低，可结合穿搭场景分享3C数码产品"
+   },
+   "KOX-003220": {
+    "kox_id": "KOX-003220",
+    "fit_score": 0.36,
+    "audience_fit": 0.05,
+    "content_fit": 0.95,
+    "angle": "内容品类契合，但受众集中在南美，语言为西班牙语，不符合美国英语受众要求"
+   },
+   "KOX-003237": {
+    "kox_id": "KOX-003237",
+    "fit_score": 0.35,
+    "audience_fit": 0.04,
+    "content_fit": 0.95,
+    "angle": "内容品类契合，但受众集中在东南亚，语言为印尼语，不符合美国受众要求"
+   },
+   "KOX-003261": {
+    "kox_id": "KOX-003261",
+    "fit_score": 0.32,
+    "audience_fit": 0.03,
+    "content_fit": 0.85,
+    "angle": "内容品类邻接契合，但受众集中在东南亚，语言为泰语，不符合目标市场要求"
+   },
+   "KOX-003274": {
+    "kox_id": "KOX-003274",
+    "fit_score": 0.22,
+    "audience_fit": 0.51,
+    "content_fit": 0.1,
+    "angle": "实际内容为食品保健，偏离3C数码目标品类，适配度低"
+   },
+   "KOX-003275": {
+    "kox_id": "KOX-003275",
+    "fit_score": 0.59,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "内容品类契合，女性受众占比高，但受众集中在欧洲，美国受众极少"
+   },
+   "KOX-003312": {
+    "kox_id": "KOX-003312",
+    "fit_score": 0.68,
+    "audience_fit": 0.15,
+    "content_fit": 0.9,
+    "angle": "内容品类契合，语言符合要求，但美国目标受众占比极低"
+   },
+   "KOX-003351": {
+    "kox_id": "KOX-003351",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.65,
+    "angle": "达人核心受众集中在东南亚地区，不在目标美国市场，受众不匹配"
+   },
+   "KOX-003360": {
+    "kox_id": "KOX-003360",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.65,
+    "angle": "达人核心受众集中在菲律宾，不在目标美国市场，受众不匹配"
+   },
+   "KOX-003539": {
+    "kox_id": "KOX-003539",
+    "fit_score": 0.74,
+    "audience_fit": 0.5,
+    "content_fit": 0.9,
+    "angle": "可从家用场景切入，做3C数码产品体验种草，带动转化"
+   },
+   "KOX-003658": {
+    "kox_id": "KOX-003658",
+    "fit_score": 0.94,
+    "audience_fit": 0.85,
+    "content_fit": 1.0,
+    "angle": "做专业3C数码产品开箱测评，突出产品卖点引导转化"
+   },
+   "KOX-004106": {
+    "kox_id": "KOX-004106",
+    "fit_score": 0.61,
+    "audience_fit": 0.55,
+    "content_fit": 0.65,
+    "angle": "可主打家庭母婴场景下的3C数码产品使用分享，适配受众需求"
+   },
+   "KOX-004120": {
+    "kox_id": "KOX-004120",
+    "fit_score": 0.75,
+    "audience_fit": 0.45,
+    "content_fit": 0.95,
+    "angle": "通过3C数码产品实测种草，突出产品功能吸引受众转化"
+   },
+   "KOX-004144": {
+    "kox_id": "KOX-004144",
+    "fit_score": 0.36,
+    "audience_fit": 0.6,
+    "content_fit": 0.2,
+    "angle": "内容实际以美妆个护、食品保健为主，和3C数码品类偏离较大"
+   },
+   "KOX-004169": {
+    "kox_id": "KOX-004169",
+    "fit_score": 0.76,
+    "audience_fit": 0.48,
+    "content_fit": 0.95,
+    "angle": "分享3C数码产品日常使用体验，面向美国受众种草带货"
+   },
+   "KOX-004210": {
+    "kox_id": "KOX-004210",
+    "fit_score": 0.7,
+    "audience_fit": 0.4,
+    "content_fit": 0.9,
+    "angle": "从游戏场景切入，推广适配游戏使用的3C数码产品"
+   },
+   "KOX-004348": {
+    "kox_id": "KOX-004348",
+    "fit_score": 0.6,
+    "audience_fit": 0.3,
+    "content_fit": 0.8,
+    "angle": "受众以年轻男性群体为主，和目标女性受众错位，适配度较低"
+   },
+   "KOX-004461": {
+    "kox_id": "KOX-004461",
+    "fit_score": 0.79,
+    "audience_fit": 0.7,
+    "content_fit": 0.85,
+    "angle": "结合日常场景分享3C数码产品使用体验，种草引导转化"
+   },
+   "KOX-004645": {
+    "kox_id": "KOX-004645",
+    "fit_score": 0.65,
+    "audience_fit": 0.5,
+    "content_fit": 0.75,
+    "angle": "从家居生活场景切入，分享3C数码产品的使用价值，种草推广"
+   },
+   "KOX-004731": {
+    "kox_id": "KOX-004731",
+    "fit_score": 0.65,
+    "audience_fit": 0.4,
+    "content_fit": 0.75,
+    "angle": "从游戏玩家使用数码设备的体验角度切入，向受众推荐3C数码产品"
+   },
+   "KOX-004747": {
+    "kox_id": "KOX-004747",
+    "fit_score": 0.54,
+    "audience_fit": 0.5,
+    "content_fit": 0.55,
+    "angle": "从家居日常场景使用3C数码产品的角度切入推荐产品"
+   },
+   "KOX-004790": {
+    "kox_id": "KOX-004790",
+    "fit_score": 0.78,
+    "audience_fit": 0.6,
+    "content_fit": 0.85,
+    "angle": "结合游戏、家居使用场景做3C数码产品开箱测评带货"
+   },
+   "KOX-004837": {
+    "kox_id": "KOX-004837",
+    "fit_score": 0.61,
+    "audience_fit": 0.85,
+    "content_fit": 0.5,
+    "angle": "从宝妈家庭日常使用3C数码产品的场景切入，向目标女性受众推荐"
+   },
+   "KOX-004897": {
+    "kox_id": "KOX-004897",
+    "fit_score": 0.69,
+    "audience_fit": 0.78,
+    "content_fit": 0.65,
+    "angle": "从美妆创作日常使用3C数码设备的场景切入，向女性受众推荐产品"
+   },
+   "KOX-004929": {
+    "kox_id": "KOX-004929",
+    "fit_score": 0.84,
+    "audience_fit": 0.7,
+    "content_fit": 0.9,
+    "angle": "直接做3C数码产品开箱测评，分享使用体验实现带货转化"
+   },
+   "KOX-004932": {
+    "kox_id": "KOX-004932",
+    "fit_score": 0.77,
+    "audience_fit": 0.35,
+    "content_fit": 0.95,
+    "angle": "做3C数码产品专业测评，侧重讲解符合女性用户需求的产品功能点带货"
+   },
+   "KOX-004950": {
+    "kox_id": "KOX-004950",
+    "fit_score": 0.75,
+    "audience_fit": 0.5,
+    "content_fit": 0.85,
+    "angle": "从游戏玩家对3C数码设备性能要求的角度切入，做产品测评推荐"
+   }
+  },
+  "BRIEF-002": {
+   "KOX-000006": {
+    "kox_id": "KOX-000006",
+    "fit_score": 0.42,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众几乎全集中在俄罗斯及周边地区，不在目标投放的东南亚市场，仅品类匹配，地域不符合要求"
+   },
+   "KOX-000008": {
+    "kox_id": "KOX-000008",
+    "fit_score": 0.28,
+    "audience_fit": 0.15,
+    "content_fit": 0.5,
+    "angle": "受众全集中在俄罗斯地区，不在目标东南亚投放市场，仅品类邻接弱匹配，地域不符合要求"
+   },
+   "KOX-000024": {
+    "kox_id": "KOX-000024",
+    "fit_score": 0.38,
+    "audience_fit": 0.1,
+    "content_fit": 0.85,
+    "angle": "受众集中在北美地区，不在目标东南亚投放市场，仅品类匹配，地域不符合要求"
+   },
+   "KOX-000028": {
+    "kox_id": "KOX-000028",
+    "fit_score": 0.43,
+    "audience_fit": 0.15,
+    "content_fit": 0.8,
+    "angle": "受众集中在北美地区，不在目标东南亚投放市场，仅品类和人群属性匹配，地域不符合要求"
+   },
+   "KOX-000049": {
+    "kox_id": "KOX-000049",
+    "fit_score": 0.42,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众集中在东北亚地区，不在目标东南亚投放市场，仅品类和人群属性匹配，地域不符合要求"
+   },
+   "KOX-000051": {
+    "kox_id": "KOX-000051",
+    "fit_score": 0.88,
+    "audience_fit": 0.85,
+    "content_fit": 0.95,
+    "angle": "以印尼本土美妆种草测评切入，结合时尚穿搭分享产品，能够有效引发目标女性受众的互动讨论"
+   },
+   "KOX-000060": {
+    "kox_id": "KOX-000060",
+    "fit_score": 0.22,
+    "audience_fit": 0.1,
+    "content_fit": 0.4,
+    "angle": "受众集中在北美地区，不在目标东南亚投放市场，品类仅弱关联，不符合投放要求"
+   },
+   "KOX-000062": {
+    "kox_id": "KOX-000062",
+    "fit_score": 0.41,
+    "audience_fit": 0.08,
+    "content_fit": 0.9,
+    "angle": "受众集中在拉美地区，不在目标东南亚投放市场，仅品类匹配，地域不符合要求"
+   },
+   "KOX-000063": {
+    "kox_id": "KOX-000063",
+    "fit_score": 0.23,
+    "audience_fit": 0.25,
+    "content_fit": 0.2,
+    "angle": "受众以男性为主，仅少量受众在目标市场，内容以汽车出行为主，和美妆品类关联度低"
+   },
+   "KOX-000089": {
+    "kox_id": "KOX-000089",
+    "fit_score": 0.1,
+    "audience_fit": 0.1,
+    "content_fit": 0.1,
+    "angle": "实际内容以汽车出行为主，和美妆品类不相关，受众也不在目标东南亚市场"
+   },
+   "KOX-000090": {
+    "kox_id": "KOX-000090",
+    "fit_score": 0.38,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众集中在东北亚北美地区，不在目标东南亚投放市场，仅内容品类匹配，地域不符合要求"
+   },
+   "KOX-000102": {
+    "kox_id": "KOX-000102",
+    "fit_score": 0.42,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众集中在中东地区，不在目标东南亚投放市场，仅品类和人群属性匹配，地域不符合要求"
+   },
+   "KOX-000111": {
+    "kox_id": "KOX-000111",
+    "fit_score": 0.28,
+    "audience_fit": 0.1,
+    "content_fit": 0.95,
+    "angle": "内容调性符合美妆品类，但受众几乎全部不在目标市场ID/MY/VN，受众错位"
+   },
+   "KOX-000141": {
+    "kox_id": "KOX-000141",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.85,
+    "angle": "内容符合美妆品类，性别年龄契合，但受众不在目标市场ID/MY/VN，受众错位"
+   },
+   "KOX-000170": {
+    "kox_id": "KOX-000170",
+    "fit_score": 0.26,
+    "audience_fit": 0.12,
+    "content_fit": 0.85,
+    "angle": "内容符合美妆品类，性别年龄契合，但受众不在目标市场ID/MY/VN，受众错位"
+   },
+   "KOX-000171": {
+    "kox_id": "KOX-000171",
+    "fit_score": 0.19,
+    "audience_fit": 0.08,
+    "content_fit": 0.3,
+    "angle": "仅少量内容涉及美妆，受众男性占比更高且全部不在目标市场，匹配度低"
+   },
+   "KOX-000172": {
+    "kox_id": "KOX-000172",
+    "fit_score": 0.27,
+    "audience_fit": 0.11,
+    "content_fit": 0.95,
+    "angle": "内容完全符合美妆品类，性别年龄契合，但受众全部不在目标东南亚市场，受众错位"
+   },
+   "KOX-000173": {
+    "kox_id": "KOX-000173",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容符合美妆品类，性别年龄契合，但受众不在目标市场ID/MY/VN，受众错位"
+   },
+   "KOX-000186": {
+    "kox_id": "KOX-000186",
+    "fit_score": 0.17,
+    "audience_fit": 0.09,
+    "content_fit": 0.25,
+    "angle": "仅少量内容涉及美妆，受众不在目标市场，匹配度低"
+   },
+   "KOX-000198": {
+    "kox_id": "KOX-000198",
+    "fit_score": 0.26,
+    "audience_fit": 0.11,
+    "content_fit": 0.88,
+    "angle": "内容符合美妆品类，性别年龄契合，但受众不在目标东南亚市场，受众错位"
+   },
+   "KOX-000212": {
+    "kox_id": "KOX-000212",
+    "fit_score": 0.1,
+    "audience_fit": 0.1,
+    "content_fit": 0.1,
+    "angle": "实际内容以家居母婴为主，不符合美妆品类，且受众不在目标市场，完全不匹配"
+   },
+   "KOX-000226": {
+    "kox_id": "KOX-000226",
+    "fit_score": 0.12,
+    "audience_fit": 0.04,
+    "content_fit": 0.2,
+    "angle": "仅少量内容涉及美妆，受众男性占比高且不在目标市场，匹配度极低"
+   },
+   "KOX-000227": {
+    "kox_id": "KOX-000227",
+    "fit_score": 0.13,
+    "audience_fit": 0.07,
+    "content_fit": 0.2,
+    "angle": "仅少量内容涉及美妆，受众不在目标市场且女性占比不足，匹配度低"
+   },
+   "KOX-000231": {
+    "kox_id": "KOX-000231",
+    "fit_score": 0.42,
+    "audience_fit": 0.2,
+    "content_fit": 0.65,
+    "angle": "内容以时尚为主，与美妆为邻接品类，性别年龄契合，但无受众地域数据，无法确认目标市场覆盖，勉强可用"
+   },
+   "KOX-000242": {
+    "kox_id": "KOX-000242",
+    "fit_score": 0.28,
+    "audience_fit": 0.36,
+    "content_fit": 0.8,
+    "angle": "受众几乎全部位于非目标市场，且女性受众占比远低于目标要求，适配性差"
+   },
+   "KOX-000258": {
+    "kox_id": "KOX-000258",
+    "fit_score": 0.88,
+    "audience_fit": 0.8,
+    "content_fit": 0.95,
+    "angle": "以越南本地美妆种草测评的角度切入，分享产品上脸使用体验，引发粉丝互动讨论"
+   },
+   "KOX-000260": {
+    "kox_id": "KOX-000260",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众全部集中在南美地区，不在目标投放市场范围内，不适配"
+   },
+   "KOX-000261": {
+    "kox_id": "KOX-000261",
+    "fit_score": 0.22,
+    "audience_fit": 0.1,
+    "content_fit": 0.85,
+    "angle": "受众集中在欧洲地区，不符合目标市场要求，不适配"
+   },
+   "KOX-000262": {
+    "kox_id": "KOX-000262",
+    "fit_score": 0.75,
+    "audience_fit": 0.7,
+    "content_fit": 0.8,
+    "angle": "从时尚穿搭搭配美妆产品的角度切入，分享日常妆容搭配技巧，引发粉丝互动"
+   },
+   "KOX-000275": {
+    "kox_id": "KOX-000275",
+    "fit_score": 0.15,
+    "audience_fit": 0.08,
+    "content_fit": 0.3,
+    "angle": "受众集中在南亚印度地区，不在目标投放市场，不适配"
+   },
+   "KOX-000280": {
+    "kox_id": "KOX-000280",
+    "fit_score": 0.68,
+    "audience_fit": 0.65,
+    "content_fit": 0.7,
+    "angle": "结合印尼本地年轻游戏受众的特点，分享男生日常简约护肤美妆单品，引发互动"
+   },
+   "KOX-000304": {
+    "kox_id": "KOX-000304",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众集中在欧洲地区，不符合目标市场要求，不适配"
+   },
+   "KOX-000309": {
+    "kox_id": "KOX-000309",
+    "fit_score": 0.23,
+    "audience_fit": 0.12,
+    "content_fit": 0.85,
+    "angle": "受众集中在澳洲北美地区，不在目标投放市场，不适配"
+   },
+   "KOX-000317": {
+    "kox_id": "KOX-000317",
+    "fit_score": 0.18,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众集中在日本地区，不在目标投放市场，不适配"
+   },
+   "KOX-000319": {
+    "kox_id": "KOX-000319",
+    "fit_score": 0.21,
+    "audience_fit": 0.1,
+    "content_fit": 0.85,
+    "angle": "受众集中在南美地区，不符合目标市场要求，不适配"
+   },
+   "KOX-000338": {
+    "kox_id": "KOX-000338",
+    "fit_score": 0.19,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众集中在欧美地区，不在目标投放市场，不适配"
+   },
+   "KOX-000366": {
+    "kox_id": "KOX-000366",
+    "fit_score": 0.5,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容品类符合美妆要求，但几乎所有受众都不在目标投放市场，受众错位"
+   },
+   "KOX-000370": {
+    "kox_id": "KOX-000370",
+    "fit_score": 0.28,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "内容品类与美妆相关，但所有受众都不在目标投放市场，受众错位"
+   },
+   "KOX-000376": {
+    "kox_id": "KOX-000376",
+    "fit_score": 0.57,
+    "audience_fit": 0.48,
+    "content_fit": 0.65,
+    "angle": "可从内服养颜结合美妆产品的方向切入，触达东南亚目标受众"
+   },
+   "KOX-000385": {
+    "kox_id": "KOX-000385",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.6,
+    "angle": "内容涉及美妆但所有受众都不在目标投放市场，受众错位"
+   },
+   "KOX-000387": {
+    "kox_id": "KOX-000387",
+    "fit_score": 0.9,
+    "audience_fit": 0.82,
+    "content_fit": 0.98,
+    "angle": "以本土美妆博主身份做产品试用测评，引发互动讨论，高度契合投放需求"
+   },
+   "KOX-000416": {
+    "kox_id": "KOX-000416",
+    "fit_score": 0.18,
+    "audience_fit": 0.1,
+    "content_fit": 0.3,
+    "angle": "受众不在目标市场，内容实际以食品保健为主，偏离美妆品类"
+   },
+   "KOX-000417": {
+    "kox_id": "KOX-000417",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "内容品类符合美妆要求，但所有受众都不在目标投放市场，受众错位"
+   },
+   "KOX-000433": {
+    "kox_id": "KOX-000433",
+    "fit_score": 0.21,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众不在目标投放市场，受众错位"
+   },
+   "KOX-000481": {
+    "kox_id": "KOX-000481",
+    "fit_score": 0.15,
+    "audience_fit": 0.1,
+    "content_fit": 0.2,
+    "angle": "内容实际为母婴品类，偏离美妆，且受众不在目标市场"
+   },
+   "KOX-000482": {
+    "kox_id": "KOX-000482",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容品类符合美妆要求，但所有受众都不在目标投放市场，受众错位"
+   },
+   "KOX-000484": {
+    "kox_id": "KOX-000484",
+    "fit_score": 0.18,
+    "audience_fit": 0.1,
+    "content_fit": 0.4,
+    "angle": "受众不在目标投放市场，内容偏离美妆品类"
+   },
+   "KOX-000501": {
+    "kox_id": "KOX-000501",
+    "fit_score": 0.7,
+    "audience_fit": 0.65,
+    "content_fit": 0.75,
+    "angle": "可从时尚穿搭搭配美妆产品种草的方向切入，契合越南本土目标受众"
+   },
+   "KOX-000509": {
+    "kox_id": "KOX-000509",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "达人受众集中在欧洲地区，不符合本次投放的东南亚目标市场要求"
+   },
+   "KOX-000514": {
+    "kox_id": "KOX-000514",
+    "fit_score": 0.28,
+    "audience_fit": 0.15,
+    "content_fit": 0.85,
+    "angle": "达人受众集中在大中华区及日本，不符合本次东南亚目标市场要求"
+   },
+   "KOX-000531": {
+    "kox_id": "KOX-000531",
+    "fit_score": 0.88,
+    "audience_fit": 0.82,
+    "content_fit": 0.95,
+    "angle": "以印尼、马来西亚年轻女性感兴趣的美妆种草/测评切入，引发互动讨论"
+   },
+   "KOX-000534": {
+    "kox_id": "KOX-000534",
+    "fit_score": 0.24,
+    "audience_fit": 0.1,
+    "content_fit": 0.85,
+    "angle": "达人受众集中在日本，不符合本次东南亚目标市场要求"
+   },
+   "KOX-000535": {
+    "kox_id": "KOX-000535",
+    "fit_score": 0.08,
+    "audience_fit": 0.05,
+    "content_fit": 0.1,
+    "angle": "受众集中在南美，实际内容为母婴品类，与目标美妆品类不匹配"
+   },
+   "KOX-000537": {
+    "kox_id": "KOX-000537",
+    "fit_score": 0.55,
+    "audience_fit": 0.5,
+    "content_fit": 0.6,
+    "angle": "可从美妆个护搭配内服养生的角度切入，分享护理经验引发目标受众互动"
+   },
+   "KOX-000545": {
+    "kox_id": "KOX-000545",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "达人受众集中在欧美地区，不符合本次东南亚目标市场要求"
+   },
+   "KOX-000562": {
+    "kox_id": "KOX-000562",
+    "fit_score": 0.93,
+    "audience_fit": 0.92,
+    "content_fit": 0.95,
+    "angle": "针对越南年轻女性做美妆产品试用分享、种草测评，激发互动讨论"
+   },
+   "KOX-000586": {
+    "kox_id": "KOX-000586",
+    "fit_score": 0.1,
+    "audience_fit": 0.05,
+    "content_fit": 0.15,
+    "angle": "受众集中在中东地区，实际内容为3C数码与母婴品类，不符合投放要求"
+   },
+   "KOX-000594": {
+    "kox_id": "KOX-000594",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "达人受众集中在日本，不符合本次东南亚目标市场要求"
+   },
+   "KOX-000610": {
+    "kox_id": "KOX-000610",
+    "fit_score": 0.18,
+    "audience_fit": 0.05,
+    "content_fit": 0.3,
+    "angle": "受众集中在西班牙语系欧美地区，性别男性占比偏高，不符合目标人群要求"
+   },
+   "KOX-000613": {
+    "kox_id": "KOX-000613",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "达人受众集中在韩国，不符合本次东南亚目标市场要求"
+   },
+   "KOX-000639": {
+    "kox_id": "KOX-000639",
+    "fit_score": 0.3,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众绝大多数位于欧洲，不符合印尼、马来西亚、越南的目标市场要求"
+   },
+   "KOX-000647": {
+    "kox_id": "KOX-000647",
+    "fit_score": 0.43,
+    "audience_fit": 0.12,
+    "content_fit": 0.75,
+    "angle": "内容涉及美妆个护，性别年龄符合要求，但受众主要在日本、美国等非目标市场"
+   },
+   "KOX-000679": {
+    "kox_id": "KOX-000679",
+    "fit_score": 0.38,
+    "audience_fit": 0.1,
+    "content_fit": 0.65,
+    "angle": "受众全部位于欧洲，不符合目标市场要求"
+   },
+   "KOX-000694": {
+    "kox_id": "KOX-000694",
+    "fit_score": 0.44,
+    "audience_fit": 0.68,
+    "content_fit": 0.2,
+    "angle": "受众符合目标市场、年龄性别要求，可尝试将美妆产品植入日常出行内容分享"
+   },
+   "KOX-000696": {
+    "kox_id": "KOX-000696",
+    "fit_score": 0.5,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容调性品类符合美妆个护要求，但受众主要位于欧美，不符合目标市场要求"
+   },
+   "KOX-000714": {
+    "kox_id": "KOX-000714",
+    "fit_score": 0.48,
+    "audience_fit": 0.25,
+    "content_fit": 0.7,
+    "angle": "受众地域不明确，女性占比偏低，仅内容涉及美妆个护，勉强可用"
+   },
+   "KOX-000722": {
+    "kox_id": "KOX-000722",
+    "fit_score": 0.53,
+    "audience_fit": 0.4,
+    "content_fit": 0.65,
+    "angle": "受众有部分位于目标东南亚市场，可结合时尚穿搭内容分享美妆产品，带动互动"
+   },
+   "KOX-000724": {
+    "kox_id": "KOX-000724",
+    "fit_score": 0.5,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容品类符合美妆要求，但受众主要位于欧洲，不符合目标市场要求"
+   },
+   "KOX-000730": {
+    "kox_id": "KOX-000730",
+    "fit_score": 0.15,
+    "audience_fit": 0.2,
+    "content_fit": 0.1,
+    "angle": "实际内容为3C数码、游戏应用，和美妆个护无关，受众地域不明确，不适配"
+   },
+   "KOX-000732": {
+    "kox_id": "KOX-000732",
+    "fit_score": 0.65,
+    "audience_fit": 0.45,
+    "content_fit": 0.85,
+    "angle": "超三成受众位于目标市场，内容本身涉及美妆个护，可做日常美妆测评分享带动互动"
+   },
+   "KOX-000760": {
+    "kox_id": "KOX-000760",
+    "fit_score": 0.13,
+    "audience_fit": 0.1,
+    "content_fit": 0.15,
+    "angle": "受众主要位于非洲，实际内容为母婴品类，和美妆个护适配度低，不适配"
+   },
+   "KOX-000773": {
+    "kox_id": "KOX-000773",
+    "fit_score": 0.4,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "内容品类与美妆个护相关，但受众主要位于东北亚，不符合目标市场要求"
+   },
+   "KOX-000786": {
+    "kox_id": "KOX-000786",
+    "fit_score": 0.9,
+    "audience_fit": 0.8,
+    "content_fit": 1.0,
+    "angle": "分享美妆产品试用测评，引导粉丝讨论使用体验，适配互动需求"
+   },
+   "KOX-000791": {
+    "kox_id": "KOX-000791",
+    "fit_score": 0.63,
+    "audience_fit": 0.35,
+    "content_fit": 0.9,
+    "angle": "仅覆盖少量越南、马来西亚目标受众，语言不符合目标要求，仅可定向投放尝试"
+   },
+   "KOX-000793": {
+    "kox_id": "KOX-000793",
+    "fit_score": 0.28,
+    "audience_fit": 0.1,
+    "content_fit": 1.0,
+    "angle": "受众全部位于欧洲，完全不符合目标东南亚市场地域要求"
+   },
+   "KOX-000795": {
+    "kox_id": "KOX-000795",
+    "fit_score": 0.2,
+    "audience_fit": 0.05,
+    "content_fit": 0.8,
+    "angle": "受众位于欧美拉美，不符合目标东南亚市场地域要求"
+   },
+   "KOX-000839": {
+    "kox_id": "KOX-000839",
+    "fit_score": 0.43,
+    "audience_fit": 0.25,
+    "content_fit": 0.6,
+    "angle": "仅覆盖少量目标受众，可从内服外养养生美妆结合角度切入做互动"
+   },
+   "KOX-000850": {
+    "kox_id": "KOX-000850",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众全部位于欧洲，不符合目标东南亚市场地域要求"
+   },
+   "KOX-000873": {
+    "kox_id": "KOX-000873",
+    "fit_score": 0.5,
+    "audience_fit": 0.8,
+    "content_fit": 0.2,
+    "angle": "受众契合度高，可从家居美妆场景、美妆收纳角度切入做互动内容"
+   },
+   "KOX-000875": {
+    "kox_id": "KOX-000875",
+    "fit_score": 0.3,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众主要位于北美欧洲，不符合目标东南亚市场地域要求"
+   },
+   "KOX-000907": {
+    "kox_id": "KOX-000907",
+    "fit_score": 0.2,
+    "audience_fit": 0.08,
+    "content_fit": 0.9,
+    "angle": "受众主要位于南亚印度，不符合目标东南亚市场地域要求"
+   },
+   "KOX-000934": {
+    "kox_id": "KOX-000934",
+    "fit_score": 0.18,
+    "audience_fit": 0.1,
+    "content_fit": 0.5,
+    "angle": "受众地域不对，且女性占比低，不符合目标人群要求"
+   },
+   "KOX-000944": {
+    "kox_id": "KOX-000944",
+    "fit_score": 0.3,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众主要位于北美，不符合目标东南亚市场地域要求"
+   },
+   "KOX-000948": {
+    "kox_id": "KOX-000948",
+    "fit_score": 0.3,
+    "audience_fit": 0.1,
+    "content_fit": 1.0,
+    "angle": "受众主要位于澳新欧美，不符合目标东南亚市场地域要求"
+   },
+   "KOX-000954": {
+    "kox_id": "KOX-000954",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众主要分布在中东地区，女性受众占比偏低，不符合目标市场与受众要求"
+   },
+   "KOX-000955": {
+    "kox_id": "KOX-000955",
+    "fit_score": 0.45,
+    "audience_fit": 0.2,
+    "content_fit": 0.8,
+    "angle": "内容品类贴合美妆，但受众主要分布在欧洲，不符合东南亚目标市场要求"
+   },
+   "KOX-000974": {
+    "kox_id": "KOX-000974",
+    "fit_score": 0.48,
+    "audience_fit": 0.15,
+    "content_fit": 0.9,
+    "angle": "内容贴合美妆品类，女性受众占比符合要求，但受众主要分布在北美，不符合东南亚目标市场要求"
+   },
+   "KOX-001001": {
+    "kox_id": "KOX-001001",
+    "fit_score": 0.5,
+    "audience_fit": 0.15,
+    "content_fit": 0.95,
+    "angle": "内容贴合美妆品类，受众性别年龄符合要求，但受众集中在中东，不符合东南亚目标市场要求"
+   },
+   "KOX-001005": {
+    "kox_id": "KOX-001005",
+    "fit_score": 0.7,
+    "audience_fit": 0.6,
+    "content_fit": 0.8,
+    "angle": "内容可结合时尚美妆日常分享，近三成受众分布在目标市场越南、马来西亚，符合适配要求"
+   },
+   "KOX-001007": {
+    "kox_id": "KOX-001007",
+    "fit_score": 0.45,
+    "audience_fit": 0.2,
+    "content_fit": 0.7,
+    "angle": "内容含美妆相关内容，但受众地域信息缺失，无法确认符合目标市场要求"
+   },
+   "KOX-001012": {
+    "kox_id": "KOX-001012",
+    "fit_score": 0.4,
+    "audience_fit": 0.1,
+    "content_fit": 0.75,
+    "angle": "内容品类贴合美妆，但受众主要分布在南亚，不符合东南亚目标市场要求"
+   },
+   "KOX-001033": {
+    "kox_id": "KOX-001033",
+    "fit_score": 0.48,
+    "audience_fit": 0.15,
+    "content_fit": 0.9,
+    "angle": "内容贴合美妆品类，受众性别年龄符合要求，但受众集中在欧洲，不符合东南亚目标市场要求"
+   },
+   "KOX-001059": {
+    "kox_id": "KOX-001059",
+    "fit_score": 0.45,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容贴合美妆品类，受众性别年龄符合要求，但受众集中在澳洲，不符合东南亚目标市场要求"
+   },
+   "KOX-001094": {
+    "kox_id": "KOX-001094",
+    "fit_score": 0.6,
+    "audience_fit": 0.4,
+    "content_fit": 0.8,
+    "angle": "内容贴合美妆品类，有14%受众分布在目标市场印度尼西亚，契合部分要求"
+   },
+   "KOX-001099": {
+    "kox_id": "KOX-001099",
+    "fit_score": 0.78,
+    "audience_fit": 0.9,
+    "content_fit": 0.65,
+    "angle": "绝大多数受众分布在目标市场印度尼西亚、马来西亚，受众契合度高，可从内服养颜美妆护理方向切入内容"
+   },
+   "KOX-001103": {
+    "kox_id": "KOX-001103",
+    "fit_score": 0.42,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "内容贴合美妆品类，受众性别年龄符合要求，但受众主要分布在南亚，不符合东南亚目标市场要求"
+   },
+   "KOX-001112": {
+    "kox_id": "KOX-001112",
+    "fit_score": 0.22,
+    "audience_fit": 0.1,
+    "content_fit": 0.6,
+    "angle": "受众全部集中在中东地区，不在目标投放市场ID/MY/VN范围内，受众错位"
+   },
+   "KOX-001124": {
+    "kox_id": "KOX-001124",
+    "fit_score": 0.28,
+    "audience_fit": 0.12,
+    "content_fit": 0.95,
+    "angle": "受众绝大多数集中在澳洲、欧美地区，不在目标东南亚投放市场，受众错位"
+   },
+   "KOX-001132": {
+    "kox_id": "KOX-001132",
+    "fit_score": 0.23,
+    "audience_fit": 0.08,
+    "content_fit": 0.95,
+    "angle": "受众全部集中在中东地区，不在目标投放市场范围内，受众错位"
+   },
+   "KOX-001136": {
+    "kox_id": "KOX-001136",
+    "fit_score": 0.24,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众绝大多数集中在北美、欧美地区，不在目标东南亚投放市场，受众错位"
+   },
+   "KOX-001141": {
+    "kox_id": "KOX-001141",
+    "fit_score": 0.18,
+    "audience_fit": 0.05,
+    "content_fit": 0.5,
+    "angle": "受众集中在欧洲，不在目标市场，实际内容为食品保健，偏离美妆个护品类"
+   },
+   "KOX-001154": {
+    "kox_id": "KOX-001154",
+    "fit_score": 0.24,
+    "audience_fit": 0.09,
+    "content_fit": 0.9,
+    "angle": "受众集中在中东地区，不在目标投放市场范围内，受众错位"
+   },
+   "KOX-001158": {
+    "kox_id": "KOX-001158",
+    "fit_score": 0.26,
+    "audience_fit": 0.07,
+    "content_fit": 0.8,
+    "angle": "受众集中在欧洲，不在目标东南亚投放市场，受众错位"
+   },
+   "KOX-001175": {
+    "kox_id": "KOX-001175",
+    "fit_score": 0.68,
+    "audience_fit": 0.85,
+    "content_fit": 0.5,
+    "angle": "可从内服外养的日常美妆护理角度切入，结合自身内容风格分享产品，引发用户互动讨论"
+   },
+   "KOX-001189": {
+    "kox_id": "KOX-001189",
+    "fit_score": 0.22,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众集中在北美地区，不在目标东南亚投放市场，受众错位"
+   },
+   "KOX-001197": {
+    "kox_id": "KOX-001197",
+    "fit_score": 0.15,
+    "audience_fit": 0.08,
+    "content_fit": 0.2,
+    "angle": "内容品类偏离美妆个护，受众集中在日本，不在目标投放市场，不适配"
+   },
+   "KOX-001220": {
+    "kox_id": "KOX-001220",
+    "fit_score": 0.18,
+    "audience_fit": 0.05,
+    "content_fit": 0.3,
+    "angle": "受众集中在欧洲，不在目标投放市场，内容品类偏离美妆个护，不适配"
+   },
+   "KOX-001227": {
+    "kox_id": "KOX-001227",
+    "fit_score": 0.12,
+    "audience_fit": 0.08,
+    "content_fit": 0.15,
+    "angle": "内容品类偏离美妆个护，受众集中在北美，不在目标投放市场，完全不适配"
+   },
+   "KOX-001229": {
+    "kox_id": "KOX-001229",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.5,
+    "angle": "受众地域集中在欧美，不在目标投放市场ID/MY/VN，受众错位"
+   },
+   "KOX-001244": {
+    "kox_id": "KOX-001244",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容品类符合美妆要求，但受众地域集中在拉美，不在目标投放市场"
+   },
+   "KOX-001269": {
+    "kox_id": "KOX-001269",
+    "fit_score": 0.86,
+    "audience_fit": 0.8,
+    "content_fit": 0.95,
+    "angle": "面向越南、印尼等目标东南亚市场的年轻女性受众，深耕美妆内容，可通过产品试用测评引发互动讨论"
+   },
+   "KOX-001275": {
+    "kox_id": "KOX-001275",
+    "fit_score": 0.23,
+    "audience_fit": 0.1,
+    "content_fit": 0.85,
+    "angle": "内容品类符合美妆要求，但受众地域集中在欧美，不在目标投放市场"
+   },
+   "KOX-001281": {
+    "kox_id": "KOX-001281",
+    "fit_score": 0.2,
+    "audience_fit": 0.15,
+    "content_fit": 0.5,
+    "angle": "受众地域集中在日本，年龄结构偏35+以上，不符合目标人群要求"
+   },
+   "KOX-001319": {
+    "kox_id": "KOX-001319",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.6,
+    "angle": "受众地域集中在欧洲，不在目标投放市场，受众错位"
+   },
+   "KOX-001337": {
+    "kox_id": "KOX-001337",
+    "fit_score": 0.22,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容品类符合美妆要求，但受众地域集中在中国台湾，不在目标投放市场"
+   },
+   "KOX-001346": {
+    "kox_id": "KOX-001346",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众地域集中在北美，不在目标投放市场，受众错位"
+   },
+   "KOX-001352": {
+    "kox_id": "KOX-001352",
+    "fit_score": 0.22,
+    "audience_fit": 0.1,
+    "content_fit": 0.85,
+    "angle": "内容品类符合美妆要求，但受众地域集中在日本，不在目标投放市场"
+   },
+   "KOX-001359": {
+    "kox_id": "KOX-001359",
+    "fit_score": 0.24,
+    "audience_fit": 0.1,
+    "content_fit": 0.95,
+    "angle": "内容品类符合美妆要求，但受众地域集中在北美，不在目标投放市场"
+   },
+   "KOX-001389": {
+    "kox_id": "KOX-001389",
+    "fit_score": 0.15,
+    "audience_fit": 0.1,
+    "content_fit": 0.3,
+    "angle": "实际内容品类以3C数码和食品为主，偏离美妆，且受众地域不在目标市场"
+   },
+   "KOX-001392": {
+    "kox_id": "KOX-001392",
+    "fit_score": 0.23,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容品类符合美妆要求，但受众地域集中在欧美，不在目标投放市场"
+   },
+   "KOX-001395": {
+    "kox_id": "KOX-001395",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众全部集中在欧洲地区，不符合本次投放目标东南亚市场ID/MY/VN的要求"
+   },
+   "KOX-001453": {
+    "kox_id": "KOX-001453",
+    "fit_score": 0.18,
+    "audience_fit": 0.08,
+    "content_fit": 0.85,
+    "angle": "受众集中在俄罗斯及欧洲地区，不符合本次投放目标东南亚市场的要求"
+   },
+   "KOX-001485": {
+    "kox_id": "KOX-001485",
+    "fit_score": 0.6,
+    "audience_fit": 0.35,
+    "content_fit": 0.88,
+    "angle": "面向账号内的印尼、马来西亚、越南受众做美妆产品试用分享，引发互动种草讨论"
+   },
+   "KOX-001510": {
+    "kox_id": "KOX-001510",
+    "fit_score": 0.15,
+    "audience_fit": 0.05,
+    "content_fit": 0.85,
+    "angle": "受众集中在欧美地区，不符合本次投放目标东南亚市场的要求"
+   },
+   "KOX-001511": {
+    "kox_id": "KOX-001511",
+    "fit_score": 0.12,
+    "audience_fit": 0.03,
+    "content_fit": 0.85,
+    "angle": "受众集中在美洲地区，不符合本次投放目标东南亚市场的要求"
+   },
+   "KOX-001529": {
+    "kox_id": "KOX-001529",
+    "fit_score": 0.85,
+    "audience_fit": 0.8,
+    "content_fit": 0.9,
+    "angle": "面向印尼、马来西亚本地受众做美妆产品实测种草，打造互动话题引发用户讨论"
+   },
+   "KOX-001538": {
+    "kox_id": "KOX-001538",
+    "fit_score": 0.16,
+    "audience_fit": 0.1,
+    "content_fit": 0.3,
+    "angle": "受众集中在美洲地区，且性别以男性为主，不符合本次投放的受众要求"
+   },
+   "KOX-001567": {
+    "kox_id": "KOX-001567",
+    "fit_score": 0.1,
+    "audience_fit": 0.05,
+    "content_fit": 0.2,
+    "angle": "受众集中在非洲地区，核心内容品类不符，不符合本次投放要求"
+   },
+   "KOX-001571": {
+    "kox_id": "KOX-001571",
+    "fit_score": 0.15,
+    "audience_fit": 0.05,
+    "content_fit": 0.85,
+    "angle": "受众集中在中东地区，不符合本次投放目标东南亚市场的要求"
+   },
+   "KOX-001582": {
+    "kox_id": "KOX-001582",
+    "fit_score": 0.1,
+    "audience_fit": 0.04,
+    "content_fit": 0.8,
+    "angle": "受众集中在非洲地区，不符合本次投放目标东南亚市场的要求"
+   },
+   "KOX-001597": {
+    "kox_id": "KOX-001597",
+    "fit_score": 0.12,
+    "audience_fit": 0.05,
+    "content_fit": 0.85,
+    "angle": "受众集中在南美地区，不符合本次投放目标东南亚市场的要求"
+   },
+   "KOX-001604": {
+    "kox_id": "KOX-001604",
+    "fit_score": 0.18,
+    "audience_fit": 0.15,
+    "content_fit": 0.25,
+    "angle": "受众集中在欧洲地区，性别以男性为主，核心内容品类不符，不符合投放要求"
+   },
+   "KOX-001626": {
+    "kox_id": "KOX-001626",
+    "fit_score": 0.93,
+    "audience_fit": 0.9,
+    "content_fit": 0.95,
+    "angle": "受众绝大多数在目标市场越南，以18-34岁女性为主，可做美妆产品测评、使用体验分享，引发互动讨论。"
+   },
+   "KOX-001634": {
+    "kox_id": "KOX-001634",
+    "fit_score": 0.28,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众集中在北美非目标市场，不符合投放地域要求。"
+   },
+   "KOX-001635": {
+    "kox_id": "KOX-001635",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众集中在澳洲等非目标市场，不符合投放地域要求。"
+   },
+   "KOX-001648": {
+    "kox_id": "KOX-001648",
+    "fit_score": 0.45,
+    "audience_fit": 0.4,
+    "content_fit": 0.5,
+    "angle": "七成以上受众在目标市场印尼，但是受众以男性为主，女性占比偏低，可尝试男士美妆相关内容切入。"
+   },
+   "KOX-001650": {
+    "kox_id": "KOX-001650",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众集中在欧洲非目标市场，不符合投放地域要求。"
+   },
+   "KOX-001659": {
+    "kox_id": "KOX-001659",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众集中在南亚非目标市场，不符合投放地域要求。"
+   },
+   "KOX-001669": {
+    "kox_id": "KOX-001669",
+    "fit_score": 0.24,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众集中在北美非目标市场，不符合投放地域要求。"
+   },
+   "KOX-001671": {
+    "kox_id": "KOX-001671",
+    "fit_score": 0.45,
+    "audience_fit": 0.3,
+    "content_fit": 0.6,
+    "angle": "近两成受众在目标东南亚市场，可结合家居母婴场景分享美妆产品使用切入。"
+   },
+   "KOX-001683": {
+    "kox_id": "KOX-001683",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众集中在北美非目标市场，不符合投放地域要求。"
+   },
+   "KOX-001686": {
+    "kox_id": "KOX-001686",
+    "fit_score": 0.23,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众集中在欧洲非目标市场，不符合投放地域要求。"
+   },
+   "KOX-001689": {
+    "kox_id": "KOX-001689",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众集中在北美非目标市场，不符合投放地域要求。"
+   },
+   "KOX-001708": {
+    "kox_id": "KOX-001708",
+    "fit_score": 0.3,
+    "audience_fit": 0.2,
+    "content_fit": 0.7,
+    "angle": "无可用受众地域数据，无法确认是否覆盖目标市场，且女性受众占比偏低。"
+   },
+   "KOX-001723": {
+    "kox_id": "KOX-001723",
+    "fit_score": 0.18,
+    "audience_fit": 0.02,
+    "content_fit": 0.95,
+    "angle": "受众全部集中在欧洲地区，完全不符合目标东南亚市场的地域要求，受众错位"
+   },
+   "KOX-001728": {
+    "kox_id": "KOX-001728",
+    "fit_score": 0.2,
+    "audience_fit": 0.03,
+    "content_fit": 0.5,
+    "angle": "受众集中在东亚北美，不在目标东南亚三国，品类仅与目标品类邻接，受众错位"
+   },
+   "KOX-001750": {
+    "kox_id": "KOX-001750",
+    "fit_score": 0.22,
+    "audience_fit": 0.03,
+    "content_fit": 0.9,
+    "angle": "受众集中在欧美地区，不符合目标东南亚市场的地域要求，受众错位"
+   },
+   "KOX-001754": {
+    "kox_id": "KOX-001754",
+    "fit_score": 0.2,
+    "audience_fit": 0.02,
+    "content_fit": 0.95,
+    "angle": "受众集中在欧美地区，不符合目标东南亚市场的地域要求，受众错位"
+   },
+   "KOX-001787": {
+    "kox_id": "KOX-001787",
+    "fit_score": 0.21,
+    "audience_fit": 0.05,
+    "content_fit": 0.8,
+    "angle": "受众集中在东亚，不在目标东南亚三国，不符合地域要求，受众错位"
+   },
+   "KOX-001792": {
+    "kox_id": "KOX-001792",
+    "fit_score": 0.18,
+    "audience_fit": 0.01,
+    "content_fit": 0.9,
+    "angle": "受众集中在欧洲地区，不符合目标东南亚市场的地域要求，受众错位"
+   },
+   "KOX-001815": {
+    "kox_id": "KOX-001815",
+    "fit_score": 0.16,
+    "audience_fit": 0.02,
+    "content_fit": 0.6,
+    "angle": "受众集中在欧美地区，不符合目标东南亚市场的地域要求，受众错位"
+   },
+   "KOX-001825": {
+    "kox_id": "KOX-001825",
+    "fit_score": 0.19,
+    "audience_fit": 0.02,
+    "content_fit": 0.7,
+    "angle": "受众集中在北美地区，不符合目标东南亚市场的地域要求，受众错位"
+   },
+   "KOX-001834": {
+    "kox_id": "KOX-001834",
+    "fit_score": 0.2,
+    "audience_fit": 0.02,
+    "content_fit": 0.75,
+    "angle": "受众集中在欧美地区，不符合目标东南亚市场的地域要求，受众错位"
+   },
+   "KOX-001837": {
+    "kox_id": "KOX-001837",
+    "fit_score": 0.45,
+    "audience_fit": 0.15,
+    "content_fit": 0.85,
+    "angle": "约9%受众位于目标市场马来西亚，自身长期创作美妆内容，可从马来西亚女性日常美妆测评切入，仅适合预算充足时考虑"
+   },
+   "KOX-001869": {
+    "kox_id": "KOX-001869",
+    "fit_score": 0.18,
+    "audience_fit": 0.02,
+    "content_fit": 0.8,
+    "angle": "受众集中在北美拉美，不符合目标东南亚市场的地域要求，受众错位"
+   },
+   "KOX-001878": {
+    "kox_id": "KOX-001878",
+    "fit_score": 0.15,
+    "audience_fit": 0.03,
+    "content_fit": 0.5,
+    "angle": "受众集中在东亚北美，不符合目标东南亚市场的地域要求，内容品类关联度较低"
+   },
+   "KOX-001893": {
+    "kox_id": "KOX-001893",
+    "fit_score": 0.18,
+    "audience_fit": 0.05,
+    "content_fit": 0.3,
+    "angle": "受众地域完全不匹配目标东南亚三国，女性受众占比低，仅内容沾边美妆"
+   },
+   "KOX-001904": {
+    "kox_id": "KOX-001904",
+    "fit_score": 0.5,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容品类符合美妆个护，但受众集中在拉美，几乎没有目标东南亚市场受众"
+   },
+   "KOX-001936": {
+    "kox_id": "KOX-001936",
+    "fit_score": 0.5,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容品类符合美妆个护，但受众集中在北美，几乎没有目标东南亚市场受众"
+   },
+   "KOX-001940": {
+    "kox_id": "KOX-001940",
+    "fit_score": 0.22,
+    "audience_fit": 0.05,
+    "content_fit": 0.4,
+    "angle": "仅品类邻接美妆，受众集中在墨西哥，不符合目标市场要求"
+   },
+   "KOX-001953": {
+    "kox_id": "KOX-001953",
+    "fit_score": 0.5,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容品类匹配美妆，但受众集中在日本，几乎没有目标东南亚三国受众"
+   },
+   "KOX-002000": {
+    "kox_id": "KOX-002000",
+    "fit_score": 0.9,
+    "audience_fit": 0.85,
+    "content_fit": 0.95,
+    "angle": "越南本地美妆达人，受众多为目标年龄女性，可做美妆产品测评种草引发互动"
+   },
+   "KOX-002001": {
+    "kox_id": "KOX-002001",
+    "fit_score": 0.5,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容品类符合美妆，但受众集中在北美，无目标东南亚市场受众"
+   },
+   "KOX-002003": {
+    "kox_id": "KOX-002003",
+    "fit_score": 0.3,
+    "audience_fit": 0.1,
+    "content_fit": 0.5,
+    "angle": "受众集中在欧洲，不符合目标市场要求，女性占比低，仅内容沾边美妆"
+   },
+   "KOX-002009": {
+    "kox_id": "KOX-002009",
+    "fit_score": 0.65,
+    "audience_fit": 0.4,
+    "content_fit": 0.9,
+    "angle": "美妆内容创作者，受众有一定比例目标市场印尼的目标年龄女性，适合做美妆种草互动"
+   },
+   "KOX-002021": {
+    "kox_id": "KOX-002021",
+    "fit_score": 0.88,
+    "audience_fit": 0.82,
+    "content_fit": 0.95,
+    "angle": "马来西亚本地美妆达人，受众多为目标年龄段女性，覆盖MY和部分ID，适合做美妆产品分享互动"
+   },
+   "KOX-002026": {
+    "kox_id": "KOX-002026",
+    "fit_score": 0.5,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容品类匹配美妆，但受众集中在中东，不符合目标东南亚市场要求"
+   },
+   "KOX-002027": {
+    "kox_id": "KOX-002027",
+    "fit_score": 0.35,
+    "audience_fit": 0.1,
+    "content_fit": 0.6,
+    "angle": "受众集中在北美，不符合目标市场要求，仅内容沾边美妆"
+   },
+   "KOX-002040": {
+    "kox_id": "KOX-002040",
+    "fit_score": 0.28,
+    "audience_fit": 0.1,
+    "content_fit": 0.45,
+    "angle": "受众地理完全不覆盖目标东南亚市场（ID/MY/VN），不符合投放地域要求"
+   },
+   "KOX-002042": {
+    "kox_id": "KOX-002042",
+    "fit_score": 0.13,
+    "audience_fit": 0.05,
+    "content_fit": 0.2,
+    "angle": "受众不覆盖目标东南亚市场，实际内容品类与美妆个护不相关"
+   },
+   "KOX-002101": {
+    "kox_id": "KOX-002101",
+    "fit_score": 0.52,
+    "audience_fit": 0.3,
+    "content_fit": 0.75,
+    "angle": "拥有部分东南亚目标受众，可做美妆产品测评分享引发用户互动"
+   },
+   "KOX-002112": {
+    "kox_id": "KOX-002112",
+    "fit_score": 0.5,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容调性贴合美妆个护，但受众完全不覆盖目标东南亚市场，仅可在预算充足时考虑"
+   },
+   "KOX-002117": {
+    "kox_id": "KOX-002117",
+    "fit_score": 0.45,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "内容贴合美妆品类，但受众不覆盖目标东南亚市场，仅预算充足时考虑"
+   },
+   "KOX-002132": {
+    "kox_id": "KOX-002132",
+    "fit_score": 0.43,
+    "audience_fit": 0.25,
+    "content_fit": 0.6,
+    "angle": "无明确公开的受众地域数据，实际内容覆盖美妆品类，确认地域符合后可尝试产出互动内容"
+   },
+   "KOX-002133": {
+    "kox_id": "KOX-002133",
+    "fit_score": 0.5,
+    "audience_fit": 0.3,
+    "content_fit": 0.7,
+    "angle": "无明确公开的受众地域数据，内容覆盖美妆品类，确认地域符合后可做年轻女性美妆分享内容"
+   },
+   "KOX-002135": {
+    "kox_id": "KOX-002135",
+    "fit_score": 0.48,
+    "audience_fit": 0.1,
+    "content_fit": 0.85,
+    "angle": "内容贴合美妆品类，但受众不覆盖目标东南亚市场，仅预算充足时考虑"
+   },
+   "KOX-002151": {
+    "kox_id": "KOX-002151",
+    "fit_score": 0.45,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "内容贴合美妆品类，但受众不覆盖目标东南亚市场，仅预算充足时考虑"
+   },
+   "KOX-002163": {
+    "kox_id": "KOX-002163",
+    "fit_score": 0.4,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "内容覆盖美妆品类，但受众不覆盖目标东南亚市场，仅预算充足时考虑"
+   },
+   "KOX-002186": {
+    "kox_id": "KOX-002186",
+    "fit_score": 0.9,
+    "audience_fit": 0.9,
+    "content_fit": 0.9,
+    "angle": "本土目标受众占比高，可从东南亚年轻女性日常美妆、产品试用测评切入，引发互动讨论"
+   },
+   "KOX-002263": {
+    "kox_id": "KOX-002263",
+    "fit_score": 0.48,
+    "audience_fit": 0.1,
+    "content_fit": 0.85,
+    "angle": "内容贴合美妆品类，但受众不覆盖目标东南亚市场，仅预算充足时考虑"
+   },
+   "KOX-002271": {
+    "kox_id": "KOX-002271",
+    "fit_score": 0.53,
+    "audience_fit": 0.1,
+    "content_fit": 0.95,
+    "angle": "达人内容聚焦美妆个护品类契合需求，但受众地理完全不覆盖目标ID/MY/VN市场，适配度低"
+   },
+   "KOX-002273": {
+    "kox_id": "KOX-002273",
+    "fit_score": 0.5,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "达人内容覆盖美妆个护品类契合需求，但受众地理不覆盖目标东南亚市场，适配度低"
+   },
+   "KOX-002290": {
+    "kox_id": "KOX-002290",
+    "fit_score": 0.35,
+    "audience_fit": 0.1,
+    "content_fit": 0.6,
+    "angle": "仅少量内容涉及美妆，品类关联度低，且受众不覆盖目标市场，不适配"
+   },
+   "KOX-002303": {
+    "kox_id": "KOX-002303",
+    "fit_score": 0.53,
+    "audience_fit": 0.1,
+    "content_fit": 0.95,
+    "angle": "内容聚焦美妆个护品类契合，但受众地理不覆盖目标东南亚市场，适配度低"
+   },
+   "KOX-002315": {
+    "kox_id": "KOX-002315",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.3,
+    "angle": "主营3C数码与家居家电，仅极少量内容涉及美妆，品类偏离且受众不覆盖目标市场，不适配"
+   },
+   "KOX-002356": {
+    "kox_id": "KOX-002356",
+    "fit_score": 0.5,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容覆盖美妆个护与服饰，品类契合需求，但受众地理不覆盖目标市场，适配度低"
+   },
+   "KOX-002358": {
+    "kox_id": "KOX-002358",
+    "fit_score": 0.68,
+    "audience_fit": 0.7,
+    "content_fit": 0.65,
+    "angle": "近四分之一受众位于目标市场印尼，受众年龄性别均符合要求，可从日常穿搭搭配美妆、内服外养的角度创作内容引发互动"
+   },
+   "KOX-002376": {
+    "kox_id": "KOX-002376",
+    "fit_score": 0.5,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容覆盖美妆个护与服饰，品类契合需求，但受众地理不覆盖目标东南亚市场，适配度低"
+   },
+   "KOX-002398": {
+    "kox_id": "KOX-002398",
+    "fit_score": 0.5,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容覆盖美妆个护，品类契合需求，但受众地理不覆盖目标东南亚市场，适配度低"
+   },
+   "KOX-002401": {
+    "kox_id": "KOX-002401",
+    "fit_score": 0.3,
+    "audience_fit": 0.1,
+    "content_fit": 0.5,
+    "angle": "仅部分内容涉及美妆，关联度低，且受众不覆盖目标市场，不适配"
+   },
+   "KOX-002416": {
+    "kox_id": "KOX-002416",
+    "fit_score": 0.3,
+    "audience_fit": 0.1,
+    "content_fit": 0.5,
+    "angle": "仅部分内容涉及美妆，关联度低，且受众不覆盖目标市场，不适配"
+   },
+   "KOX-002423": {
+    "kox_id": "KOX-002423",
+    "fit_score": 0.53,
+    "audience_fit": 0.1,
+    "content_fit": 0.95,
+    "angle": "内容聚焦美妆个护，品类契合需求，但受众地理不覆盖目标东南亚市场，适配度低"
+   },
+   "KOX-002428": {
+    "kox_id": "KOX-002428",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "达人内容品类符合美妆个护，但受众均分布在欧洲，不在目标投放市场印度尼西亚、马来西亚、越南，受众错位"
+   },
+   "KOX-002459": {
+    "kox_id": "KOX-002459",
+    "fit_score": 0.22,
+    "audience_fit": 0.08,
+    "content_fit": 0.8,
+    "angle": "内容品类接近美妆个护，但受众均分布在土耳其等欧洲地区，不在目标投放市场，受众错位"
+   },
+   "KOX-002462": {
+    "kox_id": "KOX-002462",
+    "fit_score": 0.18,
+    "audience_fit": 0.05,
+    "content_fit": 0.3,
+    "angle": "受众不在目标投放市场，且女性受众占比远低于需求，不符合投放要求"
+   },
+   "KOX-002483": {
+    "kox_id": "KOX-002483",
+    "fit_score": 0.24,
+    "audience_fit": 0.09,
+    "content_fit": 0.9,
+    "angle": "内容品类符合美妆个护，但受众均分布在日本等东亚地区，不在目标投放市场，受众错位"
+   },
+   "KOX-002490": {
+    "kox_id": "KOX-002490",
+    "fit_score": 0.15,
+    "audience_fit": 0.04,
+    "content_fit": 0.4,
+    "angle": "受众不在目标投放市场，且女性受众占比远低于需求，品类匹配度低，不符合要求"
+   },
+   "KOX-002514": {
+    "kox_id": "KOX-002514",
+    "fit_score": 0.7,
+    "audience_fit": 0.8,
+    "content_fit": 0.6,
+    "angle": "结合印尼本地美妆流行趋势，分享美妆产品使用体验与技巧，和粉丝互动引发讨论"
+   },
+   "KOX-002517": {
+    "kox_id": "KOX-002517",
+    "fit_score": 0.16,
+    "audience_fit": 0.03,
+    "content_fit": 0.28,
+    "angle": "受众不在目标投放市场，女性受众占比低，品类匹配度低，不符合投放要求"
+   },
+   "KOX-002522": {
+    "kox_id": "KOX-002522",
+    "fit_score": 0.21,
+    "audience_fit": 0.06,
+    "content_fit": 0.9,
+    "angle": "内容品类符合美妆个护，但受众均分布在南美地区，不在目标投放市场，受众错位"
+   },
+   "KOX-002529": {
+    "kox_id": "KOX-002529",
+    "fit_score": 0.91,
+    "audience_fit": 0.88,
+    "content_fit": 0.95,
+    "angle": "结合越南本地时尚穿搭场景，分享美妆产品试用体验与化妆技巧，引发粉丝互动讨论"
+   },
+   "KOX-002533": {
+    "kox_id": "KOX-002533",
+    "fit_score": 0.62,
+    "audience_fit": 0.45,
+    "content_fit": 0.8,
+    "angle": "因缺少受众地域分布数据，若确认受众主要分布在印尼目标市场，可分享美妆产品日常使用体验引发粉丝互动"
+   },
+   "KOX-002543": {
+    "kox_id": "KOX-002543",
+    "fit_score": 0.82,
+    "audience_fit": 0.78,
+    "content_fit": 0.86,
+    "angle": "结合日常饮食健康场景分享美妆产品使用心得，和粉丝互动讨论美妆相关话题"
+   },
+   "KOX-002558": {
+    "kox_id": "KOX-002558",
+    "fit_score": 0.19,
+    "audience_fit": 0.05,
+    "content_fit": 0.45,
+    "angle": "受众均分布在意大利，不在目标投放市场，品类匹配度低，不符合投放要求"
+   },
+   "KOX-002597": {
+    "kox_id": "KOX-002597",
+    "fit_score": 0.22,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众全部集中在欧洲市场，不符合目标东南亚市场要求，品类匹配但受众地域错位"
+   },
+   "KOX-002603": {
+    "kox_id": "KOX-002603",
+    "fit_score": 0.2,
+    "audience_fit": 0.08,
+    "content_fit": 0.85,
+    "angle": "受众集中在欧洲，不符合目标东南亚市场要求，品类匹配但受众地域错位"
+   },
+   "KOX-002612": {
+    "kox_id": "KOX-002612",
+    "fit_score": 0.21,
+    "audience_fit": 0.09,
+    "content_fit": 0.85,
+    "angle": "受众集中在欧洲，不符合目标东南亚市场要求，品类匹配但受众地域错位"
+   },
+   "KOX-002614": {
+    "kox_id": "KOX-002614",
+    "fit_score": 0.18,
+    "audience_fit": 0.05,
+    "content_fit": 0.75,
+    "angle": "受众集中在美洲，女性占比远低于目标要求，不符合目标人群和地域要求"
+   },
+   "KOX-002627": {
+    "kox_id": "KOX-002627",
+    "fit_score": 0.88,
+    "audience_fit": 0.82,
+    "content_fit": 0.95,
+    "angle": "从美妆产品测评、日常妆容上妆体验切入，引发粉丝互动讨论"
+   },
+   "KOX-002655": {
+    "kox_id": "KOX-002655",
+    "fit_score": 0.65,
+    "audience_fit": 0.35,
+    "content_fit": 0.95,
+    "angle": "以美妆产品测评、日常妆容分享切入，触达账号内的东南亚目标受众"
+   },
+   "KOX-002664": {
+    "kox_id": "KOX-002664",
+    "fit_score": 0.15,
+    "audience_fit": 0.05,
+    "content_fit": 0.95,
+    "angle": "受众集中在北美，不符合目标东南亚市场要求，品类匹配但受众地域错位"
+   },
+   "KOX-002673": {
+    "kox_id": "KOX-002673",
+    "fit_score": 0.2,
+    "audience_fit": 0.12,
+    "content_fit": 0.7,
+    "angle": "受众集中在欧美，女性占比不足，不符合目标人群和地域要求"
+   },
+   "KOX-002730": {
+    "kox_id": "KOX-002730",
+    "fit_score": 0.18,
+    "audience_fit": 0.08,
+    "content_fit": 0.4,
+    "angle": "受众不在目标东南亚市场，内容核心品类为食品保健，与美妆匹配度低"
+   },
+   "KOX-002731": {
+    "kox_id": "KOX-002731",
+    "fit_score": 0.62,
+    "audience_fit": 0.35,
+    "content_fit": 0.9,
+    "angle": "以美妆产品试用、日常妆容教程切入，触达账号内印尼目标受众群体"
+   },
+   "KOX-002779": {
+    "kox_id": "KOX-002779",
+    "fit_score": 0.22,
+    "audience_fit": 0.15,
+    "content_fit": 0.3,
+    "angle": "内容核心品类为游戏应用，与美妆品类匹配度低，仅少量受众在目标市场"
+   },
+   "KOX-002824": {
+    "kox_id": "KOX-002824",
+    "fit_score": 0.28,
+    "audience_fit": 0.15,
+    "content_fit": 0.5,
+    "angle": "仅少量内容涉及美妆，受众以男性为主，仅有极少受众在目标市场，匹配度低"
+   },
+   "KOX-002840": {
+    "kox_id": "KOX-002840",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.6,
+    "angle": "受众几乎全部集中在墨西哥等非目标市场，地域不匹配"
+   },
+   "KOX-002841": {
+    "kox_id": "KOX-002841",
+    "fit_score": 0.18,
+    "audience_fit": 0.08,
+    "content_fit": 0.5,
+    "angle": "受众集中在加拿大等非目标市场，地域不匹配"
+   },
+   "KOX-002859": {
+    "kox_id": "KOX-002859",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.95,
+    "angle": "受众集中在日本等东亚地区，不在目标投放的东南亚三国，地域不匹配"
+   },
+   "KOX-002860": {
+    "kox_id": "KOX-002860",
+    "fit_score": 0.15,
+    "audience_fit": 0.1,
+    "content_fit": 0.2,
+    "angle": "内容品类为家居家电、母婴，偏离目标美妆个护，受众也不在目标市场"
+   },
+   "KOX-002865": {
+    "kox_id": "KOX-002865",
+    "fit_score": 0.26,
+    "audience_fit": 0.1,
+    "content_fit": 0.95,
+    "angle": "受众集中在欧洲地区，不在目标投放的东南亚三国，地域不匹配"
+   },
+   "KOX-002866": {
+    "kox_id": "KOX-002866",
+    "fit_score": 0.68,
+    "audience_fit": 0.45,
+    "content_fit": 0.85,
+    "angle": "覆盖越南、印尼目标受众，可分享美妆产品使用体验，引发粉丝互动讨论"
+   },
+   "KOX-002881": {
+    "kox_id": "KOX-002881",
+    "fit_score": 0.53,
+    "audience_fit": 0.2,
+    "content_fit": 0.85,
+    "angle": "仅少量受众覆盖越南、马来西亚目标市场，可作为补充投放种草"
+   },
+   "KOX-002896": {
+    "kox_id": "KOX-002896",
+    "fit_score": 0.22,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众集中在南亚地区，不在目标投放的东南亚三国，地域不匹配"
+   },
+   "KOX-002901": {
+    "kox_id": "KOX-002901",
+    "fit_score": 0.24,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众集中在欧洲地区，不在目标投放的东南亚三国，地域不匹配"
+   },
+   "KOX-002902": {
+    "kox_id": "KOX-002902",
+    "fit_score": 0.81,
+    "audience_fit": 0.82,
+    "content_fit": 0.8,
+    "angle": "大部分受众在印尼、马来西亚目标市场，可发起美妆互动挑战，带动产品话题讨论"
+   },
+   "KOX-002910": {
+    "kox_id": "KOX-002910",
+    "fit_score": 0.45,
+    "audience_fit": 0.22,
+    "content_fit": 0.8,
+    "angle": "仅覆盖少量马来西亚目标受众，可作为预算充足时的补充投放"
+   },
+   "KOX-002932": {
+    "kox_id": "KOX-002932",
+    "fit_score": 0.2,
+    "audience_fit": 0.08,
+    "content_fit": 0.8,
+    "angle": "受众集中在欧洲地区，不在目标投放的东南亚三国，地域不匹配"
+   },
+   "KOX-002935": {
+    "kox_id": "KOX-002935",
+    "fit_score": 0.79,
+    "audience_fit": 0.59,
+    "content_fit": 0.95,
+    "angle": "可做美妆产品试用分享，引导用户在评论区讨论护肤美妆经验，引发互动"
+   },
+   "KOX-002943": {
+    "kox_id": "KOX-002943",
+    "fit_score": 0.76,
+    "audience_fit": 0.54,
+    "content_fit": 0.98,
+    "angle": "内容符合美妆品类定位，但受众几乎不在目标市场ID/MY/VN，无法有效触达目标人群"
+   },
+   "KOX-003019": {
+    "kox_id": "KOX-003019",
+    "fit_score": 0.74,
+    "audience_fit": 0.66,
+    "content_fit": 0.8,
+    "angle": "结合印尼本地美妆流行趋势，分享美妆产品使用感受，和粉丝互动答疑"
+   },
+   "KOX-003024": {
+    "kox_id": "KOX-003024",
+    "fit_score": 0.56,
+    "audience_fit": 0.52,
+    "content_fit": 0.6,
+    "angle": "达人主打服饰内容，可结合穿搭场景分享美妆使用心得，但受众不在目标市场，触达效果有限"
+   },
+   "KOX-003027": {
+    "kox_id": "KOX-003027",
+    "fit_score": 0.71,
+    "audience_fit": 0.48,
+    "content_fit": 0.9,
+    "angle": "内容符合美妆品类，但受众均不在目标市场ID/MY/VN，无法有效触达目标人群"
+   },
+   "KOX-003029": {
+    "kox_id": "KOX-003029",
+    "fit_score": 0.72,
+    "audience_fit": 0.5,
+    "content_fit": 0.9,
+    "angle": "内容符合美妆品类，但受众均不在目标市场ID/MY/VN，无法有效触达目标人群"
+   },
+   "KOX-003041": {
+    "kox_id": "KOX-003041",
+    "fit_score": 0.75,
+    "audience_fit": 0.51,
+    "content_fit": 0.95,
+    "angle": "内容符合美妆品类，但受众均不在目标市场ID/MY/VN，无法有效触达目标人群"
+   },
+   "KOX-003051": {
+    "kox_id": "KOX-003051",
+    "fit_score": 0.76,
+    "audience_fit": 0.53,
+    "content_fit": 0.95,
+    "angle": "内容符合美妆品类，但受众均不在目标市场ID/MY/VN，无法有效触达目标人群"
+   },
+   "KOX-003071": {
+    "kox_id": "KOX-003071",
+    "fit_score": 0.53,
+    "audience_fit": 0.33,
+    "content_fit": 0.7,
+    "angle": "内容和美妆有一定关联，但受众不在目标市场且男性占比偏高，不符合目标人群要求"
+   },
+   "KOX-003093": {
+    "kox_id": "KOX-003093",
+    "fit_score": 0.81,
+    "audience_fit": 0.7,
+    "content_fit": 0.9,
+    "angle": "面向越南本地年轻女性粉丝，做美妆产品上脸测评，结合穿搭分享使用感受，引导粉丝评论互动"
+   },
+   "KOX-003098": {
+    "kox_id": "KOX-003098",
+    "fit_score": 0.74,
+    "audience_fit": 0.55,
+    "content_fit": 0.9,
+    "angle": "内容符合美妆品类，但受众均不在目标市场ID/MY/VN，无法有效触达目标人群"
+   },
+   "KOX-003122": {
+    "kox_id": "KOX-003122",
+    "fit_score": 0.79,
+    "audience_fit": 0.66,
+    "content_fit": 0.9,
+    "angle": "面向印尼本地年轻女性，分享美妆产品种草测评，提问粉丝常用美妆好物，引发社区互动讨论"
+   },
+   "KOX-003137": {
+    "kox_id": "KOX-003137",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.3,
+    "angle": "受众主要分布在欧美，男性占比高，与目标市场和目标人群不匹配"
+   },
+   "KOX-003142": {
+    "kox_id": "KOX-003142",
+    "fit_score": 0.43,
+    "audience_fit": 0.15,
+    "content_fit": 0.7,
+    "angle": "内容贴合美妆品类，受众年龄性别符合要求，但受众集中在东北亚，不符合目标市场要求"
+   },
+   "KOX-003145": {
+    "kox_id": "KOX-003145",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.4,
+    "angle": "受众主要分布在欧美，不符合目标市场地域要求"
+   },
+   "KOX-003163": {
+    "kox_id": "KOX-003163",
+    "fit_score": 0.5,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容品类完全贴合美妆个护，受众年龄性别符合要求，但受众集中在欧美拉美，不符合目标东南亚市场要求"
+   },
+   "KOX-003169": {
+    "kox_id": "KOX-003169",
+    "fit_score": 0.7,
+    "audience_fit": 0.4,
+    "content_fit": 1.0,
+    "angle": "主打美妆测评、日常妆容分享，引发受众互动讨论，覆盖马来西亚、印尼目标受众"
+   },
+   "KOX-003180": {
+    "kox_id": "KOX-003180",
+    "fit_score": 0.1,
+    "audience_fit": 0.1,
+    "content_fit": 0.1,
+    "angle": "内容实际以3C数码为主，受众不在目标市场，与投放需求不匹配"
+   },
+   "KOX-003229": {
+    "kox_id": "KOX-003229",
+    "fit_score": 0.5,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容品类贴合美妆，但受众集中在欧美拉美，不符合目标东南亚市场要求"
+   },
+   "KOX-003257": {
+    "kox_id": "KOX-003257",
+    "fit_score": 0.38,
+    "audience_fit": 0.15,
+    "content_fit": 0.6,
+    "angle": "内容以时尚为主，仅品类邻接美妆，受众集中在东亚，不符合目标市场要求"
+   },
+   "KOX-003260": {
+    "kox_id": "KOX-003260",
+    "fit_score": 0.82,
+    "audience_fit": 0.65,
+    "content_fit": 1.0,
+    "angle": "主打美妆内容创作，分享产品测评，调动粉丝互动讨论，覆盖越南、马来西亚目标受众"
+   },
+   "KOX-003572": {
+    "kox_id": "KOX-003572",
+    "fit_score": 0.92,
+    "audience_fit": 0.85,
+    "content_fit": 1.0,
+    "angle": "以印尼本地美妆内容切入，做产品试用测评，互动性强，精准触达目标区域女性受众"
+   },
+   "KOX-003831": {
+    "kox_id": "KOX-003831",
+    "fit_score": 0.46,
+    "audience_fit": 0.42,
+    "content_fit": 0.5,
+    "angle": "有少量美妆内容，部分受众在印尼、马来西亚目标市场，可尝试从出行穿搭结合美妆角度切入"
+   },
+   "KOX-004004": {
+    "kox_id": "KOX-004004",
+    "fit_score": 0.78,
+    "audience_fit": 0.65,
+    "content_fit": 0.9,
+    "angle": "以越南本地美妆护肤分享切入，结合健康护肤理念，引发受众互动讨论，覆盖越南、印尼目标受众"
+   },
+   "KOX-004104": {
+    "kox_id": "KOX-004104",
+    "fit_score": 0.86,
+    "audience_fit": 0.82,
+    "content_fit": 0.9,
+    "angle": "以印尼本地年轻女性受众熟悉的美妆种草测评切入，分享美妆产品真实使用体验，引发粉丝互动讨论"
+   },
+   "KOX-004161": {
+    "kox_id": "KOX-004161",
+    "fit_score": 0.89,
+    "audience_fit": 0.88,
+    "content_fit": 0.9,
+    "angle": "面向越南本地年轻女性做美妆好物分享，通过上脸试用展示产品效果，激发观众互动讨论"
+   },
+   "KOX-004277": {
+    "kox_id": "KOX-004277",
+    "fit_score": 0.86,
+    "audience_fit": 0.78,
+    "content_fit": 0.95,
+    "angle": "专注马来西亚本地美妆内容分享，针对年轻女性群体做产品体验测评，带动社区口碑讨论"
+   },
+   "KOX-004302": {
+    "kox_id": "KOX-004302",
+    "fit_score": 0.78,
+    "audience_fit": 0.7,
+    "content_fit": 0.85,
+    "angle": "结合美妆与内调养生内容，以「外妆内养」的护肤美妆经验切入，讨论产品使用效果"
+   },
+   "KOX-004313": {
+    "kox_id": "KOX-004313",
+    "fit_score": 0.84,
+    "audience_fit": 0.8,
+    "content_fit": 0.88,
+    "angle": "结合日常穿搭分享美妆产品，通过打造整体造型种草，引导观众讨论搭配思路与产品体验"
+   },
+   "KOX-004590": {
+    "kox_id": "KOX-004590",
+    "fit_score": 0.63,
+    "audience_fit": 0.7,
+    "content_fit": 0.55,
+    "angle": "可结合穿搭内容植入美妆产品，通过整体造型搭配完成种草，需要在创意上做较多适配"
+   },
+   "KOX-004688": {
+    "kox_id": "KOX-004688",
+    "fit_score": 0.55,
+    "audience_fit": 0.5,
+    "content_fit": 0.6,
+    "angle": "可以结合食品保健内容，以内调养颜的方向切入推广美妆产品，受众性别契合度较低需要让步"
+   },
+   "KOX-004880": {
+    "kox_id": "KOX-004880",
+    "fit_score": 0.73,
+    "audience_fit": 0.7,
+    "content_fit": 0.75,
+    "angle": "可以结合数码拍摄内容产出高清美妆试色教程，展示产品真实妆效，引发观众互动讨论"
+   }
+  },
+  "BRIEF-003": {
+   "KOX-000004": {
+    "kox_id": "KOX-000004",
+    "fit_score": 0.37,
+    "audience_fit": 0.1,
+    "content_fit": 1.0,
+    "angle": "内容属目标游戏品类适配性好，但受众几乎全部集中在非目标投放市场，难以完成触达目标"
+   },
+   "KOX-000013": {
+    "kox_id": "KOX-000013",
+    "fit_score": 0.41,
+    "audience_fit": 0.15,
+    "content_fit": 1.0,
+    "angle": "内容完全适配游戏品类，但受众集中在澳英美等非目标市场，无法保障目标市场曝光规模"
+   },
+   "KOX-000019": {
+    "kox_id": "KOX-000019",
+    "fit_score": 0.34,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容适配游戏品类，但受众集中在墨西哥等非目标市场，触达目标人群规模有限"
+   },
+   "KOX-000023": {
+    "kox_id": "KOX-000023",
+    "fit_score": 0.73,
+    "audience_fit": 0.7,
+    "content_fit": 0.8,
+    "angle": "超过一半受众为目标市场巴西的18-34岁男性，可做本地游戏应用试玩推广获取曝光"
+   },
+   "KOX-000040": {
+    "kox_id": "KOX-000040",
+    "fit_score": 0.2,
+    "audience_fit": 0.2,
+    "content_fit": 0.2,
+    "angle": "实际内容品类为服饰，偏离目标游戏品类，受众地域分布不明确，适配性差"
+   },
+   "KOX-000064": {
+    "kox_id": "KOX-000064",
+    "fit_score": 0.48,
+    "audience_fit": 0.3,
+    "content_fit": 0.9,
+    "angle": "内容品类适配游戏应用，但受众地域分布不明确，无法保障目标市场的曝光量"
+   },
+   "KOX-000081": {
+    "kox_id": "KOX-000081",
+    "fit_score": 0.16,
+    "audience_fit": 0.1,
+    "content_fit": 0.3,
+    "angle": "实际内容为家居家电，受众集中在俄罗斯非目标市场，品类和受众均错位"
+   },
+   "KOX-000088": {
+    "kox_id": "KOX-000088",
+    "fit_score": 0.34,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容适配游戏品类，但受众集中在东南亚非目标市场，难以触达目标人群"
+   },
+   "KOX-000091": {
+    "kox_id": "KOX-000091",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.6,
+    "angle": "仅部分内容涉及游戏，受众集中在欧洲非目标市场，适配性较低"
+   },
+   "KOX-000099": {
+    "kox_id": "KOX-000099",
+    "fit_score": 0.32,
+    "audience_fit": 0.15,
+    "content_fit": 0.7,
+    "angle": "包含游戏内容产出，但受众集中在欧洲非目标市场，目标年龄人群占比偏低"
+   },
+   "KOX-000109": {
+    "kox_id": "KOX-000109",
+    "fit_score": 0.71,
+    "audience_fit": 0.8,
+    "content_fit": 0.5,
+    "angle": "受众以日本目标市场18-34岁男性为主，高度契合人群要求，可在汽车出行内容中植入游戏应用获取曝光"
+   },
+   "KOX-000112": {
+    "kox_id": "KOX-000112",
+    "fit_score": 0.34,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容适配游戏品类，但受众集中在澳洲等非目标市场，无法满足目标市场曝光需求"
+   },
+   "KOX-000119": {
+    "kox_id": "KOX-000119",
+    "fit_score": 0.91,
+    "audience_fit": 0.85,
+    "content_fit": 1.0,
+    "angle": "直接面向巴西本地年轻男性用户推广游戏，获取游戏安装曝光，完全匹配需求"
+   },
+   "KOX-000122": {
+    "kox_id": "KOX-000122",
+    "fit_score": 0.44,
+    "audience_fit": 0.2,
+    "content_fit": 0.8,
+    "angle": "内容品类符合要求，但受众集中在非洲非目标市场，仅预算充足时可考虑"
+   },
+   "KOX-000126": {
+    "kox_id": "KOX-000126",
+    "fit_score": 0.55,
+    "audience_fit": 0.25,
+    "content_fit": 1.0,
+    "angle": "内容品类匹配，但受众地域不在目标市场，女性占比偏高，不符合目标人群要求"
+   },
+   "KOX-000132": {
+    "kox_id": "KOX-000132",
+    "fit_score": 0.36,
+    "audience_fit": 0.2,
+    "content_fit": 0.6,
+    "angle": "仅部分内容涉及游戏品类，受众地域完全不在目标市场，适配度低"
+   },
+   "KOX-000142": {
+    "kox_id": "KOX-000142",
+    "fit_score": 0.75,
+    "audience_fit": 0.65,
+    "content_fit": 0.9,
+    "angle": "依托数码+游戏内容受众，面向巴西年轻男性群体做游戏推广，获取安装曝光"
+   },
+   "KOX-000149": {
+    "kox_id": "KOX-000149",
+    "fit_score": 0.55,
+    "audience_fit": 0.25,
+    "content_fit": 1.0,
+    "angle": "内容品类符合，但受众集中在东南亚非目标市场，不符合地域触达要求"
+   },
+   "KOX-000206": {
+    "kox_id": "KOX-000206",
+    "fit_score": 0.48,
+    "audience_fit": 0.2,
+    "content_fit": 0.9,
+    "angle": "内容品类匹配目标，但受众集中在北美拉美非目标市场，仅预算充足时考虑"
+   },
+   "KOX-000215": {
+    "kox_id": "KOX-000215",
+    "fit_score": 0.29,
+    "audience_fit": 0.15,
+    "content_fit": 0.5,
+    "angle": "实际内容不涉及游戏品类，受众地域也不在目标市场，适配度低"
+   },
+   "KOX-000234": {
+    "kox_id": "KOX-000234",
+    "fit_score": 0.52,
+    "audience_fit": 0.2,
+    "content_fit": 1.0,
+    "angle": "内容品类符合要求，但受众集中在非洲非目标市场，不符合地域要求"
+   },
+   "KOX-000237": {
+    "kox_id": "KOX-000237",
+    "fit_score": 0.45,
+    "audience_fit": 0.15,
+    "content_fit": 0.9,
+    "angle": "品类匹配，但受众地域、语言都不符合目标市场要求，适配度低"
+   },
+   "KOX-000249": {
+    "kox_id": "KOX-000249",
+    "fit_score": 0.43,
+    "audience_fit": 0.18,
+    "content_fit": 0.8,
+    "angle": "受众地域不在目标市场，目标年龄人群占比偏低，适配度不足"
+   },
+   "KOX-000254": {
+    "kox_id": "KOX-000254",
+    "fit_score": 0.45,
+    "audience_fit": 0.15,
+    "content_fit": 0.9,
+    "angle": "受众地域不在目标市场，女性受众占比更高，不符合目标人群要求"
+   },
+   "KOX-000257": {
+    "kox_id": "KOX-000257",
+    "fit_score": 0.31,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众核心地域不在目标市场JP/KR/BR，不符合投放要求"
+   },
+   "KOX-000264": {
+    "kox_id": "KOX-000264",
+    "fit_score": 0.32,
+    "audience_fit": 0.12,
+    "content_fit": 0.8,
+    "angle": "受众核心地域不在目标市场JP/KR/BR，不符合投放要求"
+   },
+   "KOX-000271": {
+    "kox_id": "KOX-000271",
+    "fit_score": 0.16,
+    "audience_fit": 0.1,
+    "content_fit": 0.3,
+    "angle": "内容无游戏相关内容，核心受众地域也不符合目标市场要求"
+   },
+   "KOX-000286": {
+    "kox_id": "KOX-000286",
+    "fit_score": 0.9,
+    "audience_fit": 0.85,
+    "content_fit": 1.0,
+    "angle": "面向韩国、日本目标受众，做儿童向游戏试玩内容获取安装曝光"
+   },
+   "KOX-000287": {
+    "kox_id": "KOX-000287",
+    "fit_score": 0.35,
+    "audience_fit": 0.15,
+    "content_fit": 0.8,
+    "angle": "受众核心地域不在目标市场JP/KR/BR，不符合投放要求"
+   },
+   "KOX-000290": {
+    "kox_id": "KOX-000290",
+    "fit_score": 0.34,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众核心地域不在目标市场JP/KR/BR，不符合投放要求"
+   },
+   "KOX-000311": {
+    "kox_id": "KOX-000311",
+    "fit_score": 0.37,
+    "audience_fit": 0.1,
+    "content_fit": 1.0,
+    "angle": "受众核心地域不在目标市场JP/KR/BR，不符合投放要求"
+   },
+   "KOX-000388": {
+    "kox_id": "KOX-000388",
+    "fit_score": 0.34,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众核心地域不在目标市场JP/KR/BR，不符合投放要求"
+   },
+   "KOX-000389": {
+    "kox_id": "KOX-000389",
+    "fit_score": 0.19,
+    "audience_fit": 0.1,
+    "content_fit": 0.4,
+    "angle": "受众以女性为主，不符合18-34岁男性为主的要求，且核心地域不在目标市场"
+   },
+   "KOX-000395": {
+    "kox_id": "KOX-000395",
+    "fit_score": 0.45,
+    "audience_fit": 0.25,
+    "content_fit": 0.9,
+    "angle": "覆盖部分巴西目标受众，可推出儿童向游戏试玩内容触达当地男性用户"
+   },
+   "KOX-000413": {
+    "kox_id": "KOX-000413",
+    "fit_score": 0.31,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众核心地域不在目标市场JP/KR/BR，不符合投放要求"
+   },
+   "KOX-000426": {
+    "kox_id": "KOX-000426",
+    "fit_score": 0.9,
+    "audience_fit": 0.86,
+    "content_fit": 1.0,
+    "angle": "核心受众为巴西18-34岁男性，可直接做儿童向游戏的安装曝光推广"
+   },
+   "KOX-000434": {
+    "kox_id": "KOX-000434",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众地域未覆盖目标市场JP、KR、BR，无法完成触达要求"
+   },
+   "KOX-000449": {
+    "kox_id": "KOX-000449",
+    "fit_score": 0.22,
+    "audience_fit": 0.15,
+    "content_fit": 0.95,
+    "angle": "受众地域集中在墨西哥，未覆盖目标市场JP、KR、BR，无法有效触达目标人群"
+   },
+   "KOX-000453": {
+    "kox_id": "KOX-000453",
+    "fit_score": 0.21,
+    "audience_fit": 0.14,
+    "content_fit": 0.85,
+    "angle": "受众地域未覆盖目标市场，无法满足触达要求"
+   },
+   "KOX-000465": {
+    "kox_id": "KOX-000465",
+    "fit_score": 0.15,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众年龄占比不符合18-34岁要求，且地域未覆盖目标市场"
+   },
+   "KOX-000469": {
+    "kox_id": "KOX-000469",
+    "fit_score": 0.32,
+    "audience_fit": 0.25,
+    "content_fit": 0.75,
+    "angle": "仅约8%受众位于目标市场巴西，可尝试触达巴西本地目标游戏用户"
+   },
+   "KOX-000480": {
+    "kox_id": "KOX-000480",
+    "fit_score": 0.18,
+    "audience_fit": 0.12,
+    "content_fit": 0.8,
+    "angle": "受众地域未覆盖目标市场JP、KR、BR，无法完成触达需求"
+   },
+   "KOX-000488": {
+    "kox_id": "KOX-000488",
+    "fit_score": 0.24,
+    "audience_fit": 0.16,
+    "content_fit": 0.95,
+    "angle": "受众地域未覆盖目标市场，不符合触达要求"
+   },
+   "KOX-000498": {
+    "kox_id": "KOX-000498",
+    "fit_score": 0.16,
+    "audience_fit": 0.1,
+    "content_fit": 0.75,
+    "angle": "受众地域未覆盖目标市场JP、KR、BR，无法触达目标人群"
+   },
+   "KOX-000503": {
+    "kox_id": "KOX-000503",
+    "fit_score": 0.83,
+    "audience_fit": 0.82,
+    "content_fit": 0.85,
+    "angle": "超七成受众位于目标市场日本，可直接推广儿童向游戏，触达日本本地18-34岁男性用户"
+   },
+   "KOX-000511": {
+    "kox_id": "KOX-000511",
+    "fit_score": 0.21,
+    "audience_fit": 0.14,
+    "content_fit": 0.9,
+    "angle": "受众地域未覆盖目标市场，无法满足触达要求"
+   },
+   "KOX-000513": {
+    "kox_id": "KOX-000513",
+    "fit_score": 0.14,
+    "audience_fit": 0.08,
+    "content_fit": 0.85,
+    "angle": "受众地域集中在俄罗斯地区，未覆盖目标市场，无法触达目标人群"
+   },
+   "KOX-000539": {
+    "kox_id": "KOX-000539",
+    "fit_score": 0.22,
+    "audience_fit": 0.15,
+    "content_fit": 0.85,
+    "angle": "受众地域未覆盖目标市场JP、KR、BR，无法完成曝光触达要求"
+   },
+   "KOX-000552": {
+    "kox_id": "KOX-000552",
+    "fit_score": 0.52,
+    "audience_fit": 0.2,
+    "content_fit": 1.0,
+    "angle": "可覆盖巴西18-34岁男性目标受众，仅约10%受众符合目标市场要求"
+   },
+   "KOX-000571": {
+    "kox_id": "KOX-000571",
+    "fit_score": 0.19,
+    "audience_fit": 0.05,
+    "content_fit": 1.0,
+    "angle": "受众全部位于非目标市场，不符合触达要求"
+   },
+   "KOX-000578": {
+    "kox_id": "KOX-000578",
+    "fit_score": 0.32,
+    "audience_fit": 0.1,
+    "content_fit": 0.65,
+    "angle": "受众全部位于非目标市场，仅内容品类部分关联"
+   },
+   "KOX-000590": {
+    "kox_id": "KOX-000590",
+    "fit_score": 0.42,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众全部位于非目标市场，仅内容品类契合"
+   },
+   "KOX-000598": {
+    "kox_id": "KOX-000598",
+    "fit_score": 0.42,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众全部位于非目标市场，仅内容品类契合"
+   },
+   "KOX-000602": {
+    "kox_id": "KOX-000602",
+    "fit_score": 0.46,
+    "audience_fit": 0.1,
+    "content_fit": 1.0,
+    "angle": "受众全部位于非目标市场，仅内容品类契合"
+   },
+   "KOX-000606": {
+    "kox_id": "KOX-000606",
+    "fit_score": 0.42,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众全部位于非目标市场，仅内容品类契合"
+   },
+   "KOX-000614": {
+    "kox_id": "KOX-000614",
+    "fit_score": 0.42,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众全部位于非目标市场，仅内容品类契合"
+   },
+   "KOX-000635": {
+    "kox_id": "KOX-000635",
+    "fit_score": 0.6,
+    "audience_fit": 0.4,
+    "content_fit": 0.9,
+    "angle": "可覆盖日本少量18-34岁男性目标受众，做游戏应用曝光"
+   },
+   "KOX-000654": {
+    "kox_id": "KOX-000654",
+    "fit_score": 0.61,
+    "audience_fit": 0.41,
+    "content_fit": 0.9,
+    "angle": "可覆盖巴西少量18-34岁男性目标受众，做游戏应用曝光"
+   },
+   "KOX-000698": {
+    "kox_id": "KOX-000698",
+    "fit_score": 0.34,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众全部位于非目标市场，内容仅部分关联"
+   },
+   "KOX-000700": {
+    "kox_id": "KOX-000700",
+    "fit_score": 0.42,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众全部位于非目标市场，仅内容品类契合"
+   },
+   "KOX-000702": {
+    "kox_id": "KOX-000702",
+    "fit_score": 0.36,
+    "audience_fit": 0.1,
+    "content_fit": 0.95,
+    "angle": "品类适配但受众几乎都集中在非目标印度市场，地域严重错位，无法满足目标市场曝光需求"
+   },
+   "KOX-000716": {
+    "kox_id": "KOX-000716",
+    "fit_score": 0.84,
+    "audience_fit": 0.85,
+    "content_fit": 0.8,
+    "angle": "超八成受众集中在目标巴西市场，以18-34岁男性为主，可通过游戏内容植入推广目标应用获取曝光"
+   },
+   "KOX-000772": {
+    "kox_id": "KOX-000772",
+    "fit_score": 0.32,
+    "audience_fit": 0.05,
+    "content_fit": 0.95,
+    "angle": "品类适配但受众全部集中在非目标欧洲市场，无法满足目标市场曝光需求"
+   },
+   "KOX-000777": {
+    "kox_id": "KOX-000777",
+    "fit_score": 0.31,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "品类适配但受众集中在非目标东南亚市场，不符合目标市场触达要求"
+   },
+   "KOX-000798": {
+    "kox_id": "KOX-000798",
+    "fit_score": 0.25,
+    "audience_fit": 0.1,
+    "content_fit": 0.6,
+    "angle": "品类部分关联，但受众均在非目标市场，无法满足目标市场曝光需求"
+   },
+   "KOX-000804": {
+    "kox_id": "KOX-000804",
+    "fit_score": 0.34,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "品类适配但受众集中在非目标东南亚市场，地域错位无法满足曝光需求"
+   },
+   "KOX-000854": {
+    "kox_id": "KOX-000854",
+    "fit_score": 0.25,
+    "audience_fit": 0.05,
+    "content_fit": 0.7,
+    "angle": "受众年龄性别符合要求但均集中在非目标俄罗斯地区，无法满足目标市场曝光需求"
+   },
+   "KOX-000872": {
+    "kox_id": "KOX-000872",
+    "fit_score": 0.13,
+    "audience_fit": 0.05,
+    "content_fit": 0.3,
+    "angle": "内容品类偏离，受众全部在非目标北美市场，完全不匹配投放需求"
+   },
+   "KOX-000876": {
+    "kox_id": "KOX-000876",
+    "fit_score": 0.28,
+    "audience_fit": 0.05,
+    "content_fit": 0.8,
+    "angle": "品类适配但受众集中在非目标英国市场，无法满足目标市场曝光需求"
+   },
+   "KOX-000886": {
+    "kox_id": "KOX-000886",
+    "fit_score": 0.33,
+    "audience_fit": 0.1,
+    "content_fit": 0.85,
+    "angle": "品类适配但受众均在非目标中东南亚市场，无法满足目标市场曝光需求"
+   },
+   "KOX-000891": {
+    "kox_id": "KOX-000891",
+    "fit_score": 0.88,
+    "audience_fit": 0.85,
+    "content_fit": 0.95,
+    "angle": "近半数受众集中在目标巴西市场，以18-34岁男性为主，内容为游戏品类，非常适合推广游戏应用获取目标曝光"
+   },
+   "KOX-000893": {
+    "kox_id": "KOX-000893",
+    "fit_score": 0.28,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "品类部分适配，但受众集中在非目标印度市场，地域错位无法满足曝光需求"
+   },
+   "KOX-000911": {
+    "kox_id": "KOX-000911",
+    "fit_score": 0.22,
+    "audience_fit": 0.15,
+    "content_fit": 0.3,
+    "angle": "受众地域完全不覆盖目标市场JP/KR/BR，不适配"
+   },
+   "KOX-000916": {
+    "kox_id": "KOX-000916",
+    "fit_score": 0.88,
+    "audience_fit": 0.85,
+    "content_fit": 0.95,
+    "angle": "依托自身游戏内容，面向日本、韩国年轻男性受众推广目标游戏，获取曝光"
+   },
+   "KOX-000940": {
+    "kox_id": "KOX-000940",
+    "fit_score": 0.19,
+    "audience_fit": 0.18,
+    "content_fit": 0.2,
+    "angle": "实际内容品类为食品保健，与游戏应用无关，受众地域不覆盖目标市场，不适配"
+   },
+   "KOX-000943": {
+    "kox_id": "KOX-000943",
+    "fit_score": 0.3,
+    "audience_fit": 0.25,
+    "content_fit": 0.4,
+    "angle": "受众地域不覆盖目标市场，目标年龄群体占比偏低，不适配"
+   },
+   "KOX-000959": {
+    "kox_id": "KOX-000959",
+    "fit_score": 0.16,
+    "audience_fit": 0.2,
+    "content_fit": 0.1,
+    "angle": "实际内容为食品保健，与游戏应用无关，受众地域不覆盖目标市场，不适配"
+   },
+   "KOX-000961": {
+    "kox_id": "KOX-000961",
+    "fit_score": 0.22,
+    "audience_fit": 0.2,
+    "content_fit": 0.3,
+    "angle": "受众以女性为主，不符合目标性别要求，地域不覆盖目标市场，不适配"
+   },
+   "KOX-000973": {
+    "kox_id": "KOX-000973",
+    "fit_score": 0.32,
+    "audience_fit": 0.15,
+    "content_fit": 0.95,
+    "angle": "内容品类匹配，受众年龄性别符合，但受众地域完全不覆盖目标市场，无法完成触达要求，不适配"
+   },
+   "KOX-000981": {
+    "kox_id": "KOX-000981",
+    "fit_score": 0.35,
+    "audience_fit": 0.2,
+    "content_fit": 0.95,
+    "angle": "内容品类匹配，受众年龄性别符合，但受众地域不覆盖目标市场，不适配"
+   },
+   "KOX-001041": {
+    "kox_id": "KOX-001041",
+    "fit_score": 0.18,
+    "audience_fit": 0.25,
+    "content_fit": 0.1,
+    "angle": "实际内容为服饰母婴，与游戏应用无关，受众地域不覆盖目标市场，不适配"
+   },
+   "KOX-001047": {
+    "kox_id": "KOX-001047",
+    "fit_score": 0.38,
+    "audience_fit": 0.28,
+    "content_fit": 0.95,
+    "angle": "内容品类匹配，受众年龄性别符合，但受众未覆盖目标市场巴西，不适配"
+   },
+   "KOX-001048": {
+    "kox_id": "KOX-001048",
+    "fit_score": 0.28,
+    "audience_fit": 0.22,
+    "content_fit": 0.5,
+    "angle": "仅品类邻接游戏应用，受众地域不覆盖目标市场，不适配"
+   },
+   "KOX-001050": {
+    "kox_id": "KOX-001050",
+    "fit_score": 0.45,
+    "audience_fit": 0.4,
+    "content_fit": 0.6,
+    "angle": "内容包含游戏品类，受众年龄性别符合，但受众地域信息缺失，无法确认覆盖目标市场，仅可勉强作为备选"
+   },
+   "KOX-001075": {
+    "kox_id": "KOX-001075",
+    "fit_score": 0.79,
+    "audience_fit": 0.72,
+    "content_fit": 0.9,
+    "angle": "主打日本地区年轻男性用户，做儿童向游戏试玩推广获取曝光"
+   },
+   "KOX-001077": {
+    "kox_id": "KOX-001077",
+    "fit_score": 0.42,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容品类符合游戏推广要求，但受众几乎全部不在目标市场，难以满足曝光需求"
+   },
+   "KOX-001084": {
+    "kox_id": "KOX-001084",
+    "fit_score": 0.3,
+    "audience_fit": 0.1,
+    "content_fit": 0.6,
+    "angle": "受众全部不在JP/KR/BR目标市场，无法完成触达目标"
+   },
+   "KOX-001103": {
+    "kox_id": "KOX-001103",
+    "fit_score": 0.14,
+    "audience_fit": 0.1,
+    "content_fit": 0.2,
+    "angle": "受众以女性为主，且不在目标市场，品类核心不相关，适配度极低"
+   },
+   "KOX-001118": {
+    "kox_id": "KOX-001118",
+    "fit_score": 0.66,
+    "audience_fit": 0.64,
+    "content_fit": 0.7,
+    "angle": "结合汽车出行内容，植入儿童向游戏推广，触达韩国本地年轻男性受众获取曝光"
+   },
+   "KOX-001126": {
+    "kox_id": "KOX-001126",
+    "fit_score": 0.38,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众全部不在JP/KR/BR目标市场，无法满足曝光触达要求"
+   },
+   "KOX-001128": {
+    "kox_id": "KOX-001128",
+    "fit_score": 0.58,
+    "audience_fit": 0.64,
+    "content_fit": 0.5,
+    "angle": "在汽车出行内容中植入儿童向游戏，触达韩日地区男性受众获取曝光"
+   },
+   "KOX-001149": {
+    "kox_id": "KOX-001149",
+    "fit_score": 0.3,
+    "audience_fit": 0.1,
+    "content_fit": 0.6,
+    "angle": "受众全部不在目标市场，无法完成触达要求"
+   },
+   "KOX-001163": {
+    "kox_id": "KOX-001163",
+    "fit_score": 0.42,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容品类符合游戏推广要求，但受众全部不在目标市场，难以满足曝光需求"
+   },
+   "KOX-001168": {
+    "kox_id": "KOX-001168",
+    "fit_score": 0.33,
+    "audience_fit": 0.41,
+    "content_fit": 0.2,
+    "angle": "受众绝大多数为女性，不符合目标18-34岁男性的要求，适配度低"
+   },
+   "KOX-001181": {
+    "kox_id": "KOX-001181",
+    "fit_score": 0.34,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "受众全部不在JP/KR/BR目标市场，无法满足曝光需求"
+   },
+   "KOX-001199": {
+    "kox_id": "KOX-001199",
+    "fit_score": 0.42,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容品类符合游戏推广要求，但受众全部不在目标市场，难以满足曝光需求"
+   },
+   "KOX-001205": {
+    "kox_id": "KOX-001205",
+    "fit_score": 0.69,
+    "audience_fit": 0.75,
+    "content_fit": 0.6,
+    "angle": "依托韩日受众基础，做符合儿童安全规范的游戏试玩推广获取曝光"
+   },
+   "KOX-001206": {
+    "kox_id": "KOX-001206",
+    "fit_score": 0.22,
+    "audience_fit": 0.1,
+    "content_fit": 0.4,
+    "angle": "受众集中在非目标欧洲区域，女性占比过高，不符合投放要求"
+   },
+   "KOX-001212": {
+    "kox_id": "KOX-001212",
+    "fit_score": 0.42,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众集中在非目标的东欧区域，不符合目标市场触达要求"
+   },
+   "KOX-001224": {
+    "kox_id": "KOX-001224",
+    "fit_score": 0.44,
+    "audience_fit": 0.1,
+    "content_fit": 0.95,
+    "angle": "受众集中在印度非目标市场，不符合触达要求"
+   },
+   "KOX-001233": {
+    "kox_id": "KOX-001233",
+    "fit_score": 0.22,
+    "audience_fit": 0.1,
+    "content_fit": 0.4,
+    "angle": "受众集中在中东非目标市场，不符合投放要求"
+   },
+   "KOX-001234": {
+    "kox_id": "KOX-001234",
+    "fit_score": 0.56,
+    "audience_fit": 0.4,
+    "content_fit": 0.8,
+    "angle": "可依托覆盖的日本受众群体，推出符合儿童合规要求的游戏内容获取曝光"
+   },
+   "KOX-001255": {
+    "kox_id": "KOX-001255",
+    "fit_score": 0.87,
+    "audience_fit": 0.85,
+    "content_fit": 0.9,
+    "angle": "依托日本本地18-34岁男性核心受众，做符合儿童安全规范的游戏推广获取大量目标曝光"
+   },
+   "KOX-001274": {
+    "kox_id": "KOX-001274",
+    "fit_score": 0.37,
+    "audience_fit": 0.15,
+    "content_fit": 0.7,
+    "angle": "受众集中在东南亚非目标市场，不符合目标触达要求"
+   },
+   "KOX-001312": {
+    "kox_id": "KOX-001312",
+    "fit_score": 0.26,
+    "audience_fit": 0.1,
+    "content_fit": 0.5,
+    "angle": "受众集中在北美非目标市场，不符合目标市场投放要求"
+   },
+   "KOX-001315": {
+    "kox_id": "KOX-001315",
+    "fit_score": 0.46,
+    "audience_fit": 0.2,
+    "content_fit": 0.85,
+    "angle": "受众集中在非目标拉美国家，语言不符合要求，仅内容品类匹配"
+   },
+   "KOX-001321": {
+    "kox_id": "KOX-001321",
+    "fit_score": 0.47,
+    "audience_fit": 0.15,
+    "content_fit": 0.95,
+    "angle": "受众集中在东南亚非目标市场，不符合目标触达要求"
+   },
+   "KOX-001323": {
+    "kox_id": "KOX-001323",
+    "fit_score": 0.76,
+    "audience_fit": 0.7,
+    "content_fit": 0.85,
+    "angle": "依托韩国本地18-34岁受众，做符合儿童安全规范的游戏推广获取目标曝光"
+   },
+   "KOX-001351": {
+    "kox_id": "KOX-001351",
+    "fit_score": 0.91,
+    "audience_fit": 0.85,
+    "content_fit": 1.0,
+    "angle": "面向巴西目标18-34岁男性受众做游戏应用曝光，直接展示游戏玩法获取安装曝光"
+   },
+   "KOX-001377": {
+    "kox_id": "KOX-001377",
+    "fit_score": 0.46,
+    "audience_fit": 0.3,
+    "content_fit": 0.7,
+    "angle": "核心受众地域为非目标市场菲律宾，目标年龄段人群占比低，仅可在预算充足时补充曝光"
+   },
+   "KOX-001382": {
+    "kox_id": "KOX-001382",
+    "fit_score": 0.89,
+    "audience_fit": 0.82,
+    "content_fit": 1.0,
+    "angle": "面向日本目标18-34岁男性受众做游戏应用曝光，展示游戏内容获取安装曝光"
+   },
+   "KOX-001386": {
+    "kox_id": "KOX-001386",
+    "fit_score": 0.48,
+    "audience_fit": 0.2,
+    "content_fit": 0.9,
+    "angle": "核心受众地域不在目标市场，仅可做少量补充曝光，适合预算充足时考虑"
+   },
+   "KOX-001425": {
+    "kox_id": "KOX-001425",
+    "fit_score": 0.48,
+    "audience_fit": 0.6,
+    "content_fit": 0.3,
+    "angle": "实际内容以汽车出行为主，仅品类邻接和地域符合，需要大幅调整创意适配游戏推广"
+   },
+   "KOX-001429": {
+    "kox_id": "KOX-001429",
+    "fit_score": 0.58,
+    "audience_fit": 0.5,
+    "content_fit": 0.7,
+    "angle": "受众地域数据缺失，年龄性别符合目标要求，内容包含游戏相关，可作为备选补充曝光"
+   },
+   "KOX-001438": {
+    "kox_id": "KOX-001438",
+    "fit_score": 0.49,
+    "audience_fit": 0.15,
+    "content_fit": 1.0,
+    "angle": "核心受众地域为非目标中东地区，不符合目标市场要求，仅预算充足可考虑"
+   },
+   "KOX-001466": {
+    "kox_id": "KOX-001466",
+    "fit_score": 0.1,
+    "audience_fit": 0.05,
+    "content_fit": 0.2,
+    "angle": "受众以女性为主，核心地域非目标市场，品类以母婴为主，完全不符合投放需求"
+   },
+   "KOX-001467": {
+    "kox_id": "KOX-001467",
+    "fit_score": 0.28,
+    "audience_fit": 0.2,
+    "content_fit": 0.4,
+    "angle": "核心受众地域在墨西哥，不属于目标市场，游戏相关内容占比低，适配度低"
+   },
+   "KOX-001491": {
+    "kox_id": "KOX-001491",
+    "fit_score": 0.49,
+    "audience_fit": 0.15,
+    "content_fit": 1.0,
+    "angle": "核心受众地域为非目标中东地区，不符合目标市场要求，仅预算充足可考虑补充曝光"
+   },
+   "KOX-001512": {
+    "kox_id": "KOX-001512",
+    "fit_score": 0.27,
+    "audience_fit": 0.25,
+    "content_fit": 0.3,
+    "angle": "实际内容以汽车出行为主，仅小部分受众在目标市场巴西，适配度低"
+   },
+   "KOX-001532": {
+    "kox_id": "KOX-001532",
+    "fit_score": 0.1,
+    "audience_fit": 0.1,
+    "content_fit": 0.1,
+    "angle": "实际内容以服饰为主，核心受众地域为非目标欧洲地区，完全不符合投放需求"
+   },
+   "KOX-001580": {
+    "kox_id": "KOX-001580",
+    "fit_score": 0.2,
+    "audience_fit": 0.15,
+    "content_fit": 0.3,
+    "angle": "受众核心地域全部不在目标市场JP/KR/BR，35岁以上受众占比偏高，不符合要求"
+   },
+   "KOX-001583": {
+    "kox_id": "KOX-001583",
+    "fit_score": 0.78,
+    "audience_fit": 0.7,
+    "content_fit": 0.9,
+    "angle": "覆盖日韩核心目标市场，受众符合18-34岁男性要求，内容本身就是游戏数码品类，可直接推广游戏获取曝光"
+   },
+   "KOX-001595": {
+    "kox_id": "KOX-001595",
+    "fit_score": 0.15,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "受众核心地域全部不在目标市场JP/KR/BR，不符合投放要求"
+   },
+   "KOX-001596": {
+    "kox_id": "KOX-001596",
+    "fit_score": 0.2,
+    "audience_fit": 0.18,
+    "content_fit": 0.8,
+    "angle": "无受众覆盖目标市场JP/KR/BR，不符合地域要求"
+   },
+   "KOX-001612": {
+    "kox_id": "KOX-001612",
+    "fit_score": 0.18,
+    "audience_fit": 0.15,
+    "content_fit": 0.4,
+    "angle": "受众地域不在目标市场，35岁以上受众占比过高，不符合要求"
+   },
+   "KOX-001620": {
+    "kox_id": "KOX-001620",
+    "fit_score": 0.18,
+    "audience_fit": 0.12,
+    "content_fit": 0.85,
+    "angle": "受众核心地域全部不在目标市场，不符合投放要求"
+   },
+   "KOX-001638": {
+    "kox_id": "KOX-001638",
+    "fit_score": 0.24,
+    "audience_fit": 0.2,
+    "content_fit": 0.3,
+    "angle": "仅不到6%受众覆盖目标市场日本，内容实际偏离游戏品类，适配性低"
+   },
+   "KOX-001641": {
+    "kox_id": "KOX-001641",
+    "fit_score": 0.14,
+    "audience_fit": 0.08,
+    "content_fit": 0.95,
+    "angle": "受众核心地域全部不在目标市场，不符合投放要求"
+   },
+   "KOX-001647": {
+    "kox_id": "KOX-001647",
+    "fit_score": 0.35,
+    "audience_fit": 0.25,
+    "content_fit": 0.5,
+    "angle": "仅少量受众覆盖日本，女性受众占比超过男性，不符合男性为主的要求"
+   },
+   "KOX-001666": {
+    "kox_id": "KOX-001666",
+    "fit_score": 0.79,
+    "audience_fit": 0.75,
+    "content_fit": 0.85,
+    "angle": "覆盖日韩核心目标市场，受众符合18-34岁男性要求，内容包含游戏数码品类，适合推广获取曝光"
+   },
+   "KOX-001673": {
+    "kox_id": "KOX-001673",
+    "fit_score": 0.14,
+    "audience_fit": 0.1,
+    "content_fit": 0.2,
+    "angle": "受众核心地域不在目标市场，内容实际偏离游戏品类，不符合要求"
+   },
+   "KOX-001698": {
+    "kox_id": "KOX-001698",
+    "fit_score": 0.18,
+    "audience_fit": 0.12,
+    "content_fit": 0.9,
+    "angle": "受众核心地域全部不在目标市场JP/KR/BR，不符合投放要求"
+   },
+   "KOX-001704": {
+    "kox_id": "KOX-001704",
+    "fit_score": 0.38,
+    "audience_fit": 0.15,
+    "content_fit": 0.9,
+    "angle": "内容品类匹配游戏应用，但受众几乎无目标市场JP/KR/BR用户，不符合触达要求"
+   },
+   "KOX-001731": {
+    "kox_id": "KOX-001731",
+    "fit_score": 0.37,
+    "audience_fit": 0.18,
+    "content_fit": 0.8,
+    "angle": "内容品类与游戏应用相关，但受众无目标市场JP/KR/BR用户，不符合触达要求"
+   },
+   "KOX-001738": {
+    "kox_id": "KOX-001738",
+    "fit_score": 0.36,
+    "audience_fit": 0.15,
+    "content_fit": 0.85,
+    "angle": "内容覆盖游戏应用品类，但受众无目标市场JP/KR/BR用户，不符合触达要求"
+   },
+   "KOX-001747": {
+    "kox_id": "KOX-001747",
+    "fit_score": 0.38,
+    "audience_fit": 0.16,
+    "content_fit": 0.9,
+    "angle": "内容品类匹配游戏应用，但受众几乎无目标市场JP/KR/BR用户，不符合触达要求"
+   },
+   "KOX-001749": {
+    "kox_id": "KOX-001749",
+    "fit_score": 0.41,
+    "audience_fit": 0.18,
+    "content_fit": 0.95,
+    "angle": "内容品类匹配游戏应用，但受众无目标市场JP/KR/BR用户，不符合触达要求"
+   },
+   "KOX-001753": {
+    "kox_id": "KOX-001753",
+    "fit_score": 0.19,
+    "audience_fit": 0.1,
+    "content_fit": 0.4,
+    "angle": "实际内容仅为汽车出行，受众地域不符合目标市场要求，适配度低"
+   },
+   "KOX-001758": {
+    "kox_id": "KOX-001758",
+    "fit_score": 0.35,
+    "audience_fit": 0.12,
+    "content_fit": 0.9,
+    "angle": "内容品类匹配游戏应用，但受众无目标市场用户，男性占比也不满足目标要求"
+   },
+   "KOX-001767": {
+    "kox_id": "KOX-001767",
+    "fit_score": 0.39,
+    "audience_fit": 0.15,
+    "content_fit": 0.95,
+    "angle": "内容品类匹配游戏应用，但受众无目标市场JP/KR/BR用户，不符合触达要求"
+   },
+   "KOX-001774": {
+    "kox_id": "KOX-001774",
+    "fit_score": 0.4,
+    "audience_fit": 0.2,
+    "content_fit": 0.85,
+    "angle": "内容品类与游戏应用匹配，仅极少数受众可能位于目标市场巴西，整体契合度低"
+   },
+   "KOX-001775": {
+    "kox_id": "KOX-001775",
+    "fit_score": 0.41,
+    "audience_fit": 0.18,
+    "content_fit": 0.95,
+    "angle": "内容品类匹配游戏应用，但受众无目标市场JP/KR/BR用户，不符合触达要求"
+   },
+   "KOX-001798": {
+    "kox_id": "KOX-001798",
+    "fit_score": 0.19,
+    "audience_fit": 0.1,
+    "content_fit": 0.4,
+    "angle": "实际内容仅为汽车出行，无游戏相关内容，受众地域也不符合目标市场要求"
+   },
+   "KOX-001803": {
+    "kox_id": "KOX-001803",
+    "fit_score": 0.23,
+    "audience_fit": 0.12,
+    "content_fit": 0.5,
+    "angle": "仅少量内容涉及游戏，受众地域不符合目标市场JP/KR/BR要求"
+   },
+   "KOX-001809": {
+    "kox_id": "KOX-001809",
+    "fit_score": 0.2,
+    "audience_fit": 0.1,
+    "content_fit": 0.3,
+    "angle": "受众核心地域不在目标市场JP/KR/BR，语言不符合要求，仅偶尔涉及游戏内容，适配性差"
+   },
+   "KOX-001857": {
+    "kox_id": "KOX-001857",
+    "fit_score": 0.35,
+    "audience_fit": 0.25,
+    "content_fit": 0.7,
+    "angle": "内容涉及目标游戏品类，受众性别符合要求，但核心受众地域不在目标市场JP/KR/BR"
+   },
+   "KOX-001874": {
+    "kox_id": "KOX-001874",
+    "fit_score": 0.55,
+    "audience_fit": 0.35,
+    "content_fit": 0.85,
+    "angle": "内容主打游戏品类，受众年龄性别符合要求，但核心受众地域不在目标市场JP/KR/BR"
+   },
+   "KOX-001884": {
+    "kox_id": "KOX-001884",
+    "fit_score": 0.46,
+    "audience_fit": 0.3,
+    "content_fit": 0.7,
+    "angle": "内容涉及游戏品类，受众年龄性别符合，但核心受众地域不在目标市场JP/KR/BR"
+   },
+   "KOX-001905": {
+    "kox_id": "KOX-001905",
+    "fit_score": 0.37,
+    "audience_fit": 0.15,
+    "content_fit": 0.7,
+    "angle": "语言不符合目标语言要求，核心受众地域不在JP/KR/BR，适配性差"
+   },
+   "KOX-001919": {
+    "kox_id": "KOX-001919",
+    "fit_score": 0.57,
+    "audience_fit": 0.35,
+    "content_fit": 0.9,
+    "angle": "内容纯游戏赛道，受众年龄性别高度契合，但核心受众地域不在目标市场JP/KR/BR"
+   },
+   "KOX-001923": {
+    "kox_id": "KOX-001923",
+    "fit_score": 0.74,
+    "audience_fit": 0.7,
+    "content_fit": 0.8,
+    "angle": "近六成核心受众在目标市场日本和韩国，语言符合要求，本身常做游戏内容，可做儿童向游戏推广引流曝光"
+   },
+   "KOX-001942": {
+    "kox_id": "KOX-001942",
+    "fit_score": 0.3,
+    "audience_fit": 0.1,
+    "content_fit": 0.6,
+    "angle": "语言不符合要求，核心受众地域不在目标JP/KR/BR，适配性差"
+   },
+   "KOX-001977": {
+    "kox_id": "KOX-001977",
+    "fit_score": 0.81,
+    "audience_fit": 0.85,
+    "content_fit": 0.75,
+    "angle": "核心受众在目标市场巴西，语言符合要求，受众年龄性别契合，3C内容基础上涉及游戏，适合做游戏安装曝光推广"
+   },
+   "KOX-001980": {
+    "kox_id": "KOX-001980",
+    "fit_score": 0.77,
+    "audience_fit": 0.75,
+    "content_fit": 0.8,
+    "angle": "超七成核心受众在目标市场巴西，语言符合要求，本身产出游戏内容，适合进行儿童向游戏的曝光推广"
+   },
+   "KOX-001985": {
+    "kox_id": "KOX-001985",
+    "fit_score": 0.84,
+    "audience_fit": 0.88,
+    "content_fit": 0.78,
+    "angle": "绝大多数核心受众在目标市场日本和韩国，语言符合要求，受众年龄性别契合，3C内容基础上涉及游戏，适合游戏安装曝光推广"
+   },
+   "KOX-001992": {
+    "kox_id": "KOX-001992",
+    "fit_score": 0.56,
+    "audience_fit": 0.3,
+    "content_fit": 0.95,
+    "angle": "内容纯游戏赛道，受众年龄性别契合，但核心受众地域不在目标市场JP/KR/BR"
+   },
+   "KOX-002014": {
+    "kox_id": "KOX-002014",
+    "fit_score": 0.36,
+    "audience_fit": 0.1,
+    "content_fit": 0.95,
+    "angle": "内容品类高度契合游戏应用，但受众绝大多数分布在非目标市场，不符合本次触达需求"
+   },
+   "KOX-002018": {
+    "kox_id": "KOX-002018",
+    "fit_score": 0.38,
+    "audience_fit": 0.15,
+    "content_fit": 0.9,
+    "angle": "内容品类契合游戏应用，但受众集中在印度等非目标市场，不符合触达要求"
+   },
+   "KOX-002045": {
+    "kox_id": "KOX-002045",
+    "fit_score": 0.43,
+    "audience_fit": 0.2,
+    "content_fit": 0.95,
+    "angle": "内容品类契合游戏应用，少量受众可能覆盖目标市场巴西，可作为巴西市场补充触达"
+   },
+   "KOX-002057": {
+    "kox_id": "KOX-002057",
+    "fit_score": 0.36,
+    "audience_fit": 0.1,
+    "content_fit": 0.95,
+    "angle": "内容品类契合游戏应用，但受众集中在东南亚非目标市场，不符合触达要求"
+   },
+   "KOX-002076": {
+    "kox_id": "KOX-002076",
+    "fit_score": 0.12,
+    "audience_fit": 0.08,
+    "content_fit": 0.15,
+    "angle": "品类偏离需求，且受众以女性为主，完全不符合本次投放要求"
+   },
+   "KOX-002079": {
+    "kox_id": "KOX-002079",
+    "fit_score": 0.35,
+    "audience_fit": 0.15,
+    "content_fit": 0.8,
+    "angle": "内容品类契合游戏应用，但受众集中在东南亚非目标市场，不符合触达要求"
+   },
+   "KOX-002102": {
+    "kox_id": "KOX-002102",
+    "fit_score": 0.56,
+    "audience_fit": 0.58,
+    "content_fit": 0.5,
+    "angle": "超六成受众分布在目标市场韩国，符合目标人群属性，可从游戏体验角度切入推广儿童向游戏应用"
+   },
+   "KOX-002127": {
+    "kox_id": "KOX-002127",
+    "fit_score": 0.39,
+    "audience_fit": 0.15,
+    "content_fit": 0.95,
+    "angle": "内容品类契合游戏应用，但受众绝大多数集中在北美非目标市场，不符合触达要求"
+   },
+   "KOX-002140": {
+    "kox_id": "KOX-002140",
+    "fit_score": 0.36,
+    "audience_fit": 0.1,
+    "content_fit": 0.95,
+    "angle": "内容品类契合游戏应用，但受众绝大多数集中在北美欧洲非目标市场，不符合触达要求"
+   },
+   "KOX-002153": {
+    "kox_id": "KOX-002153",
+    "fit_score": 0.73,
+    "audience_fit": 0.63,
+    "content_fit": 0.95,
+    "angle": "近半数受众分布在目标市场日本，超一成在韩国，符合18-34岁男性目标人群，可直接切入做游戏安装推广"
+   },
+   "KOX-002156": {
+    "kox_id": "KOX-002156",
+    "fit_score": 0.28,
+    "audience_fit": 0.1,
+    "content_fit": 0.7,
+    "angle": "内容涉及游戏品类，但受众几乎都不在目标市场，且女性占比接近一半，不符合目标人群要求"
+   },
+   "KOX-002159": {
+    "kox_id": "KOX-002159",
+    "fit_score": 0.36,
+    "audience_fit": 0.1,
+    "content_fit": 0.95,
+    "angle": "内容品类契合游戏应用，但受众集中在中东非目标市场，不符合触达要求"
+   },
+   "KOX-002172": {
+    "kox_id": "KOX-002172",
+    "fit_score": 0.42,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容属于目标游戏品类，但受众几乎全部位于非目标欧洲市场，无法有效触达目标人群，仅预算充足时可考虑"
+   },
+   "KOX-002197": {
+    "kox_id": "KOX-002197",
+    "fit_score": 0.62,
+    "audience_fit": 0.7,
+    "content_fit": 0.5,
+    "angle": "受众大量集中在目标市场韩国，年龄性别符合要求，可以从汽车时尚内容中植入儿童向游戏推广获取曝光"
+   },
+   "KOX-002245": {
+    "kox_id": "KOX-002245",
+    "fit_score": 0.3,
+    "audience_fit": 0.1,
+    "content_fit": 0.6,
+    "angle": "受众全部位于非目标欧美市场，无法有效触达目标人群"
+   },
+   "KOX-002252": {
+    "kox_id": "KOX-002252",
+    "fit_score": 0.93,
+    "audience_fit": 0.88,
+    "content_fit": 1.0,
+    "angle": "纯游戏内容达人，受众大部分位于目标市场日本、韩国，年龄性别完全符合需求，适合直接推广儿童向游戏获取目标曝光"
+   },
+   "KOX-002301": {
+    "kox_id": "KOX-002301",
+    "fit_score": 0.46,
+    "audience_fit": 0.1,
+    "content_fit": 1.0,
+    "angle": "内容属于目标游戏品类，但受众全部位于非目标中东市场，无法有效触达目标人群，仅预算充足时可考虑"
+   },
+   "KOX-002307": {
+    "kox_id": "KOX-002307",
+    "fit_score": 0.38,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众全部位于非目标北美市场，无法满足本次曝光触达目标人群的需求"
+   },
+   "KOX-002308": {
+    "kox_id": "KOX-002308",
+    "fit_score": 0.46,
+    "audience_fit": 0.1,
+    "content_fit": 1.0,
+    "angle": "内容符合目标游戏品类，但受众全部位于非目标北美市场，无法有效触达目标人群，仅预算充足时可考虑"
+   },
+   "KOX-002320": {
+    "kox_id": "KOX-002320",
+    "fit_score": 0.38,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众集中在非目标东南亚市场，无法有效触达目标人群"
+   },
+   "KOX-002322": {
+    "kox_id": "KOX-002322",
+    "fit_score": 0.14,
+    "audience_fit": 0.1,
+    "content_fit": 0.2,
+    "angle": "实际内容为食品保健母婴品类，偏离目标游戏品类，受众也位于非目标中东市场，完全不适配"
+   },
+   "KOX-002327": {
+    "kox_id": "KOX-002327",
+    "fit_score": 0.38,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众以女性为主且集中在非目标印尼市场，不符合目标人群要求"
+   },
+   "KOX-002332": {
+    "kox_id": "KOX-002332",
+    "fit_score": 0.91,
+    "audience_fit": 0.92,
+    "content_fit": 0.9,
+    "angle": "游戏内容达人，受众绝大多数位于目标市场韩国，年龄性别完全符合需求，非常适合推广儿童向游戏获取目标曝光"
+   },
+   "KOX-002337": {
+    "kox_id": "KOX-002337",
+    "fit_score": 0.46,
+    "audience_fit": 0.1,
+    "content_fit": 1.0,
+    "angle": "内容属于目标游戏品类，但受众集中在非目标泰国市场，无法有效触达目标人群，仅预算充足时可考虑"
+   },
+   "KOX-002340": {
+    "kox_id": "KOX-002340",
+    "fit_score": 0.84,
+    "audience_fit": 0.76,
+    "content_fit": 0.95,
+    "angle": "面向巴西目标年轻男性受众曝光推广儿童向游戏应用，契合投放要求"
+   },
+   "KOX-002363": {
+    "kox_id": "KOX-002363",
+    "fit_score": 0.3,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "受众全部集中在非目标东南亚国家，不符合投放地域要求，不适配"
+   },
+   "KOX-002391": {
+    "kox_id": "KOX-002391",
+    "fit_score": 0.33,
+    "audience_fit": 0.08,
+    "content_fit": 0.7,
+    "angle": "受众集中在中国港澳台地区，不在目标投放市场，语言不符，不适配"
+   },
+   "KOX-002392": {
+    "kox_id": "KOX-002392",
+    "fit_score": 0.35,
+    "audience_fit": 0.05,
+    "content_fit": 0.8,
+    "angle": "受众集中在中东地区，不在目标投放市场，不适配"
+   },
+   "KOX-002407": {
+    "kox_id": "KOX-002407",
+    "fit_score": 0.35,
+    "audience_fit": 0.05,
+    "content_fit": 0.8,
+    "angle": "受众集中在德国等欧洲地区，不在目标投放市场，不适配"
+   },
+   "KOX-002441": {
+    "kox_id": "KOX-002441",
+    "fit_score": 0.44,
+    "audience_fit": 0.1,
+    "content_fit": 0.95,
+    "angle": "受众全部集中在美国，不在目标投放市场，仅内容品类符合，适配度低"
+   },
+   "KOX-002443": {
+    "kox_id": "KOX-002443",
+    "fit_score": 0.27,
+    "audience_fit": 0.05,
+    "content_fit": 0.6,
+    "angle": "受众集中在土耳其，不在目标市场，内容以3C数码为主，较少游戏内容，不适配"
+   },
+   "KOX-002445": {
+    "kox_id": "KOX-002445",
+    "fit_score": 0.9,
+    "audience_fit": 0.88,
+    "content_fit": 0.92,
+    "angle": "面向韩国、日本的目标年轻男性受众曝光推广儿童向游戏应用，高度契合投放需求"
+   },
+   "KOX-002506": {
+    "kox_id": "KOX-002506",
+    "fit_score": 0.26,
+    "audience_fit": 0.1,
+    "content_fit": 0.5,
+    "angle": "受众以女性为主，集中在印度，不符合目标人群和市场要求，不适配"
+   },
+   "KOX-002510": {
+    "kox_id": "KOX-002510",
+    "fit_score": 0.31,
+    "audience_fit": 0.25,
+    "content_fit": 0.4,
+    "angle": "受众以女性为主，仅小部分受众在目标市场巴西，适配度低"
+   },
+   "KOX-002526": {
+    "kox_id": "KOX-002526",
+    "fit_score": 0.26,
+    "audience_fit": 0.1,
+    "content_fit": 0.5,
+    "angle": "受众以女性为主，集中在德国，不符合目标要求，不适配"
+   },
+   "KOX-002537": {
+    "kox_id": "KOX-002537",
+    "fit_score": 0.44,
+    "audience_fit": 0.1,
+    "content_fit": 0.95,
+    "angle": "受众主要集中在菲律宾，不在目标投放市场，仅内容品类符合要求"
+   },
+   "KOX-002576": {
+    "kox_id": "KOX-002576",
+    "fit_score": 0.88,
+    "audience_fit": 0.78,
+    "content_fit": 1.0,
+    "angle": "面向巴西18-34岁男性游戏爱好者推广游戏，获取安装曝光"
+   },
+   "KOX-002586": {
+    "kox_id": "KOX-002586",
+    "fit_score": 0.82,
+    "audience_fit": 0.75,
+    "content_fit": 0.95,
+    "angle": "面向巴西年轻男性受众，结合数码内容切入推广目标游戏获取曝光"
+   },
+   "KOX-002591": {
+    "kox_id": "KOX-002591",
+    "fit_score": 0.2,
+    "audience_fit": 0.05,
+    "content_fit": 1.0,
+    "angle": "受众主要分布在印度，不符合目标市场JP/KR/BR的要求"
+   },
+   "KOX-002592": {
+    "kox_id": "KOX-002592",
+    "fit_score": 0.18,
+    "audience_fit": 0.04,
+    "content_fit": 1.0,
+    "angle": "受众主要分布在西班牙，不符合目标市场要求"
+   },
+   "KOX-002593": {
+    "kox_id": "KOX-002593",
+    "fit_score": 0.22,
+    "audience_fit": 0.12,
+    "content_fit": 0.9,
+    "angle": "受众主要分布在东南亚，不符合目标市场要求"
+   },
+   "KOX-002598": {
+    "kox_id": "KOX-002598",
+    "fit_score": 0.19,
+    "audience_fit": 0.05,
+    "content_fit": 1.0,
+    "angle": "受众主要分布在欧洲德语区，不符合目标市场要求"
+   },
+   "KOX-002614": {
+    "kox_id": "KOX-002614",
+    "fit_score": 0.14,
+    "audience_fit": 0.08,
+    "content_fit": 0.2,
+    "angle": "内容实际为美妆时尚类，且受众不在目标市场，不适配"
+   },
+   "KOX-002623": {
+    "kox_id": "KOX-002623",
+    "fit_score": 0.18,
+    "audience_fit": 0.03,
+    "content_fit": 1.0,
+    "angle": "受众主要分布在南亚，不符合目标市场要求"
+   },
+   "KOX-002645": {
+    "kox_id": "KOX-002645",
+    "fit_score": 0.17,
+    "audience_fit": 0.06,
+    "content_fit": 0.6,
+    "angle": "受众集中在印度，且女性占比超过一半，不符合目标人群和市场要求"
+   },
+   "KOX-002656": {
+    "kox_id": "KOX-002656",
+    "fit_score": 0.21,
+    "audience_fit": 0.15,
+    "content_fit": 0.3,
+    "angle": "受众主要分布在墨西哥，内容实际为时尚类，不符合品类和市场要求"
+   },
+   "KOX-002661": {
+    "kox_id": "KOX-002661",
+    "fit_score": 0.73,
+    "audience_fit": 0.62,
+    "content_fit": 1.0,
+    "angle": "面向巴西年轻男性游戏受众推广目标游戏，获取安装曝光"
+   },
+   "KOX-002667": {
+    "kox_id": "KOX-002667",
+    "fit_score": 0.2,
+    "audience_fit": 0.06,
+    "content_fit": 0.9,
+    "angle": "受众主要分布在美国，不符合目标市场要求"
+   },
+   "KOX-002677": {
+    "kox_id": "KOX-002677",
+    "fit_score": 0.45,
+    "audience_fit": 0.15,
+    "content_fit": 0.9,
+    "angle": "内容品类符合游戏应用，年龄性别匹配目标，但受众几乎全部不在JP/KR/BR目标市场，仅预算充足可考虑"
+   },
+   "KOX-002739": {
+    "kox_id": "KOX-002739",
+    "fit_score": 0.52,
+    "audience_fit": 0.2,
+    "content_fit": 1.0,
+    "angle": "内容完全匹配游戏应用，年龄性别符合目标，但受众均不在JP/KR/BR目标市场"
+   },
+   "KOX-002743": {
+    "kox_id": "KOX-002743",
+    "fit_score": 0.46,
+    "audience_fit": 0.2,
+    "content_fit": 0.85,
+    "angle": "内容包含游戏应用品类，年龄性别符合目标，但受众不在JP/KR/BR目标市场"
+   },
+   "KOX-002766": {
+    "kox_id": "KOX-002766",
+    "fit_score": 0.47,
+    "audience_fit": 0.18,
+    "content_fit": 0.9,
+    "angle": "内容品类匹配游戏应用，年龄性别符合目标，但受众不在JP/KR/BR目标市场"
+   },
+   "KOX-002777": {
+    "kox_id": "KOX-002777",
+    "fit_score": 0.52,
+    "audience_fit": 0.2,
+    "content_fit": 1.0,
+    "angle": "内容完全匹配游戏应用，年龄性别高度符合目标，但受众均不在JP/KR/BR目标市场"
+   },
+   "KOX-002778": {
+    "kox_id": "KOX-002778",
+    "fit_score": 0.21,
+    "audience_fit": 0.15,
+    "content_fit": 0.3,
+    "angle": "实际内容为汽车出行，仅与游戏应用品类邻接，受众不在目标市场，适配度低"
+   },
+   "KOX-002779": {
+    "kox_id": "KOX-002779",
+    "fit_score": 0.38,
+    "audience_fit": 0.1,
+    "content_fit": 0.8,
+    "angle": "内容品类符合游戏应用，但受众以女性为主，且均不在JP/KR/BR目标市场"
+   },
+   "KOX-002801": {
+    "kox_id": "KOX-002801",
+    "fit_score": 0.39,
+    "audience_fit": 0.18,
+    "content_fit": 0.7,
+    "angle": "内容包含游戏应用品类，年龄性别符合目标，但受众不在JP/KR/BR目标市场"
+   },
+   "KOX-002806": {
+    "kox_id": "KOX-002806",
+    "fit_score": 0.49,
+    "audience_fit": 0.15,
+    "content_fit": 1.0,
+    "angle": "内容完全匹配游戏应用，年龄性别高度符合目标，但受众不在JP/KR/BR目标市场"
+   },
+   "KOX-002811": {
+    "kox_id": "KOX-002811",
+    "fit_score": 0.61,
+    "audience_fit": 0.75,
+    "content_fit": 0.4,
+    "angle": "受众大部分位于目标市场巴西，语言为pt符合要求，年龄性别匹配需求，可植入游戏内容做推广"
+   },
+   "KOX-002823": {
+    "kox_id": "KOX-002823",
+    "fit_score": 0.47,
+    "audience_fit": 0.18,
+    "content_fit": 0.9,
+    "angle": "内容品类匹配游戏应用，年龄性别高度符合目标，但受众不在JP/KR/BR目标市场"
+   },
+   "KOX-002835": {
+    "kox_id": "KOX-002835",
+    "fit_score": 0.18,
+    "audience_fit": 0.1,
+    "content_fit": 0.3,
+    "angle": "实际内容为汽车出行，受众全部不在目标市场，适配度低"
+   },
+   "KOX-002870": {
+    "kox_id": "KOX-002870",
+    "fit_score": 0.45,
+    "audience_fit": 0.25,
+    "content_fit": 0.9,
+    "angle": "内容符合游戏品类，但受众几乎全部集中在欧美非目标市场，不符合触达要求"
+   },
+   "KOX-002889": {
+    "kox_id": "KOX-002889",
+    "fit_score": 0.4,
+    "audience_fit": 0.2,
+    "content_fit": 0.85,
+    "angle": "内容核心为游戏品类，但受众集中在北美，不在JP/KR/BR目标市场"
+   },
+   "KOX-002890": {
+    "kox_id": "KOX-002890",
+    "fit_score": 0.43,
+    "audience_fit": 0.2,
+    "content_fit": 0.95,
+    "angle": "内容符合游戏品类，但受众集中在欧洲，不在目标市场"
+   },
+   "KOX-002914": {
+    "kox_id": "KOX-002914",
+    "fit_score": 0.56,
+    "audience_fit": 0.5,
+    "content_fit": 0.7,
+    "angle": "过半受众位于目标市场巴西，可从数码设备联动游戏的角度切入推广儿童向游戏应用"
+   },
+   "KOX-002924": {
+    "kox_id": "KOX-002924",
+    "fit_score": 0.17,
+    "audience_fit": 0.15,
+    "content_fit": 0.2,
+    "angle": "实际内容仅为汽车出行，受众集中在非洲，品类和受众均不符合需求"
+   },
+   "KOX-002927": {
+    "kox_id": "KOX-002927",
+    "fit_score": 0.4,
+    "audience_fit": 0.18,
+    "content_fit": 0.9,
+    "angle": "内容符合游戏品类，但受众集中在大中华及东南亚地区，不在目标市场"
+   },
+   "KOX-002929": {
+    "kox_id": "KOX-002929",
+    "fit_score": 0.45,
+    "audience_fit": 0.25,
+    "content_fit": 0.9,
+    "angle": "受众年龄性别符合要求，但全部集中在东南亚，不在JP/KR/BR目标市场"
+   },
+   "KOX-002960": {
+    "kox_id": "KOX-002960",
+    "fit_score": 0.53,
+    "audience_fit": 0.45,
+    "content_fit": 0.7,
+    "angle": "受众覆盖JP、KR两个目标市场，男性占比高，可从休闲游戏内容切入推广儿童向游戏"
+   },
+   "KOX-002965": {
+    "kox_id": "KOX-002965",
+    "fit_score": 0.68,
+    "audience_fit": 0.65,
+    "content_fit": 0.75,
+    "angle": "超过六成受众位于目标市场巴西，男性占比符合要求，可从数码游戏联动的角度切入推广"
+   },
+   "KOX-002973": {
+    "kox_id": "KOX-002973",
+    "fit_score": 0.43,
+    "audience_fit": 0.2,
+    "content_fit": 0.95,
+    "angle": "内容符合游戏品类，但受众集中在南欧，不在JP/KR/BR目标市场"
+   },
+   "KOX-002988": {
+    "kox_id": "KOX-002988",
+    "fit_score": 0.17,
+    "audience_fit": 0.2,
+    "content_fit": 0.1,
+    "angle": "实际内容仅为服饰品类，受众集中在北美，品类和受众均不符合需求"
+   },
+   "KOX-002991": {
+    "kox_id": "KOX-002991",
+    "fit_score": 0.41,
+    "audience_fit": 0.2,
+    "content_fit": 0.9,
+    "angle": "内容符合游戏品类，但受众集中在北美，不在JP/KR/BR目标市场"
+   },
+   "KOX-002998": {
+    "kox_id": "KOX-002998",
+    "fit_score": 0.22,
+    "audience_fit": 0.15,
+    "content_fit": 0.5,
+    "angle": "受众地域集中在东南亚，完全不在本次目标市场JP、KR、BR范围内，适配度低"
+   },
+   "KOX-003007": {
+    "kox_id": "KOX-003007",
+    "fit_score": 0.28,
+    "audience_fit": 0.18,
+    "content_fit": 0.95,
+    "angle": "内容品类完全符合游戏应用，但受众地域集中在东欧，不在目标市场JP、KR、BR范围内"
+   },
+   "KOX-003018": {
+    "kox_id": "KOX-003018",
+    "fit_score": 0.42,
+    "audience_fit": 0.35,
+    "content_fit": 0.65,
+    "angle": "内容含游戏应用相关内容，年龄符合目标要求，但受众地域不明确，男性占比仅略高于女性，适配度一般"
+   },
+   "KOX-003046": {
+    "kox_id": "KOX-003046",
+    "fit_score": 0.89,
+    "audience_fit": 0.86,
+    "content_fit": 0.95,
+    "angle": "本身就是游戏垂类达人，超八成受众为目标年龄段18-34岁男性，近六成受众分布在目标市场JP、KR，非常适合推广游戏获取安装曝光"
+   },
+   "KOX-003056": {
+    "kox_id": "KOX-003056",
+    "fit_score": 0.25,
+    "audience_fit": 0.15,
+    "content_fit": 0.8,
+    "angle": "内容含游戏应用相关内容，但受众地域集中在欧洲，不在目标市场JP、KR、BR范围内"
+   },
+   "KOX-003076": {
+    "kox_id": "KOX-003076",
+    "fit_score": 0.73,
+    "audience_fit": 0.76,
+    "content_fit": 0.7,
+    "angle": "超六成受众集中在目标市场巴西，近七成受众为18-34岁男性，本身有游戏内容创作经验，适合推广本次游戏产品"
+   },
+   "KOX-003085": {
+    "kox_id": "KOX-003085",
+    "fit_score": 0.3,
+    "audience_fit": 0.18,
+    "content_fit": 0.8,
+    "angle": "内容含游戏应用相关内容，但受众地域集中在欧洲，不在目标市场JP、KR、BR范围内"
+   },
+   "KOX-003105": {
+    "kox_id": "KOX-003105",
+    "fit_score": 0.25,
+    "audience_fit": 0.15,
+    "content_fit": 0.75,
+    "angle": "内容含游戏应用相关内容，但受众地域集中在欧洲，不在目标市场JP、KR、BR范围内"
+   },
+   "KOX-003106": {
+    "kox_id": "KOX-003106",
+    "fit_score": 0.22,
+    "audience_fit": 0.16,
+    "content_fit": 0.55,
+    "angle": "受众地域集中在东欧地区，不在目标市场JP、KR、BR范围内"
+   },
+   "KOX-003118": {
+    "kox_id": "KOX-003118",
+    "fit_score": 0.25,
+    "audience_fit": 0.18,
+    "content_fit": 0.6,
+    "angle": "受众地域集中在北美地区，不在目标市场JP、KR、BR范围内"
+   },
+   "KOX-003119": {
+    "kox_id": "KOX-003119",
+    "fit_score": 0.82,
+    "audience_fit": 0.8,
+    "content_fit": 0.85,
+    "angle": "近七成受众集中在目标市场巴西，超七成受众为18-34岁男性，本身就是游戏垂类创作者，适合推广游戏获取曝光"
+   },
+   "KOX-003123": {
+    "kox_id": "KOX-003123",
+    "fit_score": 0.2,
+    "audience_fit": 0.15,
+    "content_fit": 0.3,
+    "angle": "受众地域集中在中东欧，不在目标市场JP、KR、BR，仅少量内容涉及游戏，适配度低"
+   },
+   "KOX-003134": {
+    "kox_id": "KOX-003134",
+    "fit_score": 0.29,
+    "audience_fit": 0.15,
+    "content_fit": 0.5,
+    "angle": "受众核心分布在非目标市场墨西哥，地域不符合投放要求，仅内容包含游戏相关内容"
+   },
+   "KOX-003138": {
+    "kox_id": "KOX-003138",
+    "fit_score": 0.26,
+    "audience_fit": 0.1,
+    "content_fit": 0.5,
+    "angle": "受众主要分布在非目标市场东南亚地区，地域契合度极低，仅内容包含游戏相关内容"
+   },
+   "KOX-003161": {
+    "kox_id": "KOX-003161",
+    "fit_score": 0.82,
+    "audience_fit": 0.8,
+    "content_fit": 0.85,
+    "angle": "核心受众为巴西本地18-34岁男性，可从儿童向游戏体验切入做曝光推广"
+   },
+   "KOX-003162": {
+    "kox_id": "KOX-003162",
+    "fit_score": 0.42,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容为纯游戏品类，但受众全部位于非目标市场欧洲地区，不符合地域投放要求"
+   },
+   "KOX-003179": {
+    "kox_id": "KOX-003179",
+    "fit_score": 0.4,
+    "audience_fit": 0.1,
+    "content_fit": 0.85,
+    "angle": "内容包含游戏相关，但受众核心位于非目标市场欧洲，不符合地域投放要求"
+   },
+   "KOX-003184": {
+    "kox_id": "KOX-003184",
+    "fit_score": 0.42,
+    "audience_fit": 0.1,
+    "content_fit": 0.9,
+    "angle": "内容符合游戏品类要求，但受众不在目标市场JP/KR/BR，不符合地域要求"
+   },
+   "KOX-003523": {
+    "kox_id": "KOX-003523",
+    "fit_score": 0.92,
+    "audience_fit": 0.9,
+    "content_fit": 0.95,
+    "angle": "核心受众为韩国本地18-34岁男性，纯游戏内容非常契合儿童向游戏应用曝光推广"
+   },
+   "KOX-003532": {
+    "kox_id": "KOX-003532",
+    "fit_score": 0.91,
+    "audience_fit": 0.88,
+    "content_fit": 0.95,
+    "angle": "覆盖韩国、日本目标受众，纯游戏内容契合需求，可获取大量目标人群安装曝光"
+   },
+   "KOX-003641": {
+    "kox_id": "KOX-003641",
+    "fit_score": 0.74,
+    "audience_fit": 0.6,
+    "content_fit": 0.95,
+    "angle": "内容为纯游戏品类，覆盖日本目标受众，可面向18-34岁男性做儿童向游戏曝光推广"
+   },
+   "KOX-003657": {
+    "kox_id": "KOX-003657",
+    "fit_score": 0.67,
+    "audience_fit": 0.65,
+    "content_fit": 0.7,
+    "angle": "覆盖日本本地目标受众，可结合汽车出行内容切入推广儿童向游戏应用"
+   },
+   "KOX-003914": {
+    "kox_id": "KOX-003914",
+    "fit_score": 0.38,
+    "audience_fit": 0.3,
+    "content_fit": 0.5,
+    "angle": "受众以女性为主，不符合目标人群18-34岁男性为主的要求，适配度低"
+   },
+   "KOX-004005": {
+    "kox_id": "KOX-004005",
+    "fit_score": 0.69,
+    "audience_fit": 0.68,
+    "content_fit": 0.7,
+    "angle": "覆盖韩国、日本目标受众，可结合汽车出行内容推广儿童向游戏获取曝光"
+   },
+   "KOX-004164": {
+    "kox_id": "KOX-004164",
+    "fit_score": 0.81,
+    "audience_fit": 0.75,
+    "content_fit": 0.9,
+    "angle": "依托日本本土男性游戏受众，推广儿童向游戏应用获取曝光"
+   },
+   "KOX-004394": {
+    "kox_id": "KOX-004394",
+    "fit_score": 0.58,
+    "audience_fit": 0.5,
+    "content_fit": 0.7,
+    "angle": "受众以女性为主，需调整内容适配男性游戏受众，依托巴西市场曝光推广游戏"
+   },
+   "KOX-004504": {
+    "kox_id": "KOX-004504",
+    "fit_score": 0.53,
+    "audience_fit": 0.45,
+    "content_fit": 0.65,
+    "angle": "受众以女性为主，目标受众匹配度低，可结合潮流内容推广儿童向游戏"
+   },
+   "KOX-004527": {
+    "kox_id": "KOX-004527",
+    "fit_score": 0.32,
+    "audience_fit": 0.3,
+    "content_fit": 0.35,
+    "angle": "受众以女性宝妈为主，与目标18-34岁男性受众错位，品类关联度低"
+   },
+   "KOX-004548": {
+    "kox_id": "KOX-004548",
+    "fit_score": 0.89,
+    "audience_fit": 0.85,
+    "content_fit": 0.95,
+    "angle": "依托巴西男性3C数码游戏受众，推广儿童向游戏应用获取曝光"
+   },
+   "KOX-004578": {
+    "kox_id": "KOX-004578",
+    "fit_score": 0.92,
+    "audience_fit": 0.9,
+    "content_fit": 0.95,
+    "angle": "基于巴西本土男性游戏受众，推广儿童向游戏获取安装曝光"
+   },
+   "KOX-004625": {
+    "kox_id": "KOX-004625",
+    "fit_score": 0.61,
+    "audience_fit": 0.65,
+    "content_fit": 0.55,
+    "angle": "实际内容以3C数码和潮流为主，可结合3C数码场景切入推广游戏应用"
+   },
+   "KOX-004980": {
+    "kox_id": "KOX-004980",
+    "fit_score": 0.76,
+    "audience_fit": 0.7,
+    "content_fit": 0.85,
+    "angle": "依托日本3C数码受众的游戏内容分享，推广儿童向游戏获取曝光"
+   }
+  }
+ }
+}

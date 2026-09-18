@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, FileText, ListChecks, Sparkles } from 'lucide-react';
-import { TruthChip } from '../components/ui';
+import { Badge, TruthChip } from '../components/ui';
+import { useComputeSource } from '../lib/computeSource';
 import { fixed, int0 } from '../lib/format';
 import type { Artifacts } from '../lib/artifacts';
 import type { TabId } from './nav';
@@ -79,11 +80,13 @@ function BigStat({
           ? 'text-slate-900'
           : 'text-brand-700';
   return (
-    <div className="subcard px-3.5 py-3">
-      <div className={`num text-[36px] font-semibold leading-none ${color}`}>{value}</div>
-      {unit && <div className="num mt-1 text-[13px] font-medium text-slate-600">{unit}</div>}
-      <div className="mt-1.5 text-[12.5px] font-medium text-slate-800">{label}</div>
-      {note && <div className="muted mt-0.5 leading-snug">{note}</div>}
+    <div className="subcard px-3 py-2.5">
+      <div className="flex items-baseline gap-1.5">
+        <div className={`num text-[30px] font-semibold leading-none ${color}`}>{value}</div>
+        {unit && <div className="num text-[12px] font-medium text-slate-600">{unit}</div>}
+      </div>
+      <div className="mt-1 text-[12px] font-medium text-slate-800">{label}</div>
+      {note && <div className="muted leading-snug">{note}</div>}
     </div>
   );
 }
@@ -95,6 +98,7 @@ export function Hero({
   art: Artifacts;
   onGo: (tab: TabId, anchor?: string) => void;
 }): React.ReactElement {
+  const cs = useComputeSource();
   const saved = robustSaved(art);
   const m = (art.metrics as Loose | null) ?? null;
   const t1 = (m?.['table_1_fraud_detection'] as Loose | undefined) ?? undefined;
@@ -112,18 +116,22 @@ export function Hero({
 
   return (
     <section className="card overflow-hidden">
-      <div className="flex flex-col gap-5 px-5 py-5 xl:flex-row xl:gap-7">
+      <div className="flex flex-col gap-4 px-5 py-4 xl:flex-row xl:gap-6">
         {/* 左：定位 + 输入→处理→输出 */}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="chip border-brand-200 bg-brand-50 text-brand-700">
               <Sparkles size={11} /> 出海达人营销 · 投前决策智能体
             </span>
-            <TruthChip kind="rule" />
+            {cs.source === 'backend' ? (
+              <Badge className="border-emerald-300 bg-emerald-50 text-emerald-700">Python 服务实时计算</Badge>
+            ) : cs.source === 'browser' ? (
+              <TruthChip kind="rule" />
+            ) : null}
             <TruthChip kind="synthetic" />
           </div>
 
-          <h2 className="mt-3 text-[24px] font-semibold leading-tight tracking-tight text-slate-900">
+          <h2 className="mt-2.5 text-[22px] font-semibold leading-tight tracking-tight text-slate-900">
             把<b className="text-brand-700">一句话投放 brief</b>，变成一份可执行、可追责、
             <br className="hidden lg:block" />
             带预算分配和风险证据链的<b className="text-brand-700">达人投放清单</b>。
@@ -133,7 +141,7 @@ export function Hero({
           </p>
 
           {/* 三步：吃什么、做什么、吐什么 */}
-          <div className="mt-4 flex flex-col items-stretch gap-2 lg:flex-row lg:items-center">
+          <div className="mt-3 flex flex-col items-stretch gap-2 lg:flex-row lg:items-center">
             <Step n="输入" title="一句话 brief" body="“$80k 投中东 3C，要 TikTok 微中腰”——自然语言，不填表单" tone="in" />
             <ArrowRight size={16} className="mx-auto shrink-0 rotate-90 text-slate-400 lg:rotate-0" />
             <Step n="处理" title="四层门禁筛人 + 预算分配" body="G0→G3 逐层拒绝 + 带硬约束的预算贪心分配" tone="mid" />
@@ -162,8 +170,8 @@ export function Hero({
             />
             <BigStat
               value={int0(n)}
-              label="达人在浏览器内实时重算"
-              note="改参数即重跑，耗时实时计量"
+              label="达人逐条参与每次重算"
+              note={cs.source === 'backend' ? '服务与浏览器读同一份数据集' : '改参数即重跑，耗时实时计量'}
               tone="live"
             />
             <BigStat
@@ -177,29 +185,19 @@ export function Hero({
 
         </div>
       </div>
-      <div className="border-t border-slate-200 px-5 pb-4 pt-3.5">
-{/* 阅读引导 */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2.5">
-            <div className="flex items-center gap-1.5">
-              <ListChecks size={13} className="text-brand-600" />
-              <span className="text-[12.5px] font-semibold text-slate-900">30 秒看懂：按这个顺序点</span>
-            </div>
-            <div className="mt-2 grid gap-1.5 lg:grid-cols-3">
-              {guides.map((g) => (
-                <button
-                  key={g.k + g.tab}
-                  onClick={() => onGo(g.tab, g.anchor)}
-                  className="focusable group flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-left transition-colors hover:border-brand-300 hover:bg-brand-50"
-                >
-                  <span className="chip shrink-0 border-brand-200 bg-brand-50 text-brand-700">{g.k}</span>
-                  <span className="min-w-0 flex-1 truncate text-[12.5px] text-slate-700 group-hover:text-slate-900">
-                    {g.text}
-                  </span>
-                  <ArrowRight size={13} className="shrink-0 text-slate-400 group-hover:text-brand-600" />
-                </button>
-              ))}
-            </div>
-          </div>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 border-t border-slate-200 px-5 py-2.5">
+        <ListChecks size={13} className="text-brand-600" />
+        <span className="text-[12px] font-semibold text-slate-900">30 秒看懂，按这个顺序点：</span>
+        {guides.map((g) => (
+          <button
+            key={g.k + g.tab}
+            onClick={() => onGo(g.tab, g.anchor)}
+            className="focusable group flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1 transition-colors hover:border-brand-300 hover:bg-brand-50"
+          >
+            <span className="text-[12px] text-slate-700 group-hover:text-slate-900">{g.text}</span>
+            <ArrowRight size={12} className="shrink-0 text-slate-400 group-hover:text-brand-600" />
+          </button>
+        ))}
       </div>
     </section>
   );

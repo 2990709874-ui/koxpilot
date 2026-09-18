@@ -139,7 +139,8 @@ export function DecisionTab({
    */
   const live = useLiveRun();
   const result = live?.result ?? appResult;
-  const isCustom = Boolean(live);
+  /** 当前结果不是「全量产物口径」（自定义 brief 或服务本次召回窗口）→ 关闭与产物的逐项对数。 */
+  const offArtifactScope = Boolean(live);
 
   const plan = result ? (arm === 'koxpilot' ? result.plan : result.baseline) : null;
 
@@ -205,9 +206,9 @@ export function DecisionTab({
 
   // 产物口径下（不含 review、衰减 0.7）可以和 Python 产物直接对数；参数一改就不可比，如实说明
   // 自定义 brief 不在 Python 产物里，天然不可比 —— 这一点必须显式排除，否则会拿别的 campaign 的数对上去
-  const comparable = !includeReview && decay === 0.7 && !isCustom;
+  const comparable = !includeReview && decay === 0.7 && !offArtifactScope;
   /** 分层标记只有在参数与产物口径一致（不纳入 review、decay = 参照档）时才敢往行上打。 */
-  const tierComparable = !isCustom && !includeReview && referenceDecay !== null && Math.abs(decay - referenceDecay) < 1e-9;
+  const tierComparable = !offArtifactScope && !includeReview && referenceDecay !== null && Math.abs(decay - referenceDecay) < 1e-9;
   const pyPlan = ((budgetArtifact?.plans ?? []) as Loose[]).find((p) => p.campaign_id === result.spec.campaign_id) ?? null;
   const pyArm = pyPlan ? (pyPlan[arm === 'koxpilot' ? 'koxpilot' : 'baseline_followers'] as Loose | undefined) : undefined;
   const parityRows: Array<[string, string, string, boolean]> = [];
@@ -236,7 +237,7 @@ export function DecisionTab({
         tone={audit.saved_usd >= 0 ? 'good' : 'warn'}
         conclusion={
           <>
-            {isCustom ? '你自己敲的那条 brief' : result.spec.campaign_id} 的 {usd0(result.plan.budget_usd)} 预算落到{' '}
+            {live ? live.label : result.spec.campaign_id} 的 {usd0(result.plan.budget_usd)} 预算落到{' '}
             <b>{int0(result.plan.n_selected)}</b> 人 / {int0(result.plan.n_posts)} 条；与「按粉丝量降序买」的基线相比，
             这一次<b>{audit.saved_usd >= 0 ? '少' : '多'}浪费 {usd0(Math.abs(audit.saved_usd))}</b>
             （占预算 {signedPct1(audit.saved_share_of_budget)}）。
@@ -274,9 +275,11 @@ export function DecisionTab({
           ]}
         />
         <TruthChip kind="rule" />
-        {isCustom && (
+        {live && (
           <Badge className="border-live-300 bg-live-50 text-live-700">
-            当前是你自己敲的 brief（campaign_id = {result.spec.campaign_id}），与 Python 产物不可比
+            {live.origin === 'service'
+              ? `候选集 = 服务本次召回的 ${int0(result.pool.length)} 人，与全量产物口径不同`
+              : `当前是你自己敲的 brief（campaign_id = ${result.spec.campaign_id}），与 Python 产物不可比`}
           </Badge>
         )}
         <span className="muted">两臂共用同一份定向筛选与报价口径，唯一差异是选人依据</span>
@@ -298,20 +301,20 @@ export function DecisionTab({
               <span className="text-[13px] text-slate-500"> 人 / {int0(plan.n_posts)} 条</span>
             </>
           }
-          hint={`候选池 ${int0(plan.candidate_pool)} 人；单人最多 ${plan.purchase_model.max_posts_per_kox} 条，第 n 条边际按 ${plan.purchase_model.post_marginal_decay}^(n−1) 衰减`}
+          hint={`候选池 ${int0(plan.candidate_pool)} 人 · 单人 ≤${plan.purchase_model.max_posts_per_kox} 条 · 边际 ${plan.purchase_model.post_marginal_decay}^(n−1)`}
         />
         <Stat label="预估 CPM" value={usd2(plan.est_cpm_usd)} hint="按方案自身预估曝光计算" />
         <Stat label="预估 CPE" value={usd2(plan.est_cpe_usd)} hint="按互动量算的单次互动成本" />
         <Stat
           label="有效曝光（真实标注结算）"
           value={compact(armAudit.effective_views_gt)}
-          hint={`名义曝光 ${int0(armAudit.nominal_views)}；水号曝光按 0 计（宽松口径按 50% 计为 ${compact(armAudit.effective_views_gt_lenient)}）`}
+          hint={`名义 ${compact(armAudit.nominal_views)} · 水号按 0 计（宽松 ${compact(armAudit.effective_views_gt_lenient)}）`}
           tone={arm === 'koxpilot' ? 'good' : 'bad'}
         />
         <Stat
           label="浪费金额（真实标注结算）"
           value={usd0(armAudit.wasted_spend_usd)}
-          hint={`占花费 ${pct1(armAudit.wasted_spend_share)}；买中真水号 ${armAudit.n_fraud_selected} 人、高危 ${armAudit.n_high_risk_selected} 人`}
+          hint={`占花费 ${pct1(armAudit.wasted_spend_share)} · 真水号 ${armAudit.n_fraud_selected} 人 / 高危 ${armAudit.n_high_risk_selected} 人`}
           tone={armAudit.wasted_spend_share > 0.2 ? 'bad' : 'good'}
         />
       </div>
@@ -334,32 +337,20 @@ export function DecisionTab({
             ]}
             fmt={(x) => (x > 1e5 ? compact(x) : int0(x))}
           />
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
-              <div className="text-[11px] text-slate-600">少浪费</div>
-              <div className={`num text-[16px] ${audit.saved_usd >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+          <div className="mt-2.5 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px]">
+            <span className="text-slate-600">
+              少浪费{' '}
+              <b className={`num ${audit.saved_usd >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {audit.saved_usd >= 0 ? '' : '−'}
                 {usd0(Math.abs(audit.saved_usd))}
-              </div>
-              <div className="muted">
-                占预算 {signedPct1(audit.saved_share_of_budget)}
-                {robust && robust !== 'missing'
-                  ? ` · 稳健区间 [${signedPct1(robust.low)}, ${signedPct1(robust.high)}]`
-                  : ''}
-              </div>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
-              <div className="text-[11px] text-slate-600">有效曝光提升</div>
-              <div className={`num text-[16px] ${audit.effective_view_uplift >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                {signedPct1(audit.effective_view_uplift)}
-              </div>
-              <div className="muted">宽松口径 {signedPct1(audit.effective_view_uplift_lenient)}</div>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
-              <div className="text-[11px] text-slate-600">每千美元有效曝光</div>
-              <div className="num text-[16px] text-live-700">{compact(audit.effective_views_per_1k_usd.koxpilot)}</div>
-              <div className="muted">基线 {compact(audit.effective_views_per_1k_usd.baseline)}</div>
-            </div>
+              </b>{' '}
+              · 占预算 {signedPct1(audit.saved_share_of_budget)}
+              {robust && robust !== 'missing' ? ` · 稳健区间 [${signedPct1(robust.low)}, ${signedPct1(robust.high)}]` : ''}
+            </span>
+            <span className="text-slate-600">
+              每千美元有效曝光 <b className="num text-live-700">{compact(audit.effective_views_per_1k_usd.koxpilot)}</b> · 基线{' '}
+              {compact(audit.effective_views_per_1k_usd.baseline)}
+            </span>
           </div>
           {audit.saved_usd < 0 && (
             <Note tone="warn">
@@ -418,38 +409,39 @@ export function DecisionTab({
               <MixBar mix={plan.platform_mix} labels={PLATFORM_LABEL} />
             </div>
           </div>
+          <div className="mt-2">
+        <Collapse
+          title={`分配过程：${plan.trace.length} 步决策日志（每一步为什么加人、为什么修正配额）`}
+          hint="由分配器在本次运行中生成"
+        >
+          <ol className="space-y-1.5">
+            {plan.trace.map((t, i) => (
+              <li key={t} className="flex gap-2 text-[12px] leading-relaxed text-slate-700">
+                <span className="num mt-[1px] flex h-4 w-4 shrink-0 items-center justify-center rounded bg-live-100 text-[9px] text-live-700">
+                  {i + 1}
+                </span>
+                {t}
+              </li>
+            ))}
+          </ol>
+          {other.trace.length > 0 && (
+            <details className="mt-2">
+              <summary className="cursor-pointer text-[11px] text-slate-500 hover:text-slate-700">
+                查看{arm === 'koxpilot' ? '基线臂' : 'KOXPilot 臂'}的 trace
+              </summary>
+              <ol className="mt-1.5 space-y-1">
+                {other.trace.map((t) => (
+                  <li key={t} className="muted">
+                    · {t}
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )}
+        </Collapse>
+          </div>
         </Panel>
       </div>
-
-      <Collapse
-        title={`分配过程：${plan.trace.length} 步决策日志（每一步为什么加人、为什么修正配额）`}
-        hint="由分配器在本次运行中生成"
-      >
-        <ol className="space-y-1.5">
-          {plan.trace.map((t, i) => (
-            <li key={t} className="flex gap-2 text-[12px] leading-relaxed text-slate-700">
-              <span className="num mt-[1px] flex h-4 w-4 shrink-0 items-center justify-center rounded bg-live-100 text-[9px] text-live-700">
-                {i + 1}
-              </span>
-              {t}
-            </li>
-          ))}
-        </ol>
-        {other.trace.length > 0 && (
-          <details className="mt-2">
-            <summary className="cursor-pointer text-[11px] text-slate-500 hover:text-slate-700">
-              查看{arm === 'koxpilot' ? '基线臂' : 'KOXPilot 臂'}的 trace
-            </summary>
-            <ol className="mt-1.5 space-y-1">
-              {other.trace.map((t) => (
-                <li key={t} className="muted">
-                  · {t}
-                </li>
-              ))}
-            </ol>
-          </details>
-        )}
-      </Collapse>
 
       <Collapse
         title={`达人清单：${plan.n_selected} 人 / ${plan.n_posts} 条的逐人金额、性价比与交付分层`}
@@ -593,16 +585,20 @@ export function DecisionTab({
           title={
             comparable
               ? `与 Python 离线结果逐项对数（${allParity ? `${parityRows.length} 项全部一致` : '存在差异'}）`
-              : isCustom
-                ? '自定义 brief 与 Python 离线结果不可比（口径说明）'
-                : '当前参数与离线结果口径不同，暂不可比（口径说明）'
+              : live?.origin === 'service'
+                ? '服务本次召回窗口与 Python 离线全量结果不可比（口径说明）'
+                : live
+                  ? '自定义 brief 与 Python 离线结果不可比（口径说明）'
+                  : '当前参数与离线结果口径不同，暂不可比（口径说明）'
           }
           hint={
             comparable
               ? '当前参数与离线结果口径一致：不纳入待复核、边际衰减 0.7'
-              : isCustom
-                ? '自定义 brief 没有对应的离线结果可对照'
-                : '已修改参数（纳入待复核或调整了边际衰减），与离线结果口径不同'
+              : live?.origin === 'service'
+                ? `本次候选集是服务按 top_n 上限召回的 ${int0(result.pool.length)} 人，离线结果按全量候选池计算，两者不同口径`
+                : live
+                  ? '自定义 brief 没有对应的离线结果可对照'
+                  : '已修改参数（纳入待复核或调整了边际衰减），与离线结果口径不同'
           }
         >
           {comparable && parityRows.length > 0 ? (

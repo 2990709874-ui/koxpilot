@@ -39,7 +39,7 @@ export function Funnel({
 }) {
   const max = Math.max(...steps.map((s) => s.value), 1);
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1">
       {steps.map((s, i) => {
         const prev = i === 0 ? null : steps[i - 1].value;
         const drop = prev === null ? null : prev - s.value;
@@ -54,7 +54,7 @@ export function Funnel({
                 {drop !== null && drop > 0 && <span className="ml-1.5 text-rose-600/80">−{int0(drop)}</span>}
               </span>
             </div>
-            <div className="mt-1 h-2.5 overflow-hidden rounded-[3px]" style={{ background: CHROME.track }}>
+            <div className="mt-0.5 h-2 overflow-hidden rounded-[3px]" style={{ background: CHROME.track }}>
               <div
                 className="h-full rounded-[3px] transition-all duration-700"
                 style={{ width: `${w}%`, background: `linear-gradient(90deg, ${color}, ${color}88)` }}
