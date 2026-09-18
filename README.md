@@ -15,6 +15,31 @@
 
 Demo 不是播放预录结果：**四层门禁在浏览器里用 TypeScript 重算一遍**，与 Python 实现读同一份阈值表、逐条比对 0 差异（[实时校验产物](https://185ab87138d0.aime-site.bytedance.net/data/consistency.json)）。
 
+---
+
+## 从这里开始：按你想花多少时间选一条路
+
+| 你是 | 走这条 | 大概花多久 |
+| --- | --- | --- |
+| **只想快速判断这东西行不行** | 打开上面的 [在线 Demo](https://185ab87138d0.aime-site.bytedance.net)，看 `#console` 输入 brief → `#decision` 看名单和证据链 | 3 分钟 |
+| **想看完整的方法与结论** | 读 [**AI 应用能力文档（PDF，10 页）**](./AI应用能力文档_KOXPilot_纪辉.pdf)——业务对齐、四层门禁、多种子实验、成本账、13 条自我修复，一份读完 | 15 分钟 |
+| **想抠实现细节 / 验证数字是真的** | 继续往下读本文件，然后 [30 秒复现](#30-秒复现) 在本地跑一遍 `make all && make test` | 20 分钟 |
+| **想读设计取舍与边界** | [`docs/`](./docs) 六篇技术文档，见下方[文档](#文档)一节 | 1 小时+ |
+
+**这个仓库是唯一入口**：在线 Demo、PDF 文档、全部源码与产物、六篇技术文档都在这里，不需要再去别处找。
+
+### 仓库里有什么
+
+| 路径 | 是什么 | 为什么值得点开 |
+| --- | --- | --- |
+| [`AI应用能力文档_KOXPilot_纪辉.pdf`](./AI应用能力文档_KOXPilot_纪辉.pdf) | 提交用的完整文档 | 想一次读完就看这个 |
+| [`docs/`](./docs) | 六篇技术分册 | 架构 / 门禁 / 评测 / Prompt 与成本 / 边界 / 稳健性 |
+| `src/koxpilot/` | Python 核心：6 个 Agent + 评测 + 审计 | 所有数字的来源 |
+| `web/` | 前端（React + TS），含**门禁的第二套独立实现** | 双实现一致性校验就在这里 |
+| `output/` | 全部指标产物（**已入库**） | clone 完不跑任何命令，就能核对本文件里的每个数字 |
+| `data/` | 合成达人库 + 3 个 brief（**已入库**） | 固定种子，`make data` 可逐字节重建 |
+| `tests/` | 745 个测试 | 含反数据泄漏 AST 扫描、文档数字防漂移 |
+
 
 ---
 
@@ -145,34 +170,72 @@ KOXPilot 做的事：在签合同之前，把"这个达人能不能投、值多�
 
 ## 30 秒复现
 
-核心结论全部由确定性计算产生，**不需要任何 API key**：
+### 环境要求
+
+| | 版本 | 说明 |
+| --- | --- | --- |
+| Python | 3.11+ | 核心链路**零第三方依赖**（只用标准库），不需要 pip install |
+| Node.js | 20+ | 只有跑前端才需要 |
+| pnpm | 9+ | 前端包管理，`npm i -g pnpm` |
+
+### 第一步：核心结论（不需要任何 API key）
 
 ```bash
+git clone <这个仓库>
 cd koxpilot
+
 make all        # data -> gate -> budget -> eval，约 1 分钟
+make test       # 745 个测试，含反数据泄漏的 AST 静态扫描与哨兵测试
 ```
 
-固定种子 `SEED=20270919`，任何人任何机器跑出的 `output/metrics.json` 应当完全一致（数据集 sha256 会打印在日志里，当前是 `29500afd5390f3fd…`）。
+跑完看 `output/metrics.json`——本文件里的每个数字都在里面。固定种子 `SEED=20270919`，任何人任何机器跑出的结果应当完全一致（数据集 sha256 会打印在日志里，当前是 `29500afd5390f3fd…`）。
 
-跑测试：
+> `data/` 和 `output/` 都已入库，所以**其实你不跑 `make all` 也能直接核对数字**。跑一遍的意义是验证"这些产物真的能从代码重建出来"。
+
+### 第二步：本地启动前端 Demo
 
 ```bash
-make test       # 含反数据泄漏的 AST 静态扫描与哨兵测试
+cd web
+pnpm install
+pnpm run prepare-data   # ← 必须先跑：从 data/ 与 output/ 派生前端消费的 JSON
+pnpm run verify         # ← 也必须跑：它同时产出 #arch 页签要读的 consistency.json
+pnpm run dev            # 起开发服务器，默认 http://localhost:5173
 ```
 
-需要 LLM 的部分（构建期真调，结果固化后线上零外部依赖）：
+**为什么这两步不能跳**：前端消费的 `web/public/data/` 是派生产物（体积大、可一键重建，因此**刻意不入库**）。`prepare-data` 生成 10 个数据文件；`verify` 跑双实现逐条比对，并把结果写成第 11 个文件 `consistency.json`——`#arch` 页签的一致性面板直接读它。跳过任一步，`pnpm run dev` 会起得来，但页面拿不到数据。
+
+嫌麻烦就一条命令：
+
+```bash
+make web    # = cd web && pnpm install --frozen-lockfile && pnpm run refresh
+            #   refresh = prepare-data + verify + build，跑完 pnpm run preview 就能看
+```
+
+`verify` 会打印这些（这就是"前后端不是一套数据两张皮"的证据）：
+
+```
+判定级：5,000/5,000 条完全一致
+证据链级：200/200 条完全一致（含 human_text 逐字符），比对 255 行 reason
+预算/审计级：分配臂 9/9 一致，反事实审计 3/3 一致
+```
+
+### 第三步（可选）：需要 LLM 的部分
+
+构建期真调模型，结果固化后线上零外部依赖。**不做这一步不影响任何核心数字**——`output/` 里已有真实调用的记录。
 
 ```bash
 cp .env.example .env    # 填入自己的 endpoint 与 key
 make llm                # brief 解析 / 标签错配判定 / 语义适配打分，跑完自动重跑 eval 接入 token 账
-make promptbench        # Prompt v1/v2/v3 × 双模型横评
+make promptbench        # Prompt v1/v2/v3 × 双模型横评（约 16 分钟，会产生真实费用）
 ```
 
-前端 Demo：
+### 常见问题
 
-```bash
-make web        # 等价于 cd web && pnpm install && pnpm run refresh
-```
+| 现象 | 原因 | 怎么办 |
+| --- | --- | --- |
+| 前端页面空白 / 数据全是 0 | 没跑 `pnpm run prepare-data` | 补跑，然后刷新 |
+| `make llm` 报缺 key | 没有 `.env` | 这一步可跳过，不影响核心结论 |
+| `make test` 里文档数字测试红了 | 你改了 `output/` 但没同步 README | 这是**故意的**——见[代码级保证](#代码级保证) |
 
 ---
 
@@ -313,6 +376,7 @@ total 5000 · matched 5000 · diff_count 0 · match_rate 1.0
 
 ```
 koxpilot/
+├── AI应用能力文档_KOXPilot_纪辉.pdf   ← 提交用的完整文档，想一次读完就看这个
 ├── src/koxpilot/
 │   ├── datagen/          合成数据生成（含两次防自证修复的核心逻辑）
 │   ├── gates/            四层门禁：g0/g1/g2/g3 + policy 判定升级 + 动态阈值标定
@@ -323,11 +387,15 @@ koxpilot/
 ├── tests/                pytest（含反数据泄漏静态扫描与哨兵）
 ├── web/                  React + TypeScript 前端 Demo（含 TS 门禁引擎与一致性校验脚本）
 ├── docs/                 架构 / 门禁规则手册 / 评测方法 / Prompt 与成本 / 工程边界
-├── data/                 生成的数据集（可复现，无需入库亦可重建）
-└── output/               所有实验产物（metrics / thresholds / verdicts / budget / audit / bench）
+├── data/                 合成数据集（已入库，`make data` 可逐字节重建）
+└── output/               所有实验产物（已入库，clone 完即可核对 README 里的每个数字）
 ```
 
 ## 文档
+
+**如果只读一份**：[AI 应用能力文档（PDF，10 页）](./AI应用能力文档_KOXPilot_纪辉.pdf)——业务对齐、产品链路、决策质量、业务价值、Prompt 实验、工程完备性、13 条自我修复、已知边界，一份读完。
+
+想深入某一块，再翻对应分册：
 
 | 文档 | 回答什么问题 |
 | --- | --- |
@@ -336,6 +404,9 @@ koxpilot/
 | [03-evaluation.md](docs/03-evaluation.md) | 评测怎么设计，六张表结果，**反自证专章**，已知弱项 |
 | [04-prompt-and-cost.md](docs/04-prompt-and-cost.md) | Prompt v1→v3 的实测谱系，token 成本账，该不该用大模型 |
 | [05-boundaries.md](docs/05-boundaries.md) | 哪部分真算、哪部分固化、哪部分是合成数据，以及局限与下一步 |
+| [06-robustness.md](docs/06-robustness.md) | 12 种子稳健性、三臂价值归因、伪重复口径、弱项显著性检验 |
+
+推荐阅读顺序：**PDF → 03（评测怎么防自证）→ 06（结论有多稳）→ 05（边界在哪）**。前两篇是方法，后两篇是这个项目最不像学生作业的部分。
 
 ---
 
