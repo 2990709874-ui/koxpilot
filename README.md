@@ -4,14 +4,14 @@
 
 > 把一句话投放 brief，变成一份可执行、可追责、带预算分配和风险证据链的达人投放清单，并用可复现的实验说清这份清单比"凭粉丝量选人"少浪费多少钱——以及这个结论有多稳。
 
-### 🔗 [在线 Demo](https://185ab87138d0.aime-site.bytedance.net) &nbsp;·&nbsp; 六个页签支持直达
+### 🔗 [在线 Demo](https://185ab87138d0.aime-site.bytedance.net) &nbsp;·&nbsp; 四个页签支持直达
 
-[决策台](https://185ab87138d0.aime-site.bytedance.net/#console) ·
-[决策与预算](https://185ab87138d0.aime-site.bytedance.net/#decision) ·
-[评测](https://185ab87138d0.aime-site.bytedance.net/#eval) ·
-[成本与价值](https://185ab87138d0.aime-site.bytedance.net/#cost) ·
-[架构](https://185ab87138d0.aime-site.bytedance.net/#arch) ·
-[工程日志](https://185ab87138d0.aime-site.bytedance.net/#notes)
+[**投放决策**](https://185ab87138d0.aime-site.bytedance.net/#run) 输入 brief，出名单和预算 ·
+[**效果验证**](https://185ab87138d0.aime-site.bytedance.net/#proof) 它准不准、稳不稳 ·
+[**成本账**](https://185ab87138d0.aime-site.bytedance.net/#cost) 花了多少 token，值不值 ·
+[**工程实现**](https://185ab87138d0.aime-site.bytedance.net/#build) 怎么编排的、踩过哪些坑
+
+> 打开就能**自己敲一条投放需求**（不是从预置项里挑），下游召回、四层门禁、预算分配全部在你的浏览器里重算一遍。
 
 Demo 不是播放预录结果：**四层门禁在浏览器里用 TypeScript 重算一遍**，与 Python 实现读同一份阈值表、逐条比对 0 差异（[实时校验产物](https://185ab87138d0.aime-site.bytedance.net/data/consistency.json)）。
 
@@ -21,7 +21,7 @@ Demo 不是播放预录结果：**四层门禁在浏览器里用 TypeScript 重�
 
 | 你是 | 走这条 | 大概花多久 |
 | --- | --- | --- |
-| **只想快速判断这东西行不行** | 打开上面的 [在线 Demo](https://185ab87138d0.aime-site.bytedance.net)，看 `#console` 输入 brief → `#decision` 看名单和证据链 | 3 分钟 |
+| **只想快速判断这东西行不行** | 打开上面的 [在线 Demo](https://185ab87138d0.aime-site.bytedance.net)，首屏就是「输入什么/输出什么/凭什么可信」，然后在 `#run` 里自己敲一条 brief | 3 分钟 |
 | **想看完整的方法与结论** | 读 [**AI 应用能力文档（PDF，10 页）**](./AI应用能力文档_KOXPilot_纪辉.pdf)——业务对齐、四层门禁、多种子实验、成本账、13 条自我修复，一份读完 | 15 分钟 |
 | **想抠实现细节 / 验证数字是真的** | 继续往下读本文件，然后 [30 秒复现](#30-秒复现) 在本地跑一遍 `make all && make test` | 20 分钟 |
 | **想读设计取舍与边界** | [`docs/`](./docs) 六篇技术文档，见下方[文档](#文档)一节 | 1 小时+ |
@@ -198,11 +198,11 @@ make test       # 745 个测试，含反数据泄漏的 AST 静态扫描与哨�
 cd web
 pnpm install
 pnpm run prepare-data   # ← 必须先跑：从 data/ 与 output/ 派生前端消费的 JSON
-pnpm run verify         # ← 也必须跑：它同时产出 #arch 页签要读的 consistency.json
+pnpm run verify         # ← 也必须跑：它同时产出 #build 页签要读的 consistency.json
 pnpm run dev            # 起开发服务器，默认 http://localhost:5173
 ```
 
-**为什么这两步不能跳**：前端消费的 `web/public/data/` 是派生产物（体积大、可一键重建，因此**刻意不入库**）。`prepare-data` 生成 10 个数据文件；`verify` 跑双实现逐条比对，并把结果写成第 11 个文件 `consistency.json`——`#arch` 页签的一致性面板直接读它。跳过任一步，`pnpm run dev` 会起得来，但页面拿不到数据。
+**为什么这两步不能跳**：前端消费的 `web/public/data/` 是派生产物（体积大、可一键重建，因此**刻意不入库**）。`prepare-data` 生成 10 个数据文件；`verify` 跑双实现逐条比对，并把结果写成第 11 个文件 `consistency.json`——`#build` 页签的一致性面板直接读它。跳过任一步，`pnpm run dev` 会起得来，但页面拿不到数据。
 
 嫌麻烦就一条命令：
 
@@ -313,7 +313,7 @@ total 5000 · matched 5000 · diff_count 0 · match_rate 1.0
 
 第 11–13 条是收口阶段才抓到的，属于另一类：**数字是对的、结论也是对的，但它到此为止，没有产生任何动作。**
 
-> 口径说明：下表是按「**会不会被当场证伪**」挑出来的 13 条。线上 Demo 的 `#notes` 页放的是**构建期自我修复日志**，条目切分方式不同（14 条，含"两个进程并发写同一个缓存文件""同 prompt 同模型两次 F1 不同"这类工程记录，但不含本表里几条已被合并叙述的）。两份清单交集大但不等同——**不是同一个数**，我不把它凑成一样。
+> 口径说明：下表是按「**会不会被当场证伪**」挑出来的 13 条。线上 Demo `#build` 页「踩过的坑」放的是**构建期自我修复日志**，条目切分方式不同（14 条，含"两个进程并发写同一个缓存文件""同 prompt 同模型两次 F1 不同"这类工程记录，但不含本表里几条已被合并叙述的）。两份清单交集大但不等同——**不是同一个数**，我不把它凑成一样。
 
 | # | 问题 | 表现 | 修完的代价 |
 | --- | --- | --- | --- |
