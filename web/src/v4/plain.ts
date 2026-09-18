@@ -1,8 +1,9 @@
 /**
  * 人话词典。
  *
- * 这一版的唯一规则：**页面上出现的每一个字，一个没做过技术的营销同学要能看懂。**
- * 看不懂的一律在这里翻译掉；翻译不出来的，说明它本来就不该出现在界面上（搬去 README）。
+ * 两条规则同时成立：
+ * 1. 不出现只有作者自己懂的内部口径（AST / 分位数 / parity / ground truth / 阈值版本…）；
+ * 2. 也不写成聊天体。界面文案是**书面产品语**：名词化、陈述、可直接抄进方案文档。
  *
  * 所以这里不会出现：F1 / AUC / P95 / 分位数 / parity / ground truth / 双实现 / 哨兵 /
  * 阈值版本 / sha256 / ms / token。这些词属于工程文档，不属于给客户看的界面。
@@ -28,10 +29,10 @@ export const category = (code: string): string => CATEGORY_ZH[code] ?? code;
 /** 粉丝层级 → 人话。 */
 export const TIER_ZH: Record<string, string> = {
   nano: '素人',
-  micro: '小达人',
+  micro: '微型',
   mid: '腰部',
-  macro: '大号',
-  mega: '头部',
+  macro: '头部',
+  mega: '超头部',
 };
 
 /** 粉丝层级 → 粉丝区间，鼠标悬停时说明。 */
@@ -47,14 +48,14 @@ export const tier = (code: string): string => TIER_ZH[code] ?? code;
 
 /** 投放目标 → 人话。 */
 export const KPI_ZH: Record<string, string> = {
-  conversion: '要转化',
-  engagement: '要互动',
-  reach: '要曝光',
-  balanced: '均衡',
+  conversion: '考核转化',
+  engagement: '考核互动',
+  reach: '考核曝光',
+  balanced: '均衡考核',
 };
 
 export const gender = (g: string | null): string | null =>
-  g === 'f' ? '女性为主' : g === 'm' ? '男性为主' : null;
+  g === 'f' ? '以女性为主' : g === 'm' ? '以男性为主' : null;
 
 /** 年龄段 → 人话。18-24 / 25-34 → 「18–34 岁」。 */
 export function ageText(buckets: readonly string[]): string | null {
@@ -74,17 +75,17 @@ export function ageText(buckets: readonly string[]): string | null {
  * 原来界面上写 G0/G1/G2/G3，只有作者自己知道那是什么。
  */
 export const GATE_NAME: Record<string, string> = {
-  G0: '资料齐不齐',
-  G1: '数据是不是刷的',
-  G2: '人群对不对得上',
-  G3: '品牌安不安全',
+  G0: '资料完整性',
+  G1: '数据真实性',
+  G2: '人群匹配度',
+  G3: '品牌安全',
 };
 
 export const GATE_ASK: Record<string, string> = {
-  G0: '关键资料缺失的号先不投，缺太多连判断都做不了',
-  G1: '互动、涨粉、评论三处对照同类账号，异常的挑出来',
-  G2: '内容、语言、粉丝画像要跟这次要投的人对得上',
-  G3: '高危内容、争议历史、最近接过竞品的号排掉',
+  G0: '关键字段缺失的账号不进入后续评估；缺失过多时无法形成有效判定。',
+  G1: '互动率、涨粉曲线、评论质量三项与同类账号对照，识别异常数据。',
+  G2: '内容领域、语言与粉丝画像需与本次投放的目标人群一致。',
+  G3: '排除高危内容、争议记录与近期竞品合作。',
 };
 
 /**
@@ -94,41 +95,41 @@ export const GATE_ASK: Record<string, string> = {
  */
 export const RULE_PLAIN: Record<string, string> = {
   'G0.1': '关键资料缺失',
-  'G0.2': '资料缺得太多，判不准',
-  'G1.1': '互动率高得不像真人',
-  'G1.2': '互动率低到不正常',
-  'G1.3': '评论和点赞的比例不对劲',
-  'G1.4': '播放量远超粉丝量',
-  'G1.5': '粉丝数出现断层式暴涨',
-  'G1.6': '新号却在疯狂涨粉',
-  'G1.7': '评论大量重复或只有表情',
-  'G2.1': '自称的领域和实际内容不一样',
-  'G2.2': '几个数据源给的标签互相矛盾',
-  'G2.3': '内容和这次要投的品类不搭',
-  'G2.4': '说的语言和目标市场不符',
-  'G2.5': '粉丝主要不在目标国家',
-  'G2.6': '粉丝的年龄性别和目标人群不符',
-  'G3.1': '有高危内容',
-  'G3.2': '风险内容太多',
-  'G3.3': '最近接过竞品',
-  'G3.4': '有过争议事件',
-  'G3.5': '这是受管制品类，得额外审',
+  'G0.2': '资料缺失过多，无法形成有效判定',
+  'G1.1': '互动率异常偏高',
+  'G1.2': '互动率异常偏低',
+  'G1.3': '评论与点赞比例异常',
+  'G1.4': '播放量与粉丝量严重不匹配',
+  'G1.5': '粉丝量突增且无内容支撑',
+  'G1.6': '账号新建但涨粉速度异常',
+  'G1.7': '评论重复或以表情为主',
+  'G2.1': '自称领域与实际内容不一致',
+  'G2.2': '多个数据源标签相互矛盾',
+  'G2.3': '内容领域与本次投放品类不符',
+  'G2.4': '内容语言与目标市场不符',
+  'G2.5': '粉丝主要不在目标市场',
+  'G2.6': '粉丝年龄性别结构与目标人群不符',
+  'G3.1': '存在高危内容',
+  'G3.2': '风险内容占比过高',
+  'G3.3': '近期存在竞品合作',
+  'G3.4': '存在争议记录',
+  'G3.5': '属于受管制品类，需额外审核',
 };
 
 export const rulePlain = (ruleId: string): string => RULE_PLAIN[ruleId] ?? ruleId;
 
 /** 判定 → 人话。 */
 export const VERDICT_ZH: Record<string, string> = {
-  pass: '可以投',
-  review: '要人工确认',
-  reject: '不建议投',
+  pass: '可投放',
+  review: '需人工复核',
+  reject: '不予投放',
 };
 
 /** 三种买法 → 人话。界面上只出现这三个名字。 */
 export const ARM_PLAIN: Record<string, { name: string; how: string }> = {
-  koxpilot: { name: 'KOXPilot', how: '先过四道检查，再按「每块钱能买到多少真实播放」分预算' },
-  follower_rank: { name: '按粉丝量买', how: '粉丝从多到少排，有钱就往下签——最常见的做法' },
-  diversified_no_gate: { name: '只图分散不做检查', how: '平台、地区、量级都摊开，但不查账号真假' },
+  koxpilot: { name: 'KOXPilot', how: '先完成四道筛查，再按单位预算的有效曝光效率分配' },
+  follower_rank: { name: '按粉丝量投放', how: '按粉丝量降序签约，直至预算用尽 —— 行业最常见做法' },
+  diversified_no_gate: { name: '结构分散但不筛查', how: '平台、地区、量级均衡铺开，不做账号质量筛查' },
 };
 
 export const armName = (arm: string): string => ARM_PLAIN[arm]?.name ?? arm;
@@ -136,8 +137,8 @@ export const armHow = (arm: string): string => ARM_PLAIN[arm]?.how ?? '';
 
 /** 漏斗每一档 → 人话标题（key 来自流水线的 funnel step）。 */
 export const FUNNEL_LABEL: Record<string, string> = {
-  library: '达人库全部账号',
-  recall: '平台 / 品类 / 市场对得上',
+  library: '达人库总量',
+  recall: '符合平台、品类与市场要求',
   G0: '资料齐全',
   G1: '数据不是刷的',
   G2: '人群对得上',
@@ -153,13 +154,13 @@ export const funnelLabel = (key: string): string => FUNNEL_LABEL[key] ?? key;
 /** 信号名 → 人话。查不到的一律说「这项指标」，绝不把英文字段名甩到界面上。 */
 export const SIGNAL_ZH: Record<string, string> = {
   completeness: '资料完整度',
-  missing_critical_fields: '缺失的关键资料',
+  missing_critical_fields: '缺失的关键字段',
   engagement_rate: '互动率',
-  view_follower_ratio: '播放量 / 粉丝量',
-  comment_like_ratio: '评论 / 点赞',
+  view_follower_ratio: '播放量与粉丝量之比',
+  comment_like_ratio: '评论与点赞之比',
   comment_dup_rate: '重复评论占比',
   comment_emoji_only_rate: '纯表情评论占比',
-  follower_history: '涨粉曲线的异常程度',
+  follower_history: '涨粉曲线异常程度',
   followers_per_day: '日均涨粉',
   follower_growth_spike: '单月涨粉倍数',
   follower_growth_rate: '涨粉速度',
@@ -170,6 +171,7 @@ export const SIGNAL_ZH: Record<string, string> = {
   gender_share: '目标性别粉丝占比',
   authenticity_score: '真实性',
   declared_vs_observed_categories: '自称领域与实际内容的重合度',
+  competitor_brand: '竞品合作记录',
   source_tags: '各数据源给的标签',
   campaign_fit: '与这次投放的贴合度',
   language: '内容语言',
@@ -192,8 +194,8 @@ const fmtNum = (x: number): string => {
 /**
  * 一条证据 → 一句人话。
  *
- * 引擎自己的 `human_text` 里带分位数、阈值来源、组标签这些内部口径，
- * 那是写给工程和审计看的；界面上只说「实测多少、同类账号的参考线是多少」。
+ * 引擎自己的 `human_text` 带分位数、阈值来源、分组标签这些内部口径，那是给工程与审计看的；
+ * 界面上只保留「实测值 + 同类账号参考线」这一层。
  */
 export function reasonPlain(reason: {
   rule_id: string;
@@ -208,7 +210,7 @@ export function reasonPlain(reason: {
     const asPct = Math.abs(a) <= 1 && Math.abs(t) <= 1;
     const fa = asPct ? `${(a * 100).toFixed(1)}%` : fmtNum(a);
     const ft = asPct ? `${(t * 100).toFixed(1)}%` : fmtNum(t);
-    return `${what} ${fa}，同类账号的参考线是 ${ft}`;
+    return `${what} ${fa}，同类账号参考线 ${ft}`;
   }
   if (typeof a === 'string' && a.trim() !== '') return `${what}：${a}`;
   if (typeof a === 'number') return `${what} ${fmtNum(a)}`;

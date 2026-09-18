@@ -164,8 +164,8 @@ export default function Page(): React.ReactElement {
       }
       setServiceLine(
         diff === 0
-          ? `同一条需求已在服务器上跑过一遍，${int0(rows.length)} 位达人的结论与这里完全一致`
-          : `同一条需求在服务器上跑出 ${int0(diff)} 处不同结论，已记下待查`,
+          ? `服务端已就同一需求独立执行，${int0(rows.length)} 位达人的判定结果一致`
+          : `服务端就同一需求独立执行，${int0(diff)} 位达人的判定结果存在差异，已记录待查`,
       );
     },
     [art],
@@ -203,7 +203,7 @@ export default function Page(): React.ReactElement {
     return (
       <div className="flex min-h-screen items-center justify-center p-6">
         <Card className="max-w-md px-5 py-4">
-          <div className="text-[14px] font-semibold text-rose-600">数据没加载出来</div>
+          <div className="text-[14px] font-semibold text-rose-600">数据加载失败</div>
           <p className="mt-1.5 text-[13px] text-slate-600">{loadErr}</p>
         </Card>
       </div>
@@ -214,7 +214,7 @@ export default function Page(): React.ReactElement {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3">
         <Loader2 size={20} className="animate-spin text-brand-600" />
-        <div className="text-[13px] text-slate-600">正在加载 5,000 位海外达人的资料…</div>
+        <div className="text-[13px] text-slate-600">正在加载 5,000 位海外达人档案…</div>
       </div>
     );
   }
@@ -242,7 +242,7 @@ export default function Page(): React.ReactElement {
           </div>
           <div className="leading-tight">
             <div className="text-[15px] font-semibold tracking-tight text-slate-900">KOXPilot</div>
-            <div className="text-[12px] text-slate-500">出海找达人：先把不该投的号挡掉，再决定每个人给多少钱</div>
+            <div className="text-[12px] text-slate-500">出海达人营销投前决策 · 资质筛查与预算分配</div>
           </div>
           <div className="ml-auto flex items-center gap-2">
             <span className="hidden items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[12px] text-slate-600 sm:inline-flex">
@@ -251,7 +251,7 @@ export default function Page(): React.ReactElement {
                   cs.source === 'backend' ? 'bg-emerald-500' : cs.source === 'browser' ? 'bg-slate-400' : 'animate-pulse bg-brand-500'
                 }`}
               />
-              {cs.source === 'backend' ? '计算服务在线' : cs.source === 'browser' ? '本机计算' : '连接中'}
+              {cs.source === 'backend' ? '服务端执行' : cs.source === 'browser' ? '本地执行' : '连接中'}
             </span>
             <a
               className="rounded-lg border border-slate-200 px-2.5 py-1 text-[12px] font-medium text-slate-600 transition hover:border-brand-300 hover:text-brand-700"
@@ -268,7 +268,7 @@ export default function Page(): React.ReactElement {
       <main className="mx-auto max-w-[1120px] space-y-4 px-5 pb-16 pt-5">
         {/* ---------------- 1 说需求 ---------------- */}
         <Card className="px-5 py-4">
-          <StepTitle n={1} title="把这次投放的需求说一遍" sub="换一条需求，下面所有结论都会重新算一次" />
+          <StepTitle n={1} title="投放需求" sub="需求变更后，以下全部结论重新计算" />
           <div className="mt-3 flex flex-wrap gap-2">
             {art.briefs.map((b, i) => (
               <button
@@ -298,7 +298,7 @@ export default function Page(): React.ReactElement {
                 {ageText(spec.target_age_buckets) && <Chip>{ageText(spec.target_age_buckets)}</Chip>}
                 {gender(spec.target_gender) && <Chip>{gender(spec.target_gender)}</Chip>}
                 <Chip>{KPI_ZH[spec.kpi] ?? spec.kpi}</Chip>
-                {spec.competitor_brands.length > 0 && <Chip>避开 {spec.competitor_brands.join('、')}</Chip>}
+                {spec.competitor_brands.length > 0 && <Chip>规避竞品 {spec.competitor_brands.join('、')}</Chip>}
               </div>
             )}
           </div>
@@ -310,7 +310,7 @@ export default function Page(): React.ReactElement {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') runCustom();
               }}
-              placeholder="也可以自己写一句，例如：家用按摩仪进沙特和阿联酋，预算 3 万美元，30-45 岁男性，TikTok 为主，要转化"
+              placeholder="也可输入自定义需求，例如：家用按摩仪投放沙特与阿联酋，预算 3 万美元，目标人群 30–45 岁男性，以 TikTok 为主，考核转化"
               className="flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 text-[13px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-brand-400"
             />
             <button
@@ -319,7 +319,7 @@ export default function Page(): React.ReactElement {
               className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5 text-[13px] font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-300"
             >
               <Sparkles size={14} />
-              按这句话选人
+              生成投放方案
             </button>
           </div>
         </Card>
@@ -329,7 +329,7 @@ export default function Page(): React.ReactElement {
           <Card className="px-5 py-8">
             <div className="flex items-center justify-center gap-2 text-[13px] text-slate-500">
               <Loader2 size={16} className="animate-spin text-brand-600" />
-              正在从 5,000 位达人里选人、分预算…
+              正在完成候选筛查与预算分配…
             </div>
           </Card>
         ) : (
@@ -349,8 +349,8 @@ export default function Page(): React.ReactElement {
         <Card className="px-5 py-4">
           <button className="flex w-full items-center gap-2 text-left" onClick={() => setShowHow((v) => !v)}>
             <ChevronDown size={16} className={`text-slate-400 transition ${showHow ? 'rotate-0' : '-rotate-90'}`} />
-            <span className="text-[14px] font-semibold text-slate-900">这套东西是怎么搭起来的</span>
-            <span className="text-[12.5px] text-slate-500">（给技术同学看，不影响上面的结论）</span>
+            <span className="text-[14px] font-semibold text-slate-900">实现说明</span>
+            <span className="text-[12.5px] text-slate-500">面向技术评估，不影响上述结论</span>
           </button>
           {showHow && <HowItWorks art={art} serviceOnline={cs.source === 'backend'} />}
         </Card>
@@ -382,37 +382,37 @@ function Conclusion({
     <Card className="px-5 py-5">
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <BigNumber
-          label="这次建议签"
+          label="建议签约"
           value={`${int0(plan.n_selected)} 位`}
-          sub={`从 ${int0(result.pool.length)} 位符合条件的达人里挑出来`}
+          sub={`自 ${int0(result.pool.length)} 位符合定向条件的达人中选出`}
           tone="brand"
         />
         <BigNumber
-          label="要花的钱"
+          label="预算投入"
           value={usd0(plan.spent_usd)}
-          sub={`预算 ${usd0(plan.budget_usd)}，用掉 ${pct1(util)}`}
+          sub={`预算 ${usd0(plan.budget_usd)}，使用率 ${pct1(util)}`}
         />
         <BigNumber
-          label="查出问题、直接排除"
+          label="判定不予投放"
           value={`${int0(rejectN)} 位`}
           sub={
             reviewN > 0
-              ? `另有 ${int0(reviewN)} 位数据拿不准，建议人工看过再投，这次没进名单`
-              : '刷量、人群不符、或品牌有风险'
+              ? `另有 ${int0(reviewN)} 位数据存疑，建议人工复核后再定，本次未进入名单`
+              : '数据异常、人群不符或存在品牌风险'
           }
           tone="amber"
         />
         <BigNumber
-          label={saved >= 0 ? '比「按粉丝量买」少花的冤枉钱' : '比「按粉丝量买」多花的冤枉钱'}
+          label={saved >= 0 ? '相较「按粉丝量投放」减少的无效支出' : '相较「按粉丝量投放」增加的无效支出'}
           value={usd0(Math.abs(saved))}
-          sub={`按事后核对，这笔钱原本会投给刷量号或有风险的号（占预算 ${pct1(Math.abs(result.audit.saved_share_of_budget))}）`}
+          sub={`事后核算：该部分预算原本将投向刷量账号或高风险账号，占总预算 ${pct1(Math.abs(result.audit.saved_share_of_budget))}`}
           tone={saved >= 0 ? 'green' : 'amber'}
         />
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-slate-100 pt-3">
         <span className="text-[12.5px] text-slate-500">
-          预计带来 {compact(plan.est_total_views)} 次播放，每千次曝光成本 ${plan.est_cpm_usd.toFixed(2)}
+          预计曝光 {compact(plan.est_total_views)} 次，千次曝光成本 ${plan.est_cpm_usd.toFixed(2)}
         </span>
         {serviceLine && (
           <span className="inline-flex items-center gap-1.5 text-[12.5px] text-emerald-700">
@@ -433,17 +433,18 @@ function TopLine({ arms }: { arms: AllocationArm[] }): React.ReactElement | null
   if (!us || !lead) return null;
   if (lead.arm === 'koxpilot') {
     return (
-      <span className="text-[12.5px] text-slate-500">
-        三种买法里，这一份每块钱买到的真实播放最多。
-      </span>
+      <span className="text-[12.5px] text-slate-500">三种投放方式中，本方案的单位预算效率最高。</span>
     );
   }
   const leadWaste = wasteShare(lead);
   const ourWaste = wasteShare(us);
   return (
     <span className="text-[12.5px] text-slate-500">
-      注意：「{armName(lead.arm)}」这次每块钱买到的播放更多，代价是要签 {int0(contractCount(lead) ?? 0)} 份合约
-      {leadWaste !== null && ourWaste !== null ? `、有 ${pct1(leadWaste)} 的钱打给了刷量号（这一份是 ${pct1(ourWaste)}）` : ''}。
+      本次「{armName(lead.arm)}」的单位预算效率更高，代价是需签约 {int0(contractCount(lead) ?? 0)} 份合约
+      {leadWaste !== null && ourWaste !== null
+        ? `，且 ${pct1(leadWaste)} 的预算投向刷量账号（本方案为 ${pct1(ourWaste)}）`
+        : ''}
+      。
     </span>
   );
 }
@@ -470,7 +471,11 @@ function GateSection({
 
   return (
     <Card className="px-5 py-4">
-      <StepTitle n={2} title="5,000 个号是怎么筛到这份名单的" sub="点任意一行，看这一步具体挡掉了谁、为什么" />
+      <StepTitle
+        n={2}
+        title="候选筛查与拦截过程"
+        sub="自 5,000 位达人库逐环节筛选至最终名单；点击任一环节，查看该环节的拦截对象与判定依据"
+      />
       <div className="mt-3 space-y-1.5">
         {steps.map((s, i) => {
           const prev = i === 0 ? s.value : (steps[i - 1]?.value ?? s.value);
@@ -486,7 +491,7 @@ function GateSection({
                   isGate ? 'hover:bg-slate-50' : 'cursor-default'
                 } ${open ? 'bg-brand-50' : ''}`}
               >
-                <div className="w-[104px] shrink-0 text-[13px] font-medium text-slate-800 sm:w-[128px]">
+                <div className="w-[112px] shrink-0 text-[13px] font-medium leading-snug text-slate-800 sm:w-[158px]">
                   {isGate ? GATE_NAME[s.key] : funnelLabel(s.key)}
                 </div>
                 <div className="h-6 flex-1 overflow-hidden rounded-md bg-slate-100">
@@ -496,11 +501,11 @@ function GateSection({
                     }`}
                     style={{ width: i === 0 ? '100%' : `${Math.max(8, Math.min(100, (s.value / top) * 100))}%` }}
                   >
-                    {int0(s.value)} 人
+                    {int0(s.value)} 位
                   </div>
                 </div>
                 <div className="w-[88px] shrink-0 text-right text-[12.5px] text-slate-500 sm:w-[104px]">
-                  {cut > 0 ? `卡掉 ${int0(cut)} 人` : i === 0 ? '全部' : '没卡人'}
+                  {cut > 0 ? `拦截 ${int0(cut)} 位` : i === 0 ? '基准' : '无拦截'}
                 </div>
               </button>
               {open && <GateDetail result={result} gate={s.key} records={records} />}
@@ -509,7 +514,7 @@ function GateSection({
         })}
       </div>
       <p className="mt-2.5 text-[12.5px] leading-relaxed text-slate-500">
-        四步各管一件事：{GATES.map((g) => `${GATE_NAME[g]}`).join(' → ')}。被卡掉的人里，一部分是明显有问题直接排除，一部分是数据拿不准、留给人工确认 —— 两种都不会自动进名单。
+        四个环节依次执行：{GATES.map((g) => `${GATE_NAME[g]}`).join(' → ')}。被拦截的账号分两类 —— 判定不予投放，以及数据存疑需人工复核；两类均不自动进入名单。
       </p>
     </Card>
   );
@@ -552,7 +557,7 @@ function GateDetail({
         <div className="mt-2 flex flex-wrap gap-1.5">
           {topRules.map(([rule, n]) => (
             <span key={rule} className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[12px] text-slate-700">
-              {rulePlain(rule)} · {int0(n)} 人
+              {rulePlain(rule)} · {int0(n)} 位
             </span>
           ))}
         </div>
@@ -602,20 +607,20 @@ function Roster({
     <Card className="px-5 py-4">
       <StepTitle
         n={3}
-        title="名单：签谁、每个人给多少钱"
-        sub={`共 ${int0(result.plan.n_selected)} 位，合计 ${usd0(result.plan.spent_usd)}；同一个人最多买 ${result.plan.purchase_model.max_posts_per_kox} 条内容`}
+        title="投放名单与预算分配"
+        sub={`共 ${int0(result.plan.n_selected)} 位，合计 ${usd0(result.plan.spent_usd)}；单个达人最多采买 ${result.plan.purchase_model.max_posts_per_kox} 条内容`}
       />
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[820px]">
           <thead>
             <tr className="border-b border-slate-200">
               <th className="th">达人</th>
-              <th className="th">平台 / 市场</th>
-              <th className="th text-right">粉丝</th>
+              <th className="th">平台与市场</th>
+              <th className="th text-right">粉丝量</th>
               <th className="th text-right">报价</th>
-              <th className="th text-right">给他的预算</th>
-              <th className="th text-right">买几条</th>
-              <th className="th">为什么选他</th>
+              <th className="th text-right">分配预算</th>
+              <th className="th text-right">采买条数</th>
+              <th className="th">入选依据</th>
             </tr>
           </thead>
           <tbody>
@@ -628,7 +633,7 @@ function Roster({
                     {a.handle}
                     {a.verdict === 'review' && (
                       <span className="ml-1.5 rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[11px] text-amber-700">
-                        建议人工确认
+                        需人工复核
                       </span>
                     )}
                   </td>
@@ -646,8 +651,8 @@ function Roster({
                   <td className="td num text-right font-medium text-slate-900">{usd0(a.amount_usd)}</td>
                   <td className="td num text-right text-slate-600">{a.posts}</td>
                   <td className="td text-slate-600">
-                    粉丝画像匹配 {pct1(a.audience_match)}
-                    {gate ? `，数据${gate.reasons.length === 0 ? '没有异常' : '有小问题但未越线'}` : ''}，预计 {compact(a.est_views)} 次播放
+                    画像匹配 {pct1(a.audience_match)} · 数据{gate && gate.reasons.length > 0 ? '存在轻微异常，未越线' : '无异常'} · 预计曝光{' '}
+                    {compact(a.est_views)}
                   </td>
                 </tr>
               );
@@ -660,7 +665,7 @@ function Roster({
           onClick={onToggle}
           className="mt-3 inline-flex items-center gap-1 text-[12.5px] font-medium text-brand-700 hover:text-brand-800"
         >
-          {showAll ? '只看前 8 位' : `看全部 ${int0(result.plan.selected.length)} 位`}
+          {showAll ? '收起，仅显示前 8 位' : `查看全部 ${int0(result.plan.selected.length)} 位`}
           <ArrowRight size={13} />
         </button>
       )}
@@ -681,8 +686,8 @@ function Compare({ arms }: { arms: AllocationArm[] }): React.ReactElement {
     <Card className="px-5 py-4">
       <StepTitle
         n={4}
-        title="同样一笔钱，换两种常见买法会怎样"
-        sub="事后按真实情况核对：投给刷量号的曝光一律不算"
+        title="与两种常见投放方式的对照"
+        sub="同一笔预算，事后按标注结果核算；投向刷量账号的曝光不计入有效曝光"
       />
       <div className="mt-3 grid gap-3 lg:grid-cols-3">
         {sorted.map((a) => {
@@ -699,28 +704,28 @@ function Compare({ arms }: { arms: AllocationArm[] }): React.ReactElement {
                 <div className="text-[14px] font-semibold text-slate-900">{armName(a.arm)}</div>
                 {isLead && (
                   <span className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-700">
-                    每块钱买得最多
+                    单位预算效率最高
                   </span>
                 )}
               </div>
               <p className="mt-1 text-[12px] leading-relaxed text-slate-500">{armHow(a.arm)}</p>
               <dl className="mt-3 space-y-2">
-                <Row label="花了多少" value={usd0(a.spend)} />
-                <Row label="买到的真实播放" value={compact(effectiveViews(a))} />
-                <Row label="每 1 块钱买到" value={vpd === null ? '—' : `${vpd.toFixed(1)} 次播放`} strong />
+                <Row label="预算投入" value={usd0(a.spend)} />
+                <Row label="有效曝光" value={compact(effectiveViews(a))} />
+                <Row label="每美元有效曝光" value={vpd === null ? '—' : `${vpd.toFixed(1)} 次`} strong />
                 <Row
-                  label="打给刷量号的钱"
+                  label="投向刷量账号的支出"
                   value={a.waste_usd === undefined ? '—' : `${usd0(a.waste_usd)}${ws === null ? '' : `（${pct1(ws)}）`}`}
                   tone={a.waste_usd && a.waste_usd > 0 ? 'bad' : 'good'}
                 />
-                <Row label="要签几份合约" value={`${int0(contractCount(a) ?? 0)} 份`} />
+                <Row label="签约数量" value={`${int0(contractCount(a) ?? 0)} 份`} />
               </dl>
             </div>
           );
         })}
       </div>
       <p className="mt-3 border-t border-slate-100 pt-3 text-[12.5px] leading-relaxed text-slate-500">
-        「每 1 块钱买到多少真实播放」是这张表的判优口径。合约数是成本：摊得越薄，单位曝光越便宜，但报价、寄样、审稿、结算的人力都要多花一份，这笔成本不在上面的数字里。
+        判优口径为「每美元有效曝光」。签约数量属于执行成本：预算越分散，单位曝光越便宜，但报价、寄样、审稿与结算的人力成本相应增加，该部分未计入上述指标。
       </p>
     </Card>
   );
@@ -752,12 +757,12 @@ function Row({
 
 function HowItWorks({ art, serviceOnline }: { art: Artifacts; serviceOnline: boolean }): React.ReactElement {
   const steps = [
-    ['读需求', '把一句话拆成预算、平台、市场、人群、目标'],
-    ['找人', '按平台、品类、市场三条硬条件筛一遍'],
-    ['查号', '四道检查：资料 / 真假 / 人群 / 品牌安全'],
-    ['算匹配', '内容与这次投放的贴合度打分'],
-    ['分钱', '在结构约束下，把预算分到边际效率最高的人身上'],
-    ['复盘', '和另外两种买法对照，算出少花的冤枉钱'],
+    ['需求解析', '将一句话需求拆解为预算、平台、市场、人群与考核目标'],
+    ['候选召回', '按平台、品类、市场三项硬性条件筛选'],
+    ['四道筛查', '资料完整性 / 数据真实性 / 人群匹配度 / 品牌安全'],
+    ['匹配评分', '评估内容与本次投放的贴合度'],
+    ['预算分配', '在结构约束下，按边际效率分配预算'],
+    ['事后核算', '与另两种投放方式对照，核算减少的无效支出'],
   ];
   const strict = (art.metrics?.table_1_fraud_detection?.strict ?? null) as { recall?: number; precision?: number } | null;
   const recall = Number(strict?.recall ?? 0);
@@ -777,12 +782,15 @@ function HowItWorks({ art, serviceOnline }: { art: Artifacts; serviceOnline: boo
         ))}
       </div>
       <ul className="space-y-1.5 text-[12.5px] leading-relaxed text-slate-600">
-        <li>· 页面点一下，需求发给 Python 服务，六步在服务端跑完把结果送回来；{serviceOnline ? '此刻服务在线。' : '服务没连上时，浏览器里有同一套规则的实现接着跑，功能不缺。'}</li>
         <li>
-          · 效果怎么验的：{int0(Number(art.manifest.dataset.n))} 位达人全部带人工标注。真的刷量号里，系统能挑出{' '}
-          {pct1(recall)}；被系统判成刷量的号里，{pct1(precision)} 确实是刷的。完整口径与已知短板写在仓库文档里。
+          · 前端提交需求后，六个环节在 Python 服务端执行并返回结果；
+          {serviceOnline ? '当前服务端在线。' : '服务未连接时，由浏览器内同一套规则实现接续执行，功能不缺项。'}
         </li>
-        <li>· 数据是按真实平台分布生成的合成数据，不含任何真实达人信息。</li>
+        <li>
+          · 评测口径：{int0(Number(art.manifest.dataset.n))} 位达人全部带人工标注。刷量账号召回率 {pct1(recall)}；判定为刷量的账号中{' '}
+          {pct1(precision)} 与标注一致。完整口径与已知短板见仓库文档。
+        </li>
+        <li>· 数据为按平台真实分布生成的合成数据，不含任何真实达人信息。</li>
       </ul>
       <a
         className="inline-flex items-center gap-1 text-[12.5px] font-medium text-brand-700 hover:text-brand-800"
@@ -790,7 +798,7 @@ function HowItWorks({ art, serviceOnline }: { art: Artifacts; serviceOnline: boo
         target="_blank"
         rel="noreferrer"
       >
-        看源码、评测报告与技术文档
+        查看源码、评测报告与技术文档
         <ArrowRight size={13} />
       </a>
     </div>

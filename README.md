@@ -14,7 +14,7 @@ cd web && pnpm install && pnpm run prepare-data && pnpm run dev   # → http://l
 
 **方式二：GitHub Pages**——本仓库已配好自动发布（[`.github/workflows/pages.yml`](./.github/workflows/pages.yml)）。仓库 Settings → Pages → Source 选 `GitHub Actions` 后，站点地址即 `https://<你的-GitHub-用户名>.github.io/koxpilot/`。
 
-界面是**一页到底**，按看的人的思路排：说需求 → 四个结论数字 → 5,000 人怎么筛到这份名单（点任意一步看挡掉了谁、为什么）→ 名单和每人给多少钱 → 换两种常见买法对比 → 最后一节折叠着的「这套东西怎么搭的」。评测指标、双实现对照、阈值口径这些工程内容**不放在界面上**，都写在这份 README 和 [`docs/`](./docs) 里。
+界面为**单页结构**，按决策顺序排列：投放需求 → 决策结论（建议签约、预算投入、判定不予投放、相较「按粉丝量投放」减少的无效支出）→ 候选筛查与拦截过程（可逐环节下钻到拦截对象与判定依据）→ 投放名单与预算分配 → 与两种常见投放方式的对照 → 折叠的「实现说明」。评测指标、双实现对照、阈值口径等工程内容**不进入界面**，统一写在本 README 与 [`docs/`](./docs)。
 
 ![KOXPilot 首屏：这次该签谁、要花多少钱、挡掉了谁](./screenshots/ui-1-first-screen.png)
 

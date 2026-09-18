@@ -15,14 +15,14 @@ __all__ = ["BRIEFS", "build_briefs"]
 BRIEFS: list[dict[str, Any]] = [
     {
         "brief_id": "BRIEF-001",
-        "name": "3C 小家电新品 · 北美 · 看转化",
+        "name": "3C 小家电新品 · 北美 · 考核转化",
         "raw_text": (
             "3C 小家电新品，主打北美市场，预算 8 万美元，目标 25-40 岁女性，"
             "TikTok 和 YouTube 为主，看重转化不是曝光。"
         ),
         "spec": {
             "campaign_id": "BRIEF-001",
-            "name": "3C 小家电新品 · 北美 · 看转化",
+            "name": "3C 小家电新品 · 北美 · 考核转化",
             "target_categories": ["3c_digital", "home_appliance"],
             "target_markets": ["US", "CA"],
             "target_languages": ["en"],
@@ -37,7 +37,7 @@ BRIEFS: list[dict[str, Any]] = [
     },
     {
         "brief_id": "BRIEF-002",
-        "name": "国货彩妆 · 东南亚 · 看互动",
+        "name": "国货彩妆 · 东南亚 · 考核互动",
         "raw_text": (
             "国货彩妆品牌进东南亚，主打印尼、马来西亚、越南三个市场，预算 4.5 万美元，"
             "目标 18-30 岁女性，Instagram 和 TikTok，希望先把口碑和互动做起来，"
@@ -45,7 +45,7 @@ BRIEFS: list[dict[str, Any]] = [
         ),
         "spec": {
             "campaign_id": "BRIEF-002",
-            "name": "国货彩妆 · 东南亚 · 看互动",
+            "name": "国货彩妆 · 东南亚 · 考核互动",
             "target_categories": ["beauty_care", "fashion"],
             "target_markets": ["ID", "MY", "VN"],
             "target_languages": ["id", "ms", "vi", "en"],
@@ -60,7 +60,7 @@ BRIEFS: list[dict[str, Any]] = [
     },
     {
         "brief_id": "BRIEF-003",
-        "name": "休闲手游全球上线 · 日韩+巴西 · 看曝光",
+        "name": "休闲手游全球上线 · 日韩+巴西 · 考核曝光",
         "raw_text": (
             "一款休闲手游全球上线，重点是日本、韩国和巴西，预算 12 万美元，"
             "主要人群 18-34 岁男性为主，YouTube 和 TikTok，这一轮先要量，先把安装曝光打出来，"
@@ -68,7 +68,7 @@ BRIEFS: list[dict[str, Any]] = [
         ),
         "spec": {
             "campaign_id": "BRIEF-003",
-            "name": "休闲手游全球上线 · 日韩+巴西 · 看曝光",
+            "name": "休闲手游全球上线 · 日韩+巴西 · 考核曝光",
             "target_categories": ["gaming_app", "3c_digital"],
             "target_markets": ["JP", "KR", "BR"],
             "target_languages": ["ja", "ko", "pt", "en"],
