@@ -216,3 +216,19 @@ export function reasonPlain(reason: {
   if (typeof a === 'number') return `${what} ${fmtNum(a)}`;
   return what;
 }
+
+/**
+ * 数据集里的 brief 名称是造数据时随手写的口语标签（"看转化"），
+ * 产物字节一致性校验依赖原值，所以不改数据，只在展示时换成书面说法。
+ */
+const BRIEF_NAME_FIX: Array<[RegExp, string]> = [
+  [/看转化/g, '考核转化'],
+  [/看互动/g, '考核互动'],
+  [/看曝光/g, '考核曝光'],
+];
+
+export function briefLabel(name: string): string {
+  let out = name;
+  for (const [re, to] of BRIEF_NAME_FIX) out = out.replace(re, to);
+  return out;
+}

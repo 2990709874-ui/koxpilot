@@ -18,6 +18,7 @@ import { parseBrief } from '../engine/briefParse';
 import type { CampaignSpec, GateResult, Kox } from '../engine/types';
 import {
   GATE_ASK,
+  briefLabel,
   GATE_NAME,
   KPI_ZH,
   TIER_RANGE,
@@ -280,7 +281,7 @@ export default function Page(): React.ReactElement {
                     : 'border-slate-200 bg-white text-slate-600 hover:border-brand-300'
                 }`}
               >
-                {b.name}
+                {briefLabel(b.name)}
               </button>
             ))}
           </div>
