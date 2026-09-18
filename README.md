@@ -34,7 +34,7 @@ Demo 不是播放预录结果，而是**两条通道同时在跑**：首屏先�
 | [`AI应用能力文档_KOXPilot_纪辉.pdf`](./AI应用能力文档_KOXPilot_纪辉.pdf) | 提交用的完整文档 | 想一次读完就看这个 |
 | [`docs/`](./docs) | 六篇技术分册 | 架构 / 门禁 / 评测 / Prompt 与成本 / 边界 / 稳健性 |
 | `src/koxpilot/` | Python 核心：6 个 Agent + 评测 + 审计 | 所有数字的来源 |
-| `api/` | 线上 HTTP 服务（FastAPI），import 上面那份核心链路 | 契约冻结在 [`api/CONTRACT.md`](./api/CONTRACT.md)，地址在 [`api/DEPLOYED_URL.txt`](./api/DEPLOYED_URL.txt) |
+| `api/` | 线上 HTTP 服务（FastAPI），import 上面那份核心链路 | 契约冻结在 [`api/CONTRACT.md`](./api/CONTRACT.md)；线上地址 `$SERVICE_BASE`（[部署记录](./api/DEPLOYED_URL.txt)） |
 | `web/` | 前端（React + TS），含**门禁的第二套独立实现** | 双实现一致性校验就在这里 |
 | `output/` | 全部指标产物（**已入库**） | clone 完不跑任何命令，就能核对本文件里的每个数字 |
 | `data/` | 合成达人库 + 3 个 brief（**已入库**） | 固定种子，`make data` 可逐字节重建 |
@@ -299,7 +299,14 @@ data/*.json + output/*.json          ← 真实计算产物，已入库
    4 个端点，见 api/CONTRACT.md          src/engine/（~1,500 行）+ src/budget/（~1,100 行）
 ```
 
-**通道 A 是真服务，不是壳。** `api/koxpilot_service/` 不重写任何业务逻辑，它 import 的是 `src/koxpilot` 里那份被 766 个测试盯着的代码：门禁走 `gates.engine.evaluate`，预算走 `budget.planner.plan_campaign`，审计走 `eval.audit.counterfactual_report`，证据句走 `gates.humanize`。接口契约冻结在 `api/CONTRACT.md`（4 个端点：`/api/health`、`/api/plan`、`/api/kox/{id}/explain`、`/api/gate/batch`），默认公开、无需 token。部署地址在 [`api/DEPLOYED_URL.txt`](api/DEPLOYED_URL.txt)。
+**通道 A 是真服务，不是壳。** `api/koxpilot_service/` 不重写任何业务逻辑，它 import 的是 `src/koxpilot` 里那份被 766 个测试盯着的代码：门禁走 `gates.engine.evaluate`，预算走 `budget.planner.plan_campaign`，审计走 `eval.audit.counterfactual_report`，证据句走 `gates.humanize`。接口契约冻结在 `api/CONTRACT.md`（4 个端点：`/api/health`、`/api/plan`、`/api/kox/{id}/explain`、`/api/gate/batch`），默认公开、无需 token，部署记录在 [`api/DEPLOYED_URL.txt`](api/DEPLOYED_URL.txt)。现在就能拿 curl 验：
+
+```bash
+curl -s $SERVICE_BASE/api/health
+curl -s $SERVICE_BASE/api/kox/KOX-000002/explain
+```
+
+这个 `explain` 的每一句理由，和你在本地跑 `python -m koxpilot.cli explain KOX-000002` 打出来的**逐字相同**——因为两边调的是同一个 `gates/humanize.py`，不是两处各写一份文案。这件事由 `api/check_cli_parity.py` 逐字符断言，不靠我自己眼看。
 
 **通道 B 也不是放录像。** `src/engine/` 与 `src/budget/` 是四层门禁与预算分配的**独立第二实现**——服务没连上时它独立跑完全流程，功能不缺项；服务在线时它就变成一台**校对机**：`/api/plan` 会在 `parity_payload.verdicts` 里把这次召回集里每个达人的判定都带回来，浏览器对同一批 `kox_id` 现算一遍，界面直接显示比对条数与差异条数。
 
