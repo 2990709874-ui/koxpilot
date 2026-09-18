@@ -65,3 +65,18 @@ Thumbs.db
 # 唯一例外是本地缓存的中间态，见下：
 output/*.tmp
 output/*.partial
+
+# ---------------------------------------------------------------------------
+# 部署产物：可一键重建，不入库
+# ---------------------------------------------------------------------------
+# api/_bundle/ 是 `python api/build_bundle.py` 从 src/koxpilot + data/ + output/
+# 生成的自包含部署包（含 Python 3.8 语法降级）。它**不入库**的理由：
+#   1. 入库等于把 43 个源文件在仓库里存第二份，读代码的人会分不清哪份是真的
+#   2. 两份副本一旦不同步，就会出现「线上行为和 src 不一致」这类最难查的 bug
+# 服务的路径解析是「bundle 优先、回落仓库真产物」，所以 clone 下来没有 bundle 也能直接
+# `cd api && python3 main.py` 跑起来，结果与离线命令行逐字段一致（已实测）。
+api/_bundle/
+
+# deploy/hf-space/_out/ 是 `python deploy/hf-space/build_space.py` 生成的 HF Space 包
+# （7.6 MB，含数据集副本），同理不入库。
+deploy/hf-space/_out/

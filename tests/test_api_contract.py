@@ -119,8 +119,10 @@ def test_plan_shape(plan_payload: dict[str, Any]) -> None:
         "ok",
         "brief",
         "funnel",
+        "scope",
         "candidates",
         "allocation",
+        "advice",
         "timings",
         "parity_payload",
     }
@@ -133,6 +135,21 @@ def test_plan_shape(plan_payload: dict[str, Any]) -> None:
     assert [t["agent"] for t in plan_payload["timings"]] == ["A1", "A2", "A3", "A4", "A5", "A6"]
     for row in plan_payload["timings"]:
         assert row["ms"] >= 0
+
+    # ---- 口径块：这次计算用了多少人必须写在响应体里，且必须等于召回命中数 ----
+    scope = plan_payload["scope"]
+    assert set(scope) == {
+        "recall_total",
+        "computed_on",
+        "detail_rows",
+        "truncated_for_compute",
+        "note",
+    }
+    assert scope["recall_total"] == counts[0]
+    assert scope["computed_on"] == scope["recall_total"], "计算池不许小于召回命中数"
+    assert scope["truncated_for_compute"] is False
+    assert scope["detail_rows"] == len(plan_payload["candidates"])
+    assert looks_like_identifier(scope["note"]) is None
 
 
 def test_plan_parity_payload_covers_recall_sorted(plan_payload: dict[str, Any]) -> None:
@@ -147,7 +164,7 @@ def test_plan_parity_payload_covers_recall_sorted(plan_payload: dict[str, Any]) 
     for row in rows:
         assert row["verdict"] in ("pass", "review", "reject")
 
-    # 召回集合确实是定向筛选的结果（本例 182 人 < top_n，不涉及截断）
+    # 召回集合就是定向筛选的结果本身：不论 top_n 给多少，一条都不许少
     snap = STORE.snapshot()
     assert snap is not None
     spec = CampaignSpec.from_dict(
@@ -201,6 +218,7 @@ def test_plan_allocation_matches_arms(plan_payload: dict[str, Any]) -> None:
         "unallocated_why",
         "picked",
         "arms",
+        "judge",
         "saved_usd",
         "saved_share",
     }
@@ -210,9 +228,104 @@ def test_plan_allocation_matches_arms(plan_payload: dict[str, Any]) -> None:
     assert "koxpilot" in arms and "follower_rank" in arms
     assert abs(arms["koxpilot"]["spend"] - alloc["allocated_usd"]) < 0.01
     for arm in alloc["arms"]:
+        assert set(arm) == {
+            "arm",
+            "label",
+            "spend",
+            "n_selected",
+            "judge",
+            "effective_views_gt",
+            "effective_views_gt_per_dollar",
+            "effective_views_gt_lenient",
+            "effective_views_gt_lenient_per_dollar",
+            "waste_usd",
+            "engine_expected_value",
+            "engine_value_per_dollar",
+            "expected_value",
+            "value_per_dollar",
+        }
         assert looks_like_identifier(arm["label"]) is None
-        assert arm["expected_value"] >= 0
+        # 判优字段的裁判必须是标注，不是引擎自评
+        assert arm["judge"] == "ground_truth"
+        assert arm["effective_views_gt"] >= 0
+        assert arm["waste_usd"] >= 0
+        # 宽松口径把水号曝光按 50% 计，因此不可能低于主口径
+        assert arm["effective_views_gt_lenient"] >= arm["effective_views_gt"] - 1e-6
+        if arm["spend"] > 0:
+            for field in ("effective_views_gt", "effective_views_gt_lenient"):
+                per_dollar = arm[field + "_per_dollar"]
+                assert per_dollar is not None
+                assert abs(per_dollar - arm[field] / arm["spend"]) < 0.05
+            assert arm["engine_value_per_dollar"] is not None
+        else:
+            # "没花钱"与"花了钱没效果"是两件事：一律给 None，不允许写 0
+            assert arm["effective_views_gt_per_dollar"] is None
+            assert arm["effective_views_gt_lenient_per_dollar"] is None
+            assert arm["engine_value_per_dollar"] is None
+        # 引擎事前估分是次级信息，与判优字段是两个量纲，不允许悄悄相等冒充裁判
+        assert arm["engine_expected_value"] >= 0
+        # 兼容字段与新字段同数同义
+        assert arm["expected_value"] == arm["effective_views_gt"]
+        assert arm["value_per_dollar"] == arm["effective_views_gt_per_dollar"]
     assert alloc["unallocated_why"]
+
+    # ---- 口径声明必须写在响应体里：判优字段、裁判来源、两个假设、链路分离 ----
+    # 写在文档里不算：文档会和代码走散，而这几个数字是"谁更划算"的全部依据。
+    from koxpilot.eval.audit import (
+        JUDGE_GROUND_TRUTH,
+        LENIENT_VIEW_ASSUMPTION,
+        MAIN_VIEW_ASSUMPTION,
+    )
+
+    judge = alloc["judge"]
+    assert set(judge) == {
+        "metric",
+        "judge",
+        "main_assumption",
+        "lenient_assumption",
+        "engine_score_role",
+        "pipeline_separation",
+    }
+    assert judge["metric"] == "effective_views_gt_per_dollar"
+    assert judge["judge"] == JUDGE_GROUND_TRUTH
+    # 假设原文只写一处：服务端引用 eval.audit 的常量，不另抄一遍措辞
+    assert judge["main_assumption"] == MAIN_VIEW_ASSUMPTION
+    assert judge["lenient_assumption"] == LENIENT_VIEW_ASSUMPTION
+    assert "不参与判优" in judge["engine_score_role"]
+    assert "A6" in judge["pipeline_separation"]
+
+
+def test_plan_advice_shape(plan_payload: dict[str, Any]) -> None:
+    """预算利用率低于门线时给出放宽建议；达到门线时为空。"""
+    alloc = plan_payload["allocation"]
+    advice = plan_payload["advice"]
+    assert isinstance(advice, list)
+    utilization = alloc["allocated_usd"] / alloc["budget_usd"] if alloc["budget_usd"] > 0 else 1.0
+    if utilization >= 0.60:
+        assert advice == []
+        return
+    assert advice
+    assert len(advice) == len({row["key"] for row in advice})
+    extra = [row["extra_spendable_usd"] for row in advice]
+    assert extra == sorted(extra, reverse=True)
+    for row in advice:
+        assert set(row) == {
+            "key",
+            "title",
+            "action",
+            "spendable_usd",
+            "extra_spendable_usd",
+            "utilization_after",
+            "extra_picked",
+            "quality_note",
+        }
+        assert row["key"] in {"relax_age", "expand_markets", "discount_review"}
+        assert looks_like_identifier(row["title"]) is None
+        assert looks_like_identifier(row["action"]) is None
+        assert looks_like_identifier(row["quality_note"]) is None
+        assert abs(row["extra_spendable_usd"] - (row["spendable_usd"] - alloc["allocated_usd"])) < 0.02
+        assert row["utilization_after"] >= 0.0
+        assert row["extra_picked"] >= 0
 
 
 def test_plan_preset_uses_frozen_spec() -> None:
@@ -243,13 +356,65 @@ def test_plan_notes_say_why_a1_did_not_use_the_model(plan_payload: dict[str, Any
     assert all("KOXPILOT_" not in n for n in notes), notes
 
 
-def test_plan_top_n_truncates_and_says_so() -> None:
-    payload = svc.plan({"brief_text": "全球投放，预算 10 万美元", "options": {"top_n": 50}})
-    recall = payload["funnel"][0]
-    assert recall["count"] == 50
-    # 截断了就必须在标签里说清楚，不能让人以为本次只召回了 50 人
-    assert "top_n" in recall["label"]
-    assert len(payload["parity_payload"]["verdicts"]) == 50
+def test_plan_top_n_only_trims_details_and_matches_offline_artifact() -> None:
+    """``top_n`` 只裁明细条数，**不许裁计算池**；预置 brief 必须复现离线产物。
+
+    这条测试守的是一个真出过的事故：v1.0 的 ``_recall`` 用 ``top_n`` 截断召回集合，
+    而截断掉的正是分配器用来满足结构配额（长尾下限 / 单一国家上限）的那批库存，
+    于是同一条 BRIEF-001 在服务上只花掉 7.1% 的预算、在 CLI 上花掉 99.8%，
+    "预算没花完" 还被当成投放结论展示了出去。
+
+    两半合成一条测试是刻意的：它们其实是同一句话的两个面 ——
+    ①同一条 brief 换 ``top_n`` 结果必须不变；②预置 brief 的结果必须等于离线权威产物
+    （README / PDF 的招牌数字都出自它）。任一半破了，Demo 与文档就又是两套结论。
+    """
+    import json
+
+    # ---- ① 同一条 brief，不同 top_n 必须给出逐字段相同的分配结果 ----
+    body = {"brief_text": "全球投放，预算 10 万美元"}
+    small = svc.plan({**body, "options": {"top_n": 50, "explain_limit": 60}})
+    large = svc.plan({**body, "options": {"top_n": 500, "explain_limit": 60}})
+
+    for payload in (small, large):
+        assert payload["scope"]["truncated_for_compute"] is False
+        # 召回数 == 计算池 == 逐条比对载荷条数
+        assert payload["funnel"][0]["count"] == payload["scope"]["computed_on"]
+        assert len(payload["parity_payload"]["verdicts"]) == payload["scope"]["computed_on"]
+        assert payload["funnel"][0]["count"] > 500, "本例定向极宽，召回必然远超 top_n 上限"
+
+    assert small["funnel"] == large["funnel"]
+    assert small["allocation"]["picked"] == large["allocation"]["picked"]
+    assert small["allocation"]["allocated_usd"] == large["allocation"]["allocated_usd"]
+    assert small["allocation"]["arms"] == large["allocation"]["arms"]
+    # 只有"看多少条"随 top_n 变
+    assert len(small["candidates"]) == 50
+    assert len(large["candidates"]) == 60
+
+    # ---- ② 预置 brief 的线上方案 == output/budget.json（离线权威口径）----
+    artifact = REPO_ROOT / "output" / "budget.json"
+    if not artifact.exists():  # 干净仓库还没跑过 make budget
+        pytest.skip("缺少 output/budget.json，先跑 make budget")
+    plans = json.loads(artifact.read_text(encoding="utf-8"))["plans"]
+    assert plans
+
+    for row in plans:
+        payload = svc.plan({"brief_id": row["campaign_id"], "options": {"top_n": 200}})
+        alloc = payload["allocation"]
+        off = row["koxpilot"]
+        assert alloc["picked"] == off["n_selected"], row["campaign_id"]
+        assert alloc["allocated_usd"] == pytest.approx(off["spent_usd"], abs=0.01)
+        assert alloc["budget_usd"] == pytest.approx(off["budget_usd"], abs=0.01)
+        # 利用率也要对得上：这正是当初漂了一个数量级的那个数
+        assert alloc["allocated_usd"] / alloc["budget_usd"] == pytest.approx(
+            off["constraints"]["utilization"], abs=1e-4
+        )
+        arms = {a["arm"]: a for a in alloc["arms"]}
+        assert arms["follower_rank"]["spend"] == pytest.approx(
+            row["baseline_followers"]["spent_usd"], abs=0.01
+        )
+        assert arms["diversified_no_gate"]["spend"] == pytest.approx(
+            row["diversified_no_gate"]["spent_usd"], abs=0.01
+        )
 
 
 @pytest.mark.parametrize(

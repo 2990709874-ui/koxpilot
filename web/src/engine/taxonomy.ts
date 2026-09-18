@@ -65,6 +65,35 @@ export function marketLanguages(market: string): Set<string> {
   return lang ? new Set([lang, 'en']) : new Set<string>();
 }
 
+/** 地理邻近关系（镜像 Python `taxonomy.GEO_NEIGHBORS`）：语言与受众重叠度较高的市场。 */
+export const GEO_NEIGHBORS: Record<string, string[]> = {
+  US: ['CA', 'GB', 'MX'], CA: ['US', 'GB', 'FR'], GB: ['US', 'IE', 'AU'], AU: ['GB', 'US', 'NZ'],
+  DE: ['AT', 'CH', 'NL'], FR: ['BE', 'CH', 'CA'], ES: ['MX', 'AR', 'CO'], IT: ['CH', 'DE', 'FR'],
+  NL: ['BE', 'DE', 'GB'], SE: ['NO', 'DK', 'FI'], PL: ['DE', 'CZ', 'UA'], JP: ['TW', 'KR', 'US'],
+  KR: ['JP', 'TW', 'US'], TW: ['HK', 'JP', 'SG'], HK: ['TW', 'SG', 'MY'], SG: ['MY', 'ID', 'HK'],
+  MY: ['SG', 'ID', 'TH'], ID: ['MY', 'SG', 'PH'], VN: ['TH', 'ID', 'PH'], TH: ['VN', 'MY', 'ID'],
+  PH: ['ID', 'SG', 'US'], IN: ['PK', 'BD', 'AE'], PK: ['IN', 'AE', 'SA'], BD: ['IN', 'PK', 'MY'],
+  BR: ['PT', 'AR', 'MX'], MX: ['US', 'CO', 'AR'], AR: ['CL', 'BR', 'ES'], CL: ['AR', 'PE', 'BR'],
+  CO: ['MX', 'PE', 'EC'], PE: ['CL', 'CO', 'MX'], SA: ['AE', 'EG', 'KW'], AE: ['SA', 'EG', 'IN'],
+  EG: ['SA', 'AE', 'TR'], TR: ['DE', 'AE', 'RU'], IL: ['US', 'TR', 'DE'], ZA: ['NG', 'KE', 'GB'],
+  NG: ['ZA', 'KE', 'GB'], KE: ['NG', 'ZA', 'GB'], RU: ['UA', 'TR', 'DE'], UA: ['PL', 'RU', 'DE'],
+};
+
+/**
+ * 目标市场 → 含相邻市场的市场集合（镜像 Python `taxonomy.neighbor_markets`）。
+ *
+ * 三条口径与 Python 逐字相同：邻接关系只取 `GEO_NEIGHBORS`；只保留达人库覆盖的国家
+ * （`COUNTRY_LANG` 的键，扩了也召不到人的国家不写进建议）；原市场保留，升序去重。
+ */
+export function neighborMarkets(markets: readonly string[]): string[] {
+  const out = new Set<string>();
+  for (const m of markets) if (COUNTRY_LANG[m]) out.add(m);
+  for (const m of markets) {
+    for (const n of GEO_NEIGHBORS[m] ?? []) if (COUNTRY_LANG[n]) out.add(n);
+  }
+  return [...out].sort();
+}
+
 export const CATEGORIES = [
   '3c_digital', 'beauty_care', 'home_appliance', 'fashion',
   'mother_baby', 'food_health', 'gaming_app', 'auto_travel',

@@ -9,9 +9,17 @@ import { EXAMPLE_BRIEFS, parseBrief, type BriefParseResult } from '../engine/bri
 import { Thresholds, type ThresholdsPayload } from '../engine/thresholds';
 import type { CampaignSpec, GateResult, Kox } from '../engine/types';
 import type { BriefEntry } from '../lib/artifacts';
-import { plan as requestPlan, type PlanPayload } from '../lib/api';
+import { plan as requestPlan, type AdviceRow, type AllocationArm, type AllocationBlock, type PlanPayload } from '../lib/api';
 import { reportServiceFailure, useComputeSource } from '../lib/computeSource';
 import { compareVerdicts, type ParityReport } from '../lib/parity';
+import {
+  browserAdvice,
+  browserAllocation,
+  browserArms,
+  browserUnallocatedWhy,
+  isLowUtilization,
+} from '../lib/planView';
+import { BudgetShortfall } from './budgetBlocks';
 import {
   ParityLine,
   ServiceCandidates,
@@ -61,7 +69,7 @@ export interface LiveRun {
   /**
    * 这份结果的来源：
    * - `custom`：读者自己敲的 brief，浏览器引擎独立跑的全流程；
-   * - `service`：服务本次召回的候选集（受 `options.top_n` 上限约束），浏览器引擎对同一批 kox_id 重算。
+   * - `service`：服务本次参与计算的全部候选（召回不截断），浏览器引擎对同一批 kox_id 重算。
    * 两种情况都与「全量产物」口径不同，Decision 据此关闭与产物的逐项对数。
    */
   origin: 'custom' | 'service';
@@ -396,9 +404,10 @@ export function ConsoleTab({
       if (kind === 'preset' && !b) return;
       setServiceBusy(true);
       setServiceErr(null);
-      // top_n 取契约允许的上限，让服务侧召回窗口尽量覆盖整个候选池；
-      // explain_limit 只影响返回多少条带完整证据链的候选，不影响判定与比对规模。
-      const options = { top_n: 500, explain_limit: 60 };
+      // 契约 v1.1：服务端召回不截断（命中定向的全部候选都进门禁与预算），
+      // 所以这里不再传 top_n —— 传了也只是裁明细条数。explain_limit 只影响返回多少条
+      // 带完整证据链的候选，不影响判定、分配与比对规模。
+      const options = { explain_limit: 60 };
       const res =
         kind === 'preset'
           ? await requestPlan({ brief_id: b.brief_id, options })
@@ -416,7 +425,8 @@ export function ConsoleTab({
         const spec = kind === 'free' ? (parse as BriefParseResult).spec : b.spec;
         const label = kind === 'free' ? '自由输入' : `${b.brief_id} · ${b.name}`;
         // 「同一批 kox_id」：只把服务本次召回的那批达人交给浏览器引擎重算，
-        // 这样两侧比的是同一个候选集，差异条数才是真的差异，而不是召回窗口不同带来的错位。
+        // 这样两侧比的是同一个候选集（v1.1 起它就是命中定向的全部候选），
+        // 差异条数才是真的差异，而不是召回口径不同带来的错位。
         const ids = new Set(res.data.parity_payload.verdicts.map((v) => v.kox_id));
         const subset = records.filter((r) => ids.has(String(r.kox_id)));
         const local = await runBrowser(spec, subset);
@@ -502,6 +512,61 @@ export function ConsoleTab({
     return c;
   }, [sd]);
   const serviceTotalMs = (sd?.timings ?? []).reduce((a, t) => a + t.ms, 0);
+
+  /**
+   * 服务未连接时，三条臂的可比指标与「预算没花完」结论由浏览器引擎现算，
+   * 字段与服务返回的 `allocation` / `advice` 同名同义（口径见 `lib/planView`）。
+   *
+   * 分两步给：先出对照与结论（一次分配就够），再让出一帧去跑三条放宽建议
+   * （每条都要重跑一遍召回与门禁），避免把首屏卡在计算上。
+   */
+  const [budgetView, setBudgetView] = React.useState<{
+    arms: AllocationArm[];
+    allocation: AllocationBlock;
+    advice: AdviceRow[];
+    adviceReady: boolean;
+  } | null>(null);
+
+  React.useEffect(() => {
+    if (sd || !result) {
+      setBudgetView(null);
+      return;
+    }
+    let alive = true;
+    void (async () => {
+      const thr = await ensureThresholds();
+      if (!alive) return;
+      const arms = browserArms({
+        records,
+        spec: result.spec,
+        thresholds: thr,
+        results: result.results,
+        plan: result.plan,
+        baseline: result.baseline,
+        gtById: result.gtById,
+        decay: result.decay,
+      });
+      const allocation = browserAllocation(result.plan, arms, browserUnallocatedWhy(result.plan));
+      const low = isLowUtilization(allocation);
+      if (!alive) return;
+      setBudgetView({ arms, allocation, advice: [], adviceReady: !low });
+      if (!low) return;
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const advice = browserAdvice({
+        records,
+        spec: result.spec,
+        thresholds: thr,
+        results: result.results,
+        plan: result.plan,
+        includeReview: result.includeReview,
+        decay: result.decay,
+      });
+      if (alive) setBudgetView({ arms, allocation, advice, adviceReady: true });
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [sd, result, records, ensureThresholds]);
 
   return (
     <div className="space-y-2">
@@ -712,6 +777,11 @@ export function ConsoleTab({
           <>
             <ServiceStages timings={sd.timings} />
             <ServiceSummary data={sd} />
+            {/* 三条臂的对照只在第 2 步出现一次：第 1 步回答"这批人怎么筛出来的"，
+                同一张表放两遍只会把页面拉长，不会让人多懂一点。 */}
+            {isLowUtilization(sd.allocation) && (
+              <BudgetShortfall allocation={sd.allocation} advice={sd.advice ?? []} />
+            )}
             {service && (
               <ParityLine
                 parity={service.parity}
@@ -785,6 +855,13 @@ export function ConsoleTab({
                   </div>
                 </div>
               </div>
+            )}
+            {budgetView && isLowUtilization(budgetView.allocation) && (
+              <BudgetShortfall
+                allocation={budgetView.allocation}
+                advice={budgetView.advice}
+                pending={!budgetView.adviceReady}
+              />
             )}
           </>
         )}

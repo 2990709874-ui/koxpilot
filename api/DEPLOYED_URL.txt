@@ -1,7 +1,7 @@
 $SERVICE_BASE
 
 KOXPilot HTTP 服务（公开访问，不需要 token）
-契约：api/CONTRACT.md（v1，冻结）
+契约：api/CONTRACT.md（v1.1；相对 v1 只改一处口径：top_n 只裁明细展示，不裁计算池）
 
 端点
   GET  /api/health
@@ -23,12 +23,19 @@ KOXPilot HTTP 服务（公开访问，不需要 token）
     -d '{"kox_ids":["KOX-000002","KOX-000004","KOX-001146"]}'
 
 线上实测（部署后当场跑的，不是本地数字）
-  health            status=ready，kox_count=5000，dataset_sha256=29500afd5390f3fd93245c2247281ae1f311e92009c6f374a330ec08434338d1
-  plan（自由文本）  召回 182 → 通过门禁 7 → 进入清单 4，parity_payload 182 条，端到端 61 ms
-  plan（BRIEF-001） 召回 500（受 top_n 截断）→ 57 → 45
-  gate/batch        5000 个 id 一次判完，服务侧 836 ms
+  health            status=ready，engine_version=1.1.0，kox_count=5000，dataset_sha256=29500afd5390f3fd93245c2247281ae1f311e92009c6f374a330ec08434338d1
+  plan（自由文本）  召回 182 → 通过门禁 7 → 进入清单 4，parity_payload 182 条，端到端 191 ms
+  plan（BRIEF-001） 召回 746 → 通过门禁 93 → 进入清单 69，投出 $79,855.29（利用率 99.8%），端到端 238~302 ms
+                    不传 top_n、top_n=200、top_n=500 三次请求分配结果逐字段相同，
+                    且与离线 `koxpilot budget` 的 output/budget.json 完全一致（v1.1 修的就是这处）
+  plan（BRIEF-002） 召回 399 → 清单 39，投出 $44,995.72（99.99%），184 ms
+  plan（BRIEF-003） 召回 350 → 清单 73，投出 $119,966.67（99.97%），167 ms
+  gate/batch        5000 个 id 一次判完，服务侧 849 ms
   explain           与 CLI `koxpilot explain` 的证据句逐字一致（api/check_cli_parity.py，5 个 id，0 差异）
-  双实现对撞        web/scripts/verify-service-parity.mjs 打线上服务：1431 条判定逐条比对，0 差异
+  双实现对撞        web/scripts/verify-service-parity.mjs 打线上服务：1677 条判定逐条比对 + 4 组
+                    brief × 3 条臂 × 10 个字段（含新增 n_selected），0 差异
+  arms.n_selected   2026-09-18 部署后 curl 复验：BRIEF-001 = 69 / 8 / 228，BRIEF-002 = 39 / 4 / 122，
+                    BRIEF-003 = 73 / 6 / 166（顺序：koxpilot / follower_rank / diversified_no_gate）
 
 口径说明（这些是边界，不是缺陷）
   * A1 brief 解析：部署环境未配置模型凭据，所以线上走确定性规则解析。

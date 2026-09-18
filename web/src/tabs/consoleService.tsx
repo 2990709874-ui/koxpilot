@@ -119,7 +119,14 @@ export function ServiceSummary({ data }: { data: PlanPayload }): React.ReactElem
           key: f.stage,
           label: f.label,
           value: f.count,
-          note: `${f.label}：${int0(f.count)} 人`,
+          // 召回这一级把「参与计算的人数」摊开说：这次的方案是在多少人里解出来的，
+          // 决定了预算能不能花出去，也是与离线 CLI 对数的前提。
+          note:
+            f.stage === 'recall' && data.scope
+              ? `${f.label}：${int0(f.count)} 人；其中进入计算 ${int0(data.scope.computed_on)} 人，返回明细 ${int0(
+                  data.scope.detail_rows,
+                )} 条`
+              : `${f.label}：${int0(f.count)} 人`,
         }))}
       />
       <DonutRing

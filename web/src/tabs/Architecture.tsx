@@ -9,7 +9,7 @@ import { evaluate } from '../engine/engine';
 import type { Thresholds } from '../engine/thresholds';
 import { fixed, int0, ms, pct1 } from '../lib/format';
 import type { PipelineResult } from '../lib/pipeline';
-import { API_BASE, gateBatch } from '../lib/api';
+import { apiBase, gateBatch } from '../lib/api';
 import { SOURCE_LABEL, useComputeSource } from '../lib/computeSource';
 import { compareVerdicts, type ParityReport } from '../lib/parity';
 
@@ -574,7 +574,7 @@ export function ArchitectureTab({
               ))}
             </div>
             <div className="mt-1.5 flex flex-wrap gap-1">
-              <Badge className="border-slate-300 bg-white text-slate-700">服务地址 {API_BASE.replace(/^https?:\/\//, '')}</Badge>
+              <Badge className="border-slate-300 bg-white text-slate-700">服务地址 {apiBase().replace(/^https?:\/\//, '')}</Badge>
               {cs.meta && (
                 <>
                   <Badge className="border-slate-300 bg-white text-slate-700">达人 {int0(Number(cs.meta.kox_count ?? 0))} 条</Badge>

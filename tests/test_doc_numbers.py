@@ -60,6 +60,11 @@ def prompt_bench() -> dict[str, Any]:
     return json.loads((OUTPUT / "prompt_bench.json").read_text(encoding="utf-8"))
 
 
+@pytest.fixture(scope="module")
+def audit() -> dict[str, Any]:
+    return json.loads((OUTPUT / "audit.json").read_text(encoding="utf-8"))
+
+
 def _assert_in_readme(readme: str, text: str, what: str) -> None:
     assert text in readme, f"README 里找不到 {what} 的当前值 `{text}` —— 产物变了但文档没跟上"
 
@@ -205,6 +210,69 @@ def test_promptbench_numbers_match_readme(readme: str, prompt_bench: dict[str, A
         _assert_in_readme(readme, f"{block['total_tokens']:,}", f"prompt {version} token")
     ordered = [b["avg_f1"] for _, b in sorted(prompt_bench["version_average"].items())]
     assert ordered == sorted(ordered), "v1<v2<v3 这个结论已经不成立，README 的叙事需要重写"
+
+
+def test_third_arm_beats_us_numbers_match_readme(readme: str, audit: dict[str, Any]) -> None:
+    """「第三臂在主指标上打赢了我」那一节的数字必须来自产物。
+
+    这一节是对外材料里**最不利于自己**的一段，所以它比招牌数字更需要被钉住：
+    一旦产物重跑后第三臂不再赢、或者赢的幅度变了，而 README 还挂着旧的
+    "+47.4%"，那就是拿一段假的自我批评在博取信任 —— 比夸大成绩更糟。
+    """
+    per_campaign = {row["campaign_id"]: row for row in audit["counterfactual_value_audit"]["per_campaign"]}
+
+    for campaign_id, row in per_campaign.items():
+        kox = row["koxpilot"]
+        third = row["diversified_no_gate"]
+        base = row["baseline"]
+
+        # 三臂的每千美元有效曝光都按人眼看到的千分位写法钉住
+        for arm, label in ((kox, "KOXPilot"), (third, "第三臂"), (base, "基线")):
+            _assert_in_readme(
+                readme,
+                f"{arm['effective_views_per_1k_usd']:,.0f}",
+                f"{campaign_id} {label} 的每千美元有效曝光",
+            )
+
+        # 结论本身（第三臂更高）必须仍然成立，否则这一节的叙事要重写
+        assert third["effective_views_per_1k_usd"] > kox["effective_views_per_1k_usd"], (
+            f"{campaign_id} 上第三臂已经不再赢了 —— README 那节「第三臂在主指标上打赢了我」"
+            "必须重写，而不是留着一段过期的自我批评"
+        )
+        gap = third["effective_views_per_1k_usd"] / kox["effective_views_per_1k_usd"] - 1
+        _assert_in_readme(readme, f"+{gap * 100:.1f}%", f"{campaign_id} 第三臂领先幅度")
+
+    # BRIEF-001 的取舍表：浪费、水号、高风险号、花在 reject 上的钱、合约数
+    b1 = per_campaign["BRIEF-001"]
+    kox1, third1 = b1["koxpilot"], b1["diversified_no_gate"]
+    _assert_in_readme(readme, f"${kox1['wasted_spend_usd']:,.0f}", "BRIEF-001 我方浪费金额")
+    _assert_in_readme(readme, f"${third1['wasted_spend_usd']:,.0f}", "BRIEF-001 第三臂浪费金额")
+    _assert_in_readme(readme, f"{third1['wasted_spend_share'] * 100:.2f}%", "BRIEF-001 第三臂浪费占比")
+    _assert_in_readme(readme, f"{kox1['wasted_spend_share'] * 100:.2f}%", "BRIEF-001 我方浪费占比")
+    _assert_in_readme(
+        readme, f"${third1['spend_on_gate_reject_usd']:,.0f}", "BRIEF-001 第三臂花在 reject 达人上的钱"
+    )
+    assert (
+        f"| **{kox1['n_selected']} 份** | **{third1['n_selected']} 份** |" in readme
+    ), "BRIEF-001 的合约数对比（69 份 vs 228 份）没写进 README —— 这是「可执行性」那一层的唯一量化证据"
+    assert kox1["n_high_risk_selected"] == 0, "我方已经买进品牌安全高风险号了，README 的 0 不再成立"
+
+    # BRIEF-002 那条对我们更不利的细节：浪费金额与有效曝光率都输给第三臂
+    b2 = per_campaign["BRIEF-002"]
+    kox2, third2, base2 = b2["koxpilot"], b2["diversified_no_gate"], b2["baseline"]
+    assert kox2["wasted_spend_usd"] > third2["wasted_spend_usd"], (
+        "BRIEF-002 上我方浪费已经不再高于第三臂 —— README 那段自陈需要更新"
+    )
+    _assert_in_readme(readme, f"${kox2['wasted_spend_usd']:,.0f}", "BRIEF-002 我方浪费金额")
+    _assert_in_readme(readme, f"${third2['wasted_spend_usd']:,.0f}", "BRIEF-002 第三臂浪费金额")
+    _assert_in_readme(readme, f"{kox2['effective_view_rate'] * 100:.2f}%", "BRIEF-002 我方有效曝光率")
+    _assert_in_readme(readme, f"{third2['effective_view_rate'] * 100:.2f}%", "BRIEF-002 第三臂有效曝光率")
+    _assert_in_readme(readme, f"{kox2['n_fraud_selected']} 个水号", "BRIEF-002 进入我方名单的水号个数")
+    # 连按粉丝量基线都赢了我们这件事，也必须留在文档里
+    assert base2["effective_views_per_1k_usd"] > kox2["effective_views_per_1k_usd"], (
+        "BRIEF-002 上基线不再赢我们了 —— README 里那句「稳定赢基线也不成立」需要改回来"
+    )
+    _assert_in_readme(readme, f"${base2['wasted_spend_usd']:,.0f}", "BRIEF-002 基线浪费金额")
 
 
 def test_test_count_claim_matches_reality(readme: str) -> None:

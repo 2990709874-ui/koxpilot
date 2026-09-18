@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import { health, type ApiMeta } from './api';
+import { health, loadRuntimeApiConfig, type ApiMeta } from './api';
 
 export type ComputeSource = 'probing' | 'backend' | 'browser';
 
@@ -80,6 +80,9 @@ export function startProbe(): void {
   if (started) return;
   started = true;
   void (async () => {
+    // 先读部署期配置（`api-config.json`），再探活：否则第一次 health 会打在构建期的
+    // 默认地址上，静态站换服务地址就要重新构建一次前端。
+    await loadRuntimeApiConfig();
     const first = await probeOnce();
     if (first === 'ready') {
       set({ source: 'backend', warming: false });

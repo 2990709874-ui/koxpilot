@@ -118,7 +118,7 @@ PYTHONPATH=src python -m koxpilot.cli multiseed --seeds 12
 
 必须一起报的**反向事实**（都在产物的 `caveat` / `caveats` 里，不靠这段文字兜）：
 
-1. **第三臂的绝对有效曝光在 12/12 个种子上都高于 KOXPilot**（`n_seeds_third_arm_more_effective_views = 12`）。它按每美元名义曝光排序，专挑 CPM 最便宜的长尾；KOXPilot 优化质量加权价值（含语义适配/KPI 权重/真实性折扣），会主动放弃便宜但不对味的曝光。三臂可比的口径是**浪费金额与有效曝光率**，绝对曝光数不是 KOXPilot 的优化目标。
+1. **第三臂的绝对有效曝光在 12/12 个种子上都高于 KOXPilot**（`n_seeds_third_arm_more_effective_views = 12`）。它按每美元名义曝光排序，专挑 CPM 最便宜的长尾；KOXPilot 优化质量加权价值（含语义适配/KPI 权重/真实性折扣），会主动放弃便宜但不对味的曝光。绝对曝光数不是 KOXPilot 的优化目标。**注意这不构成免责**：换成每美元有效曝光（归一化掉花费）第三臂照样赢，幅度 44%~47%，见 [README「第三臂在主指标上打赢了我」](../README.md)。
 2. **第三臂平均选 516.4 ± 18.8 人**（`third_arm_n_selected`；跨种子只记录了第三臂的人数，另两臂的人数目前只有定稿种子的快照：基线 18 人 / KOXPilot 181 人，见 [01 §A6](01-architecture.md)）。它在真实采购里不可执行（沟通与履约成本），**只是对照臂，不是"更好的方案"**。
 3. **"门禁贡献"是"门禁过滤 + 质量排序"的合计**。第三臂 → KOXPilot 之间同时变了两件事，二者共用同一批真实性/适配分数，实现上无法再拆，因此字段名如实叫 `saved_usd_by_gating`（产物里全称 `by_gating_and_quality_ranking`），不谎报成纯门禁效果。要再拆需要第四臂（"过滤 pass 但仍按每美元曝光排序"），本轮没做。
 

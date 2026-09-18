@@ -17,6 +17,49 @@ import type { BudgetPlan } from './allocator.ts';
 /** 敏感性假设：水号仍有多少比例的曝光算"有效"。主口径取 0，此常量仅用于宽松对照。 */
 export const FRAUD_RESIDUAL_VIEW_SHARE = 0.5;
 
+/**
+ * 有效曝光与浪费金额的裁判来源（与 Python `JUDGE_GROUND_TRUTH` 同值）。
+ * 写成常量是为了让对外口径能把"谁在判"标出来：`ground_truth` = 数据集标注，
+ * 不是引擎自己的分数。
+ */
+export const JUDGE_GROUND_TRUTH = 'ground_truth';
+
+/** 两个口径的假设原文（与 Python `MAIN_VIEW_ASSUMPTION` / `LENIENT_VIEW_ASSUMPTION` 逐字对齐）。 */
+export const MAIN_VIEW_ASSUMPTION = '主口径：标注为水号的达人，其曝光按 0 计入有效曝光';
+export const LENIENT_VIEW_ASSUMPTION =
+  `宽松口径：水号曝光按 ${Math.round(FRAUD_RESIDUAL_VIEW_SHARE * 100)}% 计入有效曝光。` +
+  '两个口径同向才说明结论不依赖该假设';
+
+/** 对外的"每美元有效曝光"口径（两个假设各一份）。 */
+export interface EffectiveViewCalibers {
+  judge: string;
+  effective_views_gt: number;
+  effective_views_gt_per_dollar: number | null;
+  effective_views_gt_lenient: number;
+  effective_views_gt_lenient_per_dollar: number | null;
+}
+
+/**
+ * 把 {@link planAudit} 的结果翻成"每美元有效曝光"的对外口径（主口径 + 宽松口径）。
+ * 与 Python `eval/audit.py` 的 `effective_view_calibers` 是同一段算术，逐字对齐：
+ * 分子只取按标注算好的有效曝光（不接受引擎自评），花费为 0 时给 `null` 而不是 0。
+ *
+ * @param spendUsd 分母花费。缺省用 `audit.spent_usd`；显式传入是为了让调用方能用
+ *   自己四舍五入后的花费当分母，保证"每美元 × 花费"自洽。
+ */
+export function effectiveViewCalibers(audit: PlanAudit, spendUsd?: number): EffectiveViewCalibers {
+  const eff = audit.effective_views_gt;
+  const effLenient = audit.effective_views_gt_lenient;
+  const money = spendUsd === undefined ? audit.spent_usd : spendUsd;
+  return {
+    judge: JUDGE_GROUND_TRUTH,
+    effective_views_gt: pyRound(eff, 1),
+    effective_views_gt_per_dollar: money > 0 ? pyRound(eff / money, 2) : null,
+    effective_views_gt_lenient: pyRound(effLenient, 1),
+    effective_views_gt_lenient_per_dollar: money > 0 ? pyRound(effLenient / money, 2) : null,
+  };
+}
+
 export interface GroundTruth {
   is_fraud: boolean;
   fraud_type: string | null;

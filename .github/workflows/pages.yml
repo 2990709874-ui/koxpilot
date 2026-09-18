@@ -1,0 +1,77 @@
+name: Deploy Demo to GitHub Pages
+
+# 把 web/ 构建出的静态站发布到 GitHub Pages，让任何人（不需要公司内网）都能打开 Demo。
+#
+# 首次启用：仓库 Settings → Pages → Build and deployment → Source 选 "GitHub Actions"，
+# 然后手动跑一次本 workflow（Actions 页签 → Deploy Demo to GitHub Pages → Run workflow）。
+#
+# 发布出来的站点在浏览器内引擎模式下功能完整：brief 解析、四层门禁、预算分配、
+# 反事实审计全部在浏览器里真算，不依赖任何后端服务。
+# 若后续有了公网可达的 API 服务，改 web/public/api-config.json 即可，无需改代码重构建。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - 'data/**'
+      - 'output/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: 安装依赖
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: 搬运数据产物到前端
+        working-directory: web
+        run: pnpm run prepare-data
+
+      - name: 校验 Python / TS 双实现逐条一致
+        working-directory: web
+        run: pnpm run verify
+
+      - name: 构建
+        working-directory: web
+        run: pnpm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

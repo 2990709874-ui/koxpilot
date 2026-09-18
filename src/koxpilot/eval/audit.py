@@ -26,10 +26,14 @@ from .metrics import gt_of
 __all__ = [
     "ARM_LABELS",
     "FRAUD_RESIDUAL_VIEW_SHARE",
+    "JUDGE_GROUND_TRUTH",
+    "LENIENT_VIEW_ASSUMPTION",
+    "MAIN_VIEW_ASSUMPTION",
     "RATIO_FRAGILE_BASELINE_RATE",
     "arm_attribution",
     "cost_audit_report",
     "counterfactual_report",
+    "effective_view_calibers",
     "plan_audit",
 ]
 
@@ -43,6 +47,16 @@ ARM_LABELS: dict[str, str] = {
 #: 敏感性假设：水号仍有多少比例的曝光算"有效"。
 #: 主口径取 0（水号曝光全部作废），本常量用于给出宽松对照，证明结论稳健。
 FRAUD_RESIDUAL_VIEW_SHARE: float = 0.5
+
+#: 有效曝光与浪费金额的裁判来源。写成常量是为了让对外接口能把"谁在判"标出来，
+#: 而不是靠文档口头约定：``ground_truth`` = 数据集标注，不是引擎自己的分数。
+JUDGE_GROUND_TRUTH: str = "ground_truth"
+
+#: 两个口径的假设原文。对外接口与前端都引用这两句，避免同一件事出现两种措辞。
+MAIN_VIEW_ASSUMPTION: str = "主口径：标注为水号的达人，其曝光按 0 计入有效曝光"
+LENIENT_VIEW_ASSUMPTION: str = (
+    f"宽松口径：水号曝光按 {FRAUD_RESIDUAL_VIEW_SHARE:.0%} 计入有效曝光。两个口径同向才说明结论不依赖该假设"
+)
 
 #: 何时认定"相对提升比率的分母太小、不能当聚合口径用"。
 #: 基线只选 4~7 人，某些样本几乎把钱全花在水号上，其有效曝光率会趋近 0；
@@ -177,6 +191,44 @@ def plan_audit(plan: BudgetPlan, gt_by_id: Mapping[str, Mapping[str, Any]]) -> d
         ),
         "effective_cpm_usd": round(spent / (eff_views / 1000.0), 3) if eff_views > 0 else None,
         "effective_views_per_1k_usd": round(eff_views / (spent / 1000.0), 0) if spent else 0.0,
+    }
+
+
+def effective_view_calibers(
+    audit: Mapping[str, Any], spend_usd: float | None = None
+) -> dict[str, Any]:
+    """把 :func:`plan_audit` 的结果翻成"每美元有效曝光"的对外口径（主口径 + 宽松口径）。
+
+    为什么要这个函数：多条臂的花费能差几十倍（门禁只买得起过关的那几个人），
+    绝对有效曝光并排摆出来会把"花得少"读成"做得差"，所以对外只能按每美元比。
+    而这个换算必须**只写一处**——接口、CLI、前端各写一遍除法，早晚会出现
+    一处按主口径、一处按宽松口径的两套数字。
+
+    两条纪律都在这里落实：
+    - **裁判是 gt**：分子取 ``plan_audit`` 已经按标注算好的有效曝光，
+      不接受引擎自评的 value(k)/authenticity_score（那是自证）；
+    - **两个口径一起给**：主口径（水号曝光按 0）与宽松口径（按
+      :data:`FRAUD_RESIDUAL_VIEW_SHARE` 计）同时输出，只给对自己有利的那个不算结论。
+
+    Args:
+        audit: :func:`plan_audit` 的返回值。
+        spend_usd: 分母花费。缺省用 ``audit["spent_usd"]``；显式传入是为了让调用方
+            能用自己四舍五入后的花费当分母，保证接口里 ``每美元 × 花费`` 自洽。
+    Returns:
+        含 ``judge`` 与四个数字的字典；花费为 0 时两个"每美元"字段给 ``None``
+        （**不是 0.0**：没花钱与花了钱没效果是两件事）。
+    """
+    eff = float(audit["effective_views_gt"])
+    eff_lenient = float(audit["effective_views_gt_lenient"])
+    money = float(audit["spent_usd"] if spend_usd is None else spend_usd)
+    return {
+        "judge": JUDGE_GROUND_TRUTH,
+        "effective_views_gt": round(eff, 1),
+        "effective_views_gt_per_dollar": round(eff / money, 2) if money > 0 else None,
+        "effective_views_gt_lenient": round(eff_lenient, 1),
+        "effective_views_gt_lenient_per_dollar": (
+            round(eff_lenient / money, 2) if money > 0 else None
+        ),
     }
 
 

@@ -17,6 +17,9 @@
    服务再拿原文重解析一遍反而会引入差异，所以 ``brief_id`` 路径不重新解析。
 3. **默认参数取包里的默认值**：include_review / decay 都用 ``budget.policy`` 的默认值，
    与前端默认值一致。
+4. **召回不截断**：命中定向的全部候选都进入门禁与预算计算，``options.top_n`` 只裁
+   返回给前端的明细条数。截断计算会让服务与离线 CLI 变成两道题（预算利用率能差十几倍），
+   而 ``parity_payload`` 覆盖的正是这批参与计算的候选，前端才能用同一批 id 重算出同一份金额。
 """
 
 from __future__ import annotations
@@ -46,6 +49,12 @@ from .store import STORE, Loaded, warmup_timeout
 GATE_BATCH_LIMIT = 5000
 
 #: 契约 §4 的 options 口径
+#:
+#: ``top_n`` 只截断**返回给前端的候选明细条数**，不截断进入计算的候选池。
+#: v1.0 里它同时截断了召回集合，于是同一条 brief 在 CLI 与服务上算出的预算方案能差一个
+#: 数量级（BRIEF-001：离线 69 人 / $79,855，服务 top_n=200 时 8 人 / $5,693）——
+#: 分配器的结构配额（长尾下限 / 单一国家上限）是在候选池上求解的，池被截掉之后
+#: 「买得起且能满足配额的库存」也跟着消失，钱就花不出去。截断展示是合理的，截断计算是错的。
 TOP_N_DEFAULT, TOP_N_MAX = 200, 500
 EXPLAIN_LIMIT_DEFAULT, EXPLAIN_LIMIT_MAX = 60, 200
 
@@ -232,31 +241,24 @@ def _preset_fields(preset: Dict[str, Any], spec: Any) -> List[Dict[str, Any]]:
 # ---------------------------------------------------------------------------
 # A2：召回
 # ---------------------------------------------------------------------------
-def _recall(snap: Loaded, spec: Any, top_n: int) -> Tuple[List[Dict[str, Any]], int, bool]:
-    """定向召回。返回 ``(召回集合, 原始命中人数, 是否被 top_n 截断)``。
+def _recall(snap: Loaded, spec: Any) -> List[Dict[str, Any]]:
+    """定向召回：命中定向的**全部**达人，不做任何截断。
 
-    命中人数超过 ``top_n`` 时按「规则语义适配分 × 受众匹配分」降序取前 N，
-    同分按 ``kox_id`` 升序——两个函数都是 ``koxpilot.gates.g2`` 里给门禁用的原函数，
-    这里只借来排序，不新造相关性口径。
+    为什么不截断
+    ------------
+    召回集合就是分配器的可行域。分配器要在这个池子上同时满足「长尾金额 ≥25%」、
+    「单一国家 ≤60%」、「单达人 ≤预算的 X%」这几条结构配额；把池子截掉一半，
+    被截掉的往往正是用来满足配额的那批库存（例如 BRIEF-001 里的 CA 长尾），
+    于是可行域塌缩，预算利用率从 99.8% 掉到 7.1%。这不是「展示少一点」，
+    而是**换了一道题**：同一条 brief 在离线 CLI 与线上服务给出的方案会差一个数量级。
+
+    展示侧的收敛由 ``options.explain_limit`` / ``options.top_n`` 负责（只裁明细条数），
+    计算侧一条不裁——这样服务与 ``koxpilot.cli`` 的 ``cmd_budget``（对全库跑
+    ``plan_campaign``）是同一道题，结果可以逐条对上 ``output/budget.json``。
     """
     from koxpilot.budget.value import targeting_reason
 
-    pool: List[Dict[str, Any]] = []
-    for kox in snap.records:
-        if targeting_reason(kox, spec) is None:
-            pool.append(kox)
-    total = len(pool)
-    if total <= top_n:
-        return pool, total, False
-
-    from koxpilot.gates.g2 import audience_match_score, rule_fit_score
-
-    def relevance(kox: Dict[str, Any]) -> Tuple[float, str]:
-        score = rule_fit_score(kox, spec) * audience_match_score(kox, spec)
-        return (-score, str(kox.get("kox_id")))
-
-    pool.sort(key=relevance)
-    return pool[:top_n], total, True
+    return [kox for kox in snap.records if targeting_reason(kox, spec) is None]
 
 
 # ---------------------------------------------------------------------------
@@ -287,6 +289,7 @@ def _unallocated_why(plan: Any, candidates: List[Any], remaining: float) -> str:
         )
 
     binding: List[str] = []
+    broken: List[str] = []
     for check in (plan.constraints or {}).get("checks") or []:
         name = str(check.get("name"))
         actual, limit = check.get("actual"), check.get("limit")
@@ -294,11 +297,21 @@ def _unallocated_why(plan: Any, candidates: List[Any], remaining: float) -> str:
             continue
         if not isinstance(actual, (int, float)) or not isinstance(limit, (int, float)) or limit == 0:
             continue
+        item = "%s（当前 %.1f%%）" % (check.get("desc"), float(actual) * 100.0)
+        # 已经不满足的约束不能和"贴住上限"混在一句里说：把 74.1% 摆在"≤ 60%"后面
+        # 当作没花完的理由，看的人只会以为页面算错了。这两种情况的动作也不同。
+        if not check.get("satisfied", True):
+            broken.append(item)
+            continue
         near = actual <= limit * 1.02 if name in _MIN_TYPE_CHECKS else actual >= limit * 0.98
         if near:
-            binding.append("%s（当前 %.1f%%）" % (check.get("desc"), float(actual) * 100.0))
+            binding.append(item)
     if binding:
-        parts.append("剩余额度无法在不破结构配额的前提下花出去：%s" % "；".join(binding))
+        parts.append("剩余额度已经贴住结构配额，再加钱就会破：%s" % "；".join(binding))
+    if broken:
+        parts.append(
+            "候选池在这个定向下本身就偏，这几条配额已经守不住，继续加钱只会更偏：%s" % "；".join(broken)
+        )
 
     if not parts:
         parts.append(
@@ -308,32 +321,239 @@ def _unallocated_why(plan: Any, candidates: List[Any], remaining: float) -> str:
     return "；".join(parts) + "。"
 
 
+def _arm_row(arm: str, plan: Any, audit: Dict[str, Any]) -> Dict[str, Any]:
+    """一条臂的对外口径：花费、按标注结算的有效曝光（两个口径）、浪费金额。
+
+    **判优字段一律以标注结果为裁判。** ``effective_views_gt*`` 与 ``waste_usd``
+    全部取 A6 审计（``eval.audit.plan_audit``）的产出，换算成"每美元"也复用
+    ``eval.audit.effective_view_calibers``——接口这里不写第二套除法，
+    否则同一句结论会在服务、CLI、前端各算一遍，早晚漂移。
+
+    为什么必须给"每美元"：三条臂花的钱可以差几十倍（KOXPilot 只买得起门禁过关的
+    那几个人），把绝对有效曝光并排摆出来，读者会把"花得少"读成"做得差"。
+    花费为 0 时如实给 ``null``——写 0 是错的。
+
+    为什么主口径与宽松口径都给：主口径把标注为水号的曝光按 0 计，宽松口径按 50% 计。
+    两个口径同向，结论才不依赖这个假设；只给对自己有利的那个不算结论。
+
+    ``engine_*`` 是引擎的**事前估分**（``budget/value.py`` 的
+    ``value(k) = avg_views × 真实性折扣 × 语义适配 × 受众匹配 × KPI 权重``，
+    按等效条数加总）。它是选人排序的依据，作为次级信息给出，不参与本对比的判优——
+    用引擎自己的分给引擎打分，数字再漂亮也不能当结论。
+    """
+    from koxpilot.eval.audit import effective_view_calibers
+
+    spend = round(float(plan.spent_usd), 2)
+    caliber = effective_view_calibers(audit, spend)
+    engine_value = round(sum(float(a.value_score) for a in plan.selected), 1)
+    row = {"arm": arm, "label": ARM_LABEL[arm], "spend": spend}
+    # 这条臂实际拿到钱的达人数 = 要签、要沟通、要交付的合约数。
+    # 它是**成本**不是战绩：摊得越薄，每美元越便宜，但真实采购里排不进档期。
+    # 这笔成本完全不在判优指标（effective_views_gt_per_dollar）里，所以必须单独摆出来。
+    row["n_selected"] = len(plan.selected)
+    row.update(caliber)  # judge + 主口径/宽松口径的有效曝光与每美元有效曝光
+    row["waste_usd"] = round(float(audit["wasted_spend_usd"]), 2)
+    # 引擎事前估分：次级信息，不判优
+    row["engine_expected_value"] = engine_value
+    row["engine_value_per_dollar"] = round(engine_value / spend, 2) if spend > 0 else None
+    # 兼容字段：与 effective_views_gt / effective_views_gt_per_dollar 同数同义，
+    # 保留是因为契约 v1 已经放出去了；新调用方请直接用 effective_views_gt*。
+    row["expected_value"] = caliber["effective_views_gt"]
+    row["value_per_dollar"] = caliber["effective_views_gt_per_dollar"]
+    return row
+
+
 def _arms(plan: Any, baseline: Any, diversified: Any, row: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """三条臂的花费与有效曝光（有效曝光按 ground truth 算，防自证）。"""
+    """三条臂的花费与有效曝光（有效曝光按标注结果结算，两个口径都给）。"""
     out = [
-        {
-            "arm": "koxpilot",
-            "label": ARM_LABEL["koxpilot"],
-            "spend": round(float(plan.spent_usd), 2),
-            "expected_value": round(float(row["koxpilot"]["effective_views_gt"]), 1),
-        },
-        {
-            "arm": "follower_rank",
-            "label": ARM_LABEL["follower_rank"],
-            "spend": round(float(baseline.spent_usd), 2),
-            "expected_value": round(float(row["baseline"]["effective_views_gt"]), 1),
-        },
+        _arm_row("koxpilot", plan, row["koxpilot"]),
+        _arm_row("follower_rank", baseline, row["baseline"]),
     ]
     if diversified is not None and row.get("diversified_no_gate"):
-        out.append(
-            {
-                "arm": "diversified_no_gate",
-                "label": ARM_LABEL["diversified_no_gate"],
-                "spend": round(float(diversified.spent_usd), 2),
-                "expected_value": round(float(row["diversified_no_gate"]["effective_views_gt"]), 1),
-            }
-        )
+        out.append(_arm_row("diversified_no_gate", diversified, row["diversified_no_gate"]))
     return out
+
+
+def _judge_block() -> Dict[str, Any]:
+    """这组对比的口径声明：谁在判、按什么假设判、决策链路与裁判席怎么分开。
+
+    为什么要把它放进响应体：``arms[]`` 里那几个数字是"谁更划算"的全部依据，
+    读者必须能在同一份 JSON 里看出①判优用的是哪个字段、②裁判是标注还是引擎自评、
+    ③读了标注的到底是哪一段代码。写在文档里不算——文档会和代码走散。
+    """
+    from koxpilot.eval.audit import (
+        JUDGE_GROUND_TRUTH,
+        LENIENT_VIEW_ASSUMPTION,
+        MAIN_VIEW_ASSUMPTION,
+    )
+
+    return {
+        "metric": "effective_views_gt_per_dollar",
+        "judge": JUDGE_GROUND_TRUTH,
+        "main_assumption": MAIN_VIEW_ASSUMPTION,
+        "lenient_assumption": LENIENT_VIEW_ASSUMPTION,
+        "engine_score_role": (
+            "engine_value_per_dollar 是引擎的事前估分（选人排序依据），"
+            "只作次级信息展示，不参与判优"
+        ),
+        "pipeline_separation": (
+            "选人与分钱（A1–A5）只读可观测字段，读不到标注；"
+            "只有 A6 审计这一组对比读标注（静态扫描 + 运行期哨兵在守这条边界）"
+        ),
+    }
+
+
+# ---------------------------------------------------------------------------
+# 预算放宽建议（契约 §4 的 advice）
+# ---------------------------------------------------------------------------
+#: 预算利用率低于这条线，才算「钱明显花不出去」，才需要给放宽建议。
+#: 与前端结论块用的是同一条线（契约 §4 写明 60%），两边不允许各写一个数。
+LOW_UTILIZATION_LINE = 0.60
+
+
+def _usd(amount: float) -> str:
+    return "$%s" % "{:,.0f}".format(amount)
+
+
+def _advice_row(
+    key: str,
+    title: str,
+    action: str,
+    budget: float,
+    base_spend: float,
+    spendable: float,
+    extra_picked: int,
+    quality_note: str,
+) -> Dict[str, Any]:
+    """一条放宽建议：改什么、这次能多花出多少、名单质量会怎么变。
+
+    ``spendable_usd`` 是**在这条放宽下重跑一遍 A2→A3→A5 得到的花费**，不是估算的上限；
+    ``extra_spendable_usd`` 允许为负或 0（放宽了也没多花出钱），如实给出，不做截断——
+    "这条放宽帮不上忙"本身就是一个有用的结论。
+    """
+    return {
+        "key": key,
+        "title": title,
+        "action": action,
+        "spendable_usd": round(spendable, 2),
+        "extra_spendable_usd": round(spendable - base_spend, 2),
+        "utilization_after": round(spendable / budget, 4) if budget else 0.0,
+        "extra_picked": extra_picked,
+        "quality_note": quality_note,
+    }
+
+
+def _advice(
+    snap: Loaded,
+    spec: Any,
+    base_plan: Any,
+    base_pool: List[Dict[str, Any]],
+    base_results: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    """预算没花完时，给三条**各自独立**的放宽建议，每条都真跑一遍再报数。
+
+    三条建议对应三种不同性质的放宽，刻意分开而不是打包成一个"自动放宽"：
+    1. 去掉年龄限定 —— 放宽人群定向（不动风控）；
+    2. 扩到相邻市场 —— 放宽地域定向（相邻关系取 ``taxonomy.neighbor_markets``）；
+    3. 让需人核档带折扣进清单 —— 放宽的是**采购动作**（折扣系数取
+       ``budget.policy.REVIEW_SPEND_DISCOUNT``），门禁判定本身一个字都没改。
+
+    利用率已经达到 :data:`LOW_UTILIZATION_LINE` 时返回空列表：钱花得出去就不需要建议。
+    """
+    import dataclasses
+
+    from koxpilot.budget.planner import gate_results_for, plan_campaign
+    from koxpilot.budget.policy import REVIEW_SPEND_DISCOUNT
+    from koxpilot.taxonomy import neighbor_markets
+
+    budget = float(base_plan.budget_usd or 0.0)
+    base_spend = float(base_plan.spent_usd)
+    if budget <= 0.0 or base_spend >= budget * LOW_UTILIZATION_LINE:
+        return []
+
+    picked_ids = set(a.kox_id for a in base_plan.selected)
+    rows: List[Dict[str, Any]] = []
+
+    def replan(relaxed_spec: Any) -> Any:
+        """在放宽后的投放规格上重跑召回→门禁→分配（与主链路同一批函数、同样不截断召回）。"""
+        pool = _recall(snap, relaxed_spec)
+        results = gate_results_for(pool, relaxed_spec, snap.thresholds)
+        plan, _ = plan_campaign(pool, relaxed_spec, snap.thresholds, results)
+        return plan
+
+    # ---- 1. 去掉年龄限定 ----
+    ages = tuple(spec.target_age_buckets or ())
+    if ages:
+        plan_age = replan(dataclasses.replace(spec, target_age_buckets=()))
+        newcomers = [a for a in plan_age.selected if a.kox_id not in picked_ids]
+        rows.append(
+            _advice_row(
+                "relax_age",
+                "去掉年龄段限定",
+                "把人群里的「%s」这条限定去掉，平台 / 品类 / 市场与预算都不动" % "、".join(ages),
+                budget,
+                base_spend,
+                float(plan_age.spent_usd),
+                len(newcomers),
+                (
+                    "新进清单的 %d 人都是门禁判「可投」的人：这条放宽动的是人群定向，风控口径一条没改。"
+                    % len(newcomers)
+                )
+                if newcomers
+                else "清单不会变：卡住这笔预算的不是年龄限定。",
+            )
+        )
+
+    # ---- 2. 扩到相邻市场 ----
+    markets = tuple(spec.target_markets or ())
+    expanded = neighbor_markets(markets) if markets else ()
+    added = [m for m in expanded if m not in markets]
+    if added:
+        plan_mkt = replan(dataclasses.replace(spec, target_markets=expanded))
+        newcomers = [a for a in plan_mkt.selected if a.kox_id not in picked_ids]
+        outside = [a for a in newcomers if a.country not in markets]
+        rows.append(
+            _advice_row(
+                "expand_markets",
+                "加投相邻市场：%s" % "、".join(added),
+                "目标市场从 %s 扩到 %s（相邻市场，语言与受众重叠度较高），其余定向不动"
+                % ("、".join(markets), "、".join(expanded)),
+                budget,
+                base_spend,
+                float(plan_mkt.spent_usd),
+                len(newcomers),
+                "新进清单的 %d 人同样逐条过了四层门禁，其中 %d 人的主市场在新增市场里——"
+                "这批人触达的是相邻市场受众，是否算本次目标人群需要业务确认。"
+                % (len(newcomers), len(outside)),
+            )
+        )
+
+    # ---- 3. 需人核档带折扣进清单 ----
+    n_review = sum(1 for r in base_results.values() if r.verdict == "review")
+    if n_review:
+        plan_rev, _ = plan_campaign(base_pool, spec, snap.thresholds, base_results, include_review=True)
+        review_spend = sum(float(a.amount_usd) for a in plan_rev.selected if a.verdict == "review")
+        other_spend = sum(float(a.amount_usd) for a in plan_rev.selected if a.verdict != "review")
+        discounted = other_spend + review_spend * REVIEW_SPEND_DISCOUNT
+        review_picked = sum(1 for a in plan_rev.selected if a.verdict == "review")
+        rows.append(
+            _advice_row(
+                "discount_review",
+                "让「需人核」的人带折扣进清单",
+                "本次有 %d 人判为需人核；按单人金额 %d%% 先给试投位，人核通过后再追加到全额"
+                % (n_review, int(round(REVIEW_SPEND_DISCOUNT * 100))),
+                budget,
+                base_spend,
+                discounted,
+                review_picked,
+                "新增的 %d 人是需人核档：必须先人工核过再下单，%s 是打折后的试投金额，"
+                "也就是这条建议的风险敞口上限。"
+                % (review_picked, _usd(review_spend * REVIEW_SPEND_DISCOUNT)),
+            )
+        )
+
+    rows.sort(key=lambda r: -float(r["extra_spendable_usd"]))
+    return rows
 
 
 # ---------------------------------------------------------------------------
@@ -360,9 +580,9 @@ def plan(body: Dict[str, Any]) -> Dict[str, Any]:
     from koxpilot.budget.value import build_candidates
     from koxpilot.eval.audit import counterfactual_report
 
-    # ---- A2 召回 ----
+    # ---- A2 召回：命中定向的全部候选都进入计算，top_n 只管明细条数 ----
     t = time.time()
-    pool, recall_total, truncated = _recall(snap, spec, top_n)
+    pool = _recall(snap, spec)
     a2_ms = (time.time() - t) * 1000.0
 
     # ---- A3 门禁（不注入 LLM 适配分，与 CLI explain、浏览器引擎同口径）----
@@ -430,9 +650,8 @@ def plan(body: Dict[str, Any]) -> Dict[str, Any]:
     )
 
     n_pass = sum(1 for r in results.values() if r.verdict in verdicts)
-    recall_label = "召回" if not truncated else "召回（%d 人命中定向，按 top_n 取前 %d）" % (recall_total, top_n)
     funnel = [
-        {"stage": "recall", "label": recall_label, "count": len(pool)},
+        {"stage": "recall", "label": "召回（命中定向的全部候选，计算不截断）", "count": len(pool)},
         {"stage": "gate", "label": "通过门禁", "count": n_pass},
         {"stage": "allocated", "label": "进入清单", "count": len(campaign_plan.selected)},
     ]
@@ -445,9 +664,18 @@ def plan(body: Dict[str, Any]) -> Dict[str, Any]:
         "unallocated_why": _unallocated_why(campaign_plan, candidates_raw, remaining),
         "picked": len(campaign_plan.selected),
         "arms": _arms(campaign_plan, baseline, diversified, row),
+        # 契约 §4.1：这组对比的口径声明（判优字段 / 裁判来源 / 两个假设 / 链路分离）
+        "judge": _judge_block(),
         "saved_usd": round(float(row["saved_usd"]), 2),
         "saved_share": round(float(row["saved_share_of_budget"]), 4),
     }
+
+    # ---- 预算明显花不出去时，同一次请求里把三条放宽建议算出来 ----
+    # 放在 plan 里而不是单开一个端点：读者看到"只花掉 2%"的下一个动作一定是"那怎么办"，
+    # 让他为此再点一次、再等一次，是把工程分层的成本转嫁给使用者。
+    # 前提是这个"花不完"必须是真的：召回不截断之后，低利用率只会来自定向本身太窄
+    # （候选池里买不到能满足结构配额的库存），而不是被接口自己截出来的假象。
+    advice = _advice(snap, spec, campaign_plan, pool, results)
 
     timings = [
         {"agent": "A1", "label": AGENT_LABEL["A1"], "ms": int(round(a1_ms))},
@@ -458,14 +686,35 @@ def plan(body: Dict[str, Any]) -> Dict[str, Any]:
         {"agent": "A6", "label": AGENT_LABEL["A6"], "ms": int(round(a6_ms))},
     ]
 
+    # 明细条数 = min(explain_limit, top_n)：两者都只裁"看多少条"，一条都不裁计算。
+    detail_rows = min(explain_limit, top_n)
+
     return {
         "ok": True,
         "brief": brief_block,
         "funnel": funnel,
-        "candidates": rows[:explain_limit],
+        # 契约 §4.2：这次计算到底用了多少人、返回了多少条明细，写在响应体里而不是文档里。
+        # 有了它，"服务与离线 CLI 是同一道题"这句话是可核对的，而不是一句承诺。
+        "scope": {
+            "recall_total": len(pool),
+            "computed_on": len(pool),
+            "detail_rows": min(detail_rows, len(rows)),
+            "truncated_for_compute": False,
+            "note": (
+                "命中定向的 %d 人全部进入门禁与预算计算（召回不截断），"
+                "与离线命令行对同一条需求跑出的方案是同一道题；"
+                "请求里的两个条数上限只决定返回多少条候选明细，不影响分配结果。"
+                % len(pool)
+            ),
+        },
+        "candidates": rows[:detail_rows],
         "allocation": allocation,
+        # 契约 §4：预算利用率低于 60% 时给出的放宽建议；花得出去时为空数组
+        "advice": advice,
         "timings": timings,
-        # 契约 §4：本次召回集合内**每一条**的判定，按 kox_id 升序，供前端逐条比对
+        # 契约 §4：本次召回集合内**每一条**的判定，按 kox_id 升序，供前端逐条比对。
+        # 必须覆盖**参与计算的全部候选**：前端拿这批 id 交给浏览器 TS 引擎重算，
+        # 少给一条，两侧算的就不是同一道题，页面上的金额也会和服务返回的对不上。
         "parity_payload": {
             "verdicts": [
                 {"kox_id": kox_id, "verdict": results[kox_id].verdict} for kox_id in sorted(results.keys())

@@ -156,6 +156,27 @@ GEO_NEIGHBORS: Final[dict[str, tuple[str, ...]]] = {
     "UA": ("PL", "RU", "DE"),
 }
 
+
+def neighbor_markets(markets: tuple[str, ...] | list[str] | frozenset[str]) -> tuple[str, ...]:
+    """给定目标市场，按 :data:`GEO_NEIGHBORS` 展开到"含相邻市场"的市场集合。
+
+    口径三条，都刻意保守：
+    1. 邻国关系直接取 ``GEO_NEIGHBORS``，不另立一张"区域表"（否则同一个"相邻"
+       在造数与选人两处会有两种定义）；
+    2. 只保留 ``COUNTRIES`` 里存在的国家——达人库里没有的国家扩了也召不到人，
+       写进建议里就是空头承诺；
+    3. 原市场一并保留，返回升序去重元组（同一批输入永远得到同一个输出）。
+
+    这是一个**纯查表函数**：不读达人数据、不做任何判定，只回答"相邻市场是哪些"。
+    """
+    out = {str(m) for m in markets if str(m) in COUNTRIES}
+    for market in markets:
+        for neighbor in GEO_NEIGHBORS.get(str(market), ()):
+            if neighbor in COUNTRIES:
+                out.add(neighbor)
+    return tuple(sorted(out))
+
+
 # ---------------------------------------------------------------------------
 # 8 大行业品类（SPEC 3.1）
 # ---------------------------------------------------------------------------

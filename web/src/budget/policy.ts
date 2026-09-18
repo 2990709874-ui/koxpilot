@@ -43,6 +43,14 @@ export const MAX_REPAIR_ROUNDS = 8;
 /** review 档默认不进分配池：review 的语义是"待人核"，自动分配不该替人拍板。 */
 export const INCLUDE_REVIEW_BY_DEFAULT = false;
 
+/**
+ * review 档"带折扣下单"的单人金额系数（镜像 Python `budget/policy.REVIEW_SPEND_DISCOUNT`）。
+ *
+ * 只用于「预算花不出去」时的放宽建议测算：先给一个小额试投位，人核通过再追加到全额。
+ * 正式分配链路不受它影响。
+ */
+export const REVIEW_SPEND_DISCOUNT = 0.5;
+
 /** 采购单位是"内容条数"而不是"人"：一个达人一个 campaign 内最多投 3 条。 */
 export const MAX_POSTS_PER_KOX = 3;
 /** 同一达人第 n 条的边际曝光衰减（受众重叠 → 净增触达递减）。显式建模假设。 */

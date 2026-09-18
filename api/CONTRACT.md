@@ -1,4 +1,7 @@
-# KOXPilot HTTP API 契约（v1，冻结）
+# KOXPilot HTTP API 契约（v1.1）
+
+> v1.1 相对 v1.0 只改一处口径：`options.top_n` 不再截断进入计算的候选池（见 §4），
+> 并新增只读的 `scope` 块把这件事写进响应体（见 §4.2）。字段只增不减，v1.0 的调用方不需要改。
 
 > 这份契约是前后端唯一的对齐依据。后端实现与前端调用**都必须**严格匹配本文件。
 > 任何字段增删都要先改这里。
@@ -30,7 +33,7 @@
 {
   "meta": {
     "engine": "python",
-    "engine_version": "1.0.0",
+    "engine_version": "1.1.0",
     "dataset_sha256": "29500afd5390…",
     "kox_count": 5000,
     "thresholds_source": "output/thresholds.json",
@@ -72,7 +75,12 @@
 
 - `brief_text`：自由文本，必填（除非给了 `brief_id`）。
 - `brief_id`：可选，取预置 brief（`data/briefs.json` 里的 id），此时忽略 `brief_text`。
-- `options.top_n`：召回上限，默认 200，上限 500。
+- `options.top_n`：**展示用的明细条数上限**，默认 200，上限 500。
+  它与 `explain_limit` 一样只裁「返回多少条候选明细」（实际条数取两者的较小值），
+  **不裁进入计算的候选池**——命中定向的全部候选都进门禁与预算计算。
+  > v1.0 里这个参数同时截断了召回集合，导致同一条 BRIEF-001 在服务上只花掉 7.1% 的预算、
+  > 在离线 CLI 上花掉 99.8%（分配器的结构配额是在候选池上求解的，池被截掉之后
+  > 「买得起又能满足配额」的库存也跟着消失）。截断展示是合理的，截断计算是错的，故本条口径已修正。
 - `options.explain_limit`：返回多少条带完整证据链的达人，默认 60，上限 200。
 
 响应：
@@ -97,10 +105,17 @@
     ]
   },
   "funnel": [
-    { "stage": "recall",  "label": "召回",     "count": 182 },
+    { "stage": "recall",  "label": "召回（命中定向的全部候选，计算不截断）", "count": 182 },
     { "stage": "gate",    "label": "通过门禁", "count": 7 },
     { "stage": "allocated","label": "进入清单","count": 4 }
   ],
+  "scope": {
+    "recall_total": 182,
+    "computed_on": 182,
+    "detail_rows": 60,
+    "truncated_for_compute": false,
+    "note": "命中定向的 182 人全部进入门禁与预算计算（召回不截断）…"
+  },
   "candidates": [
     {
       "kox_id": "KOX-01234",
@@ -126,12 +141,61 @@
     "unallocated_why": "剩余额度低于单人最低起投",
     "picked": 4,
     "arms": [
-      { "arm": "koxpilot", "label": "KOXPilot 决策", "spend": 78400, "expected_value": 1234.5 },
-      { "arm": "follower_rank", "label": "按粉丝量排序", "spend": 80000, "expected_value": 901.2 }
+      {
+        "arm": "koxpilot",
+        "label": "KOXPilot 决策",
+        "spend": 1249.75,
+        "n_selected": 4,
+        "judge": "ground_truth",
+        "effective_views_gt": 67252.0,
+        "effective_views_gt_per_dollar": 53.81,
+        "effective_views_gt_lenient": 67252.0,
+        "effective_views_gt_lenient_per_dollar": 53.81,
+        "waste_usd": 0,
+        "engine_expected_value": 45264.8,
+        "engine_value_per_dollar": 36.22,
+        "expected_value": 67252.0,
+        "value_per_dollar": 53.81
+      },
+      {
+        "arm": "follower_rank",
+        "label": "按粉丝量排序",
+        "spend": 79997.39,
+        "judge": "ground_truth",
+        "effective_views_gt": 3997286.0,
+        "effective_views_gt_per_dollar": 49.97,
+        "effective_views_gt_lenient": 4104928.0,
+        "effective_views_gt_lenient_per_dollar": 51.31,
+        "waste_usd": 4326.86,
+        "engine_expected_value": 1094186.7,
+        "engine_value_per_dollar": 13.68,
+        "expected_value": 3997286.0,
+        "value_per_dollar": 49.97
+      }
     ],
+    "judge": {
+      "metric": "effective_views_gt_per_dollar",
+      "judge": "ground_truth",
+      "main_assumption": "主口径：标注为水号的达人，其曝光按 0 计入有效曝光",
+      "lenient_assumption": "宽松口径：水号曝光按 50% 计入有效曝光。两个口径同向才说明结论不依赖该假设",
+      "engine_score_role": "engine_value_per_dollar 是引擎的事前估分（选人排序依据），只作次级信息展示，不参与判优",
+      "pipeline_separation": "选人与分钱（A1–A5）只读可观测字段，读不到标注；只有 A6 审计这一组对比读标注（静态扫描 + 运行期哨兵在守这条边界）"
+    },
     "saved_usd": 21400,
     "saved_share": 0.267
   },
+  "advice": [
+    {
+      "key": "expand_markets",
+      "title": "加投相邻市场：AR、CO、US",
+      "action": "目标市场从 BR、MX 扩到 AR、BR、CO、MX、US（相邻市场…），其余定向不动",
+      "spendable_usd": 44540.97,
+      "extra_spendable_usd": 43291.22,
+      "utilization_after": 0.5568,
+      "extra_picked": 24,
+      "quality_note": "新进清单的 24 人同样逐条过了四层门禁…"
+    }
+  ],
   "timings": [
     { "agent": "A1", "label": "brief 解析", "ms": 12 },
     { "agent": "A3", "label": "四层门禁", "ms": 133 }
@@ -157,6 +221,74 @@
 - `brief.notes`：字符串数组，可为空。装两类话——解析时发现的歧义与硬性要求，以及
   **A1 这次走的是模型还是规则、以及为什么**（没凭据 / 超时 / 报错都会写在这里）。
   前端可以不显示它，但服务端不允许把这句话吞掉：`parse_path` 说的是结果，`notes` 说的是原因。
+
+### 4.1 三条臂：按「每美元」比，且以标注结果为裁判
+
+`arms[]` 里三条臂的 `spend` 可以差几十倍（KOXPilot 只买门禁过关的人，基线臂会把预算花光），
+所以**绝对值不可直接并排比较**；同时**判优不能用引擎自己的分数**——用引擎的估分给引擎打分是自证。
+因此判优字段一律取 A6 审计按 ground truth 的结算（Python 侧 `eval/audit.plan_audit` +
+`eval/audit.effective_view_calibers`，服务层不写第二套除法）：
+
+| 字段 | 含义 |
+| --- | --- |
+| `judge` | 裁判来源，恒为 `"ground_truth"`（数据集标注，不是引擎分数） |
+| `n_selected` | 这条臂实际拿到钱的达人数 = 要签、要沟通、要交付的**合约数**。是成本项，不参与判优——摊得越薄每美元越便宜，但报价、寄样、审稿、结算的成本不在判优指标里 |
+| `effective_views_gt` | 主口径有效曝光：标注为水号的达人，其曝光按 **0** 计 |
+| `effective_views_gt_per_dollar` | **判优字段** = `effective_views_gt / spend` |
+| `effective_views_gt_lenient` | 宽松口径有效曝光：水号曝光按 **50%** 计（`FRAUD_RESIDUAL_VIEW_SHARE`） |
+| `effective_views_gt_lenient_per_dollar` | 宽松口径的每美元有效曝光 |
+| `waste_usd` | 这条臂花在真水号 / 真高风险号上的钱，与 `saved_usd` 同源（`wasted_spend_usd`），不另算一份 |
+| `engine_expected_value` | 引擎**事前估分**合计（`budget/value.value(k)` 按等效条数加总） |
+| `engine_value_per_dollar` | 每美元的引擎事前估分 |
+
+- 两个"每美元"字段在 `spend` 为 0 时给 `null`，不允许写 0——「没花钱」和「花了钱没效果」是两件事。
+- **两个口径都必须给出**：只给对自己有利的那个不算结论。两个口径的最高项一致时，才可以说
+  结论不依赖「水号曝光是否完全作废」这个假设；不一致就照实说不一致。
+- `engine_*` 是选人排序的依据，只能作为**次级信息**（前端收进折叠区），不参与本对比的判优。
+- 兼容字段：`expected_value` 与 `effective_views_gt` 同数同义，`value_per_dollar` 与
+  `effective_views_gt_per_dollar` 同数同义。保留是因为 v1 已经放出去了，新调用方请用
+  `effective_views_gt*`。
+
+前端主对比只允许用 `effective_views_gt_per_dollar` 与 `waste_usd`，并必须同时标明各臂花费不同。
+
+**口径分离（`allocation.judge`）**：`judge` 块把「谁在判、按什么假设判、读标注的是哪一段」写进响应体，
+不靠文档口头约定。硬边界是：选人与分钱（A1–A5：召回 / 语义适配 / 门禁 / 估价 / 分配）**只读可观测字段，
+读不到 `gt`**；只有 A6 审计这一组对比读 `gt`。这条边界由 `tests/test_no_leakage.py` 的 AST 静态扫描
+（生产模块不得出现 `gt` 访问）与运行期泄漏哨兵共同守住。
+
+### 4.2 `scope`：这次计算用了多少人
+
+| 字段 | 含义 |
+| --- | --- |
+| `recall_total` | 命中定向的人数 |
+| `computed_on` | **真正进入门禁与预算计算的人数**；必须等于 `recall_total` |
+| `detail_rows` | 本次返回的候选明细条数（= min(`explain_limit`, `top_n`, 实际条数)） |
+| `truncated_for_compute` | 恒为 `false`；为 `true` 就意味着服务与离线 CLI 在算两道题 |
+
+`parity_payload.verdicts` 覆盖的是 `computed_on` 这批人（不是 `detail_rows`）：
+前端拿这批 id 交给浏览器 TS 引擎重算，少给一条，两侧算的就不是同一道题，
+页面上的金额也会与 `allocation` 对不上。
+
+### 4.3 `advice[]`：预算花不出去时的放宽建议
+
+触发条件：`allocated_usd / budget_usd < 60%`。达到 60% 时 `advice` 为**空数组**（钱花得出去就不需要建议）。
+最多三条，互相独立（每条都是「只改这一处」），按 `extra_spendable_usd` 降序：
+
+| `key` | 放宽的是什么 | 计算方式 |
+| --- | --- | --- |
+| `relax_age` | 人群定向：去掉 `target_age_buckets` | 在放宽后的规格上真跑一遍 A2→A3→A5 |
+| `expand_markets` | 地域定向：按 `taxonomy.neighbor_markets` 扩到相邻市场 | 同上（相邻关系取包内既有口径，不在服务层写国家表） |
+| `discount_review` | 采购动作：`review` 档带折扣进清单 | 纳入 review 重跑分配，review 单人金额乘 `budget/policy.REVIEW_SPEND_DISCOUNT` |
+
+字段：
+- `title` / `action`：中文人话，`action` 写清「改哪一处、其余不动」。
+- `spendable_usd`：该放宽下**真跑出来**的花费；`extra_spendable_usd` = 它减去本次花费，
+  允许为 0 或负数（放宽了也没多花出钱是一个有效结论，不做截断）。
+- `utilization_after`：放宽后的预算利用率。
+- `extra_picked`：比本次清单多进来的人数。
+- `quality_note`：这批新增达人的质量口径（门禁判定是什么、放宽的是定向还是采购动作、风险敞口多少）。
+
+三条建议全部走 `koxpilot` 包内既有函数，服务层不新增任何判定或排序逻辑。
 
 ## 5. `GET /api/kox/{kox_id}/explain`
 

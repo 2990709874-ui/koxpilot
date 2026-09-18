@@ -19,8 +19,10 @@ from typing import Any
 import pytest
 
 from koxpilot.eval.audit import (
+    JUDGE_GROUND_TRUTH,
     RATIO_FRAGILE_BASELINE_RATE,
     counterfactual_report,
+    effective_view_calibers,
     plan_audit,
 )
 from koxpilot.types import Allocation, BudgetPlan
@@ -85,12 +87,27 @@ class TestEffectiveViewRate:
         # 宽松口径（水号曝光按 50% 计）必然不低于主口径，且同样有界
         assert audit["effective_view_rate_lenient"] == 0.75
 
+        # 对外的"每美元"换算（接口/前端共用这一处）：裁判是标注，两个口径一起给。
+        # 分母显式传入是为了让调用方能用自己四舍五入后的花费，保证"每美元 × 花费"自洽。
+        caliber = effective_view_calibers(audit)
+        assert caliber["judge"] == JUDGE_GROUND_TRUTH
+        assert caliber["effective_views_gt"] == 1_000_000
+        assert caliber["effective_views_gt_per_dollar"] == pytest.approx(100.0)
+        assert caliber["effective_views_gt_lenient"] == 1_500_000
+        assert caliber["effective_views_gt_lenient_per_dollar"] == pytest.approx(150.0)
+        assert effective_view_calibers(audit, 20_000.0)["effective_views_gt_per_dollar"] == 50.0
+
     def test_rate_is_none_not_zero_when_nothing_was_bought(self) -> None:
         """名义曝光为 0 时"有效曝光率 = 0"是错的（无定义），必须给 None。"""
         audit = plan_audit(_plan("koxpilot", []), {})
         assert audit["nominal_views"] == 0
         assert audit["effective_view_rate"] is None
         assert audit["effective_view_rate_lenient"] is None
+        # 同理，花费为 0 时"每美元有效曝光"也一律给 None：
+        # 写 0 会把"没花钱"记成"花了钱没效果"。
+        caliber = effective_view_calibers(audit)
+        assert caliber["effective_views_gt_per_dollar"] is None
+        assert caliber["effective_views_gt_lenient_per_dollar"] is None
 
 
 class TestUpliftDenominatorExplosion:

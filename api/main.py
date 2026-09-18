@@ -1,6 +1,6 @@
 """KOXPilot HTTP 服务入口。
 
-对外接口严格按 ``api/CONTRACT.md``（v1，冻结）：
+对外接口严格按 ``api/CONTRACT.md``（v1.1）：
 
     GET  /api/health
     POST /api/plan

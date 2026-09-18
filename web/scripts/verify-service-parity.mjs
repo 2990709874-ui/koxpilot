@@ -27,6 +27,8 @@ import { Thresholds } from '../src/engine/thresholds.ts';
 import { evaluate } from '../src/engine/engine.ts';
 import { parseBrief } from '../src/engine/briefParse.ts';
 import { specFromDict, NEUTRAL_SPEC } from '../src/engine/types.ts';
+import { gateResultsFor, gtIndex, planAudit, planBaseline, planCampaign, planDiversifiedNoGate } from '../src/budget/index.ts';
+import { armRow } from '../src/lib/planView.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DATA = path.join(HERE, '..', 'public', 'data');
@@ -51,6 +53,76 @@ async function post(pathname, body) {
 }
 
 let failures = 0;
+
+/** 判优口径要逐字段对齐的字段清单（契约 §4.1）。 */
+const ARM_FIELDS = [
+  'judge',
+  'effective_views_gt',
+  'effective_views_gt_per_dollar',
+  'effective_views_gt_lenient',
+  'effective_views_gt_lenient_per_dollar',
+  'waste_usd',
+  'engine_expected_value',
+  'engine_value_per_dollar',
+  'spend',
+  'n_selected',
+];
+
+/**
+ * 三条臂的判优口径比对：服务返回的 `allocation.arms[]` vs 浏览器引擎现算的同名字段。
+ *
+ * 为什么要单独比这一组：页面上"这次谁更划算"只看 `effective_views_gt_per_dollar`，
+ * 而这个数在服务态来自 Python A6 审计、在降级态来自浏览器 A6 审计。
+ * 只比 verdict 不能证明两条通道给的是同一个结论——所以这里把两个口径的每美元、
+ * 浪费金额与引擎事前估分逐字段对齐。
+ */
+function checkArms(label, data, spec) {
+  const serviceArms = data.allocation?.arms ?? [];
+  if (serviceArms.length === 0) {
+    failures += 1;
+    console.log(`✗ ${label} 判优口径：服务没有返回 allocation.arms[]`);
+    return;
+  }
+  // 用服务本次真正参与计算的候选集（parity_payload 里的 kox_id）重算。
+  // 服务 v1.1 起召回不再截断，parity_payload 就是分配器看到的全量候选池，
+  // 请求里的明细条数上限只影响 candidates[] 展示，不影响这里的对齐。
+  const pool = data.parity_payload.verdicts.map((r) => byId.get(r.kox_id)).filter(Boolean);
+  const results = gateResultsFor(pool, spec, thresholds);
+  const plan = planCampaign(pool, spec, thresholds, results);
+  const baseline = planBaseline(pool, spec, thresholds, results);
+  const diversified = planDiversifiedNoGate(pool, spec, thresholds, results);
+  const gtById = gtIndex(records);
+  const mine = new Map(
+    [
+      ['koxpilot', plan],
+      ['follower_rank', baseline],
+      ['diversified_no_gate', diversified],
+    ].map(([name, p]) => [name, armRow(name, p, planAudit(p, gtById))]),
+  );
+
+  const diffs = [];
+  for (const arm of serviceArms) {
+    const ts = mine.get(arm.arm);
+    if (!ts) {
+      diffs.push(`${arm.arm}：浏览器侧没有这条臂`);
+      continue;
+    }
+    for (const f of ARM_FIELDS) {
+      if (JSON.stringify(arm[f]) !== JSON.stringify(ts[f])) {
+        diffs.push(`${arm.arm}.${f} 服务 ${JSON.stringify(arm[f])} / TS ${JSON.stringify(ts[f])}`);
+      }
+    }
+  }
+  if (diffs.length > 0) {
+    failures += 1;
+    console.log(`✗ ${label} 判优口径：${diffs.length} 处差异｜${diffs.slice(0, 4).join('；')}`);
+  } else {
+    console.log(
+      `✓ ${label} 判优口径：${serviceArms.length} 条臂 × ${ARM_FIELDS.length} 个字段逐字段一致` +
+        `（每美元有效曝光 ${serviceArms.map((a) => a.effective_views_gt_per_dollar).join(' / ')}）`,
+    );
+  }
+}
 
 /** 一次 plan 的逐条比对。 */
 async function checkPlan(label, body, spec) {
@@ -83,6 +155,7 @@ async function checkPlan(label, body, spec) {
       (missing ? `，本地数据缺 ${missing} 条` : '') +
       (samples.length ? `｜${samples.join('，')}` : ''),
   );
+  checkArms(label, data, spec);
 }
 
 /** explain 的证据链比对。 */
@@ -124,13 +197,13 @@ if (health.meta.dataset_sha256 !== readJson('manifest.json').dataset.sha256) {
 }
 
 for (const b of briefs) {
-  await checkPlan(`${b.brief_id} 预置`, { brief_id: b.brief_id, options: { top_n: 500, explain_limit: 60 } }, specFromDict(b.spec));
+  await checkPlan(`${b.brief_id} 预置`, { brief_id: b.brief_id, options: { explain_limit: 60 } }, specFromDict(b.spec));
 }
 
 const freeText = '巴西和墨西哥的 Instagram 彩妆，18-24 女性，预算 8 万美金，避开 Focallure';
 await checkPlan(
   '自由文本',
-  { brief_text: freeText, options: { top_n: 500, explain_limit: 60 } },
+  { brief_text: freeText, options: { explain_limit: 60 } },
   parseBrief(freeText, { campaignId: 'CUSTOM', name: '自定义 brief' }).spec,
 );
 

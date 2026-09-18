@@ -497,19 +497,22 @@ export function MixBar({
           </span>
         ))}
       </div>
-      {limits?.map((l) => {
-        const v = l.keys.reduce((a, k) => a + (mix[k] ?? 0), 0);
-        const ok = l.max !== undefined ? v <= l.max + 1e-9 : v >= (l.min ?? 0) - 1e-9;
-        return (
-          <div key={l.name} className="mt-1 flex items-center gap-2 text-[12px]">
-            <span className={ok ? 'text-emerald-600' : 'text-rose-600'}>{ok ? '✓' : '✕'}</span>
-            <span className="text-slate-600">{l.name}</span>
-            <span className="num text-slate-700">
-              {pct1(v)} {l.max !== undefined ? `≤ ${pct1(l.max, 0)}` : `≥ ${pct1(l.min ?? 0, 0)}`}
-            </span>
-          </div>
-        );
-      })}
+      {/* 多条配额并排放：一条一行会把"结构约束"这块撑高，而它们本来就该一起看 */}
+      <div className="flex flex-wrap gap-x-4">
+        {limits?.map((l) => {
+          const v = l.keys.reduce((a, k) => a + (mix[k] ?? 0), 0);
+          const ok = l.max !== undefined ? v <= l.max + 1e-9 : v >= (l.min ?? 0) - 1e-9;
+          return (
+            <div key={l.name} className="mt-1 flex items-center gap-2 text-[12px]">
+              <span className={ok ? 'text-emerald-600' : 'text-rose-600'}>{ok ? '✓' : '✕'}</span>
+              <span className="text-slate-600">{l.name}</span>
+              <span className="num text-slate-700">
+                {pct1(v)} {l.max !== undefined ? `≤ ${pct1(l.max, 0)}` : `≥ ${pct1(l.min ?? 0, 0)}`}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -572,64 +575,6 @@ export function RankStrip({
           <span>p100</span>
         </div>
       </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// 横向条形对比（成本/浪费/曝光两臂对照）
-// ---------------------------------------------------------------------------
-export function DuoBars({
-  rows,
-  fmt = int0,
-  leftName,
-  rightName,
-  leftColor = SERIES.baseline,
-  rightColor = SERIES.primary,
-}: {
-  rows: Array<{ label: string; left: number; right: number; note?: string; goodIsLow?: boolean }>;
-  fmt?: (x: number) => string;
-  leftName: string;
-  rightName: string;
-  leftColor?: string;
-  rightColor?: string;
-}) {
-  return (
-    <div className="space-y-3">
-      <div className="flex gap-4 text-[12px] text-slate-700">
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-sm" style={{ background: onLight(leftColor) }} />
-          {leftName}
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-sm" style={{ background: onLight(rightColor) }} />
-          {rightName}
-        </span>
-      </div>
-      {rows.map((r) => {
-        const max = Math.max(r.left, r.right, 1);
-        return (
-          <div key={r.label} title={r.note}>
-            <div className="flex items-baseline justify-between text-[12.5px]">
-              <span className="text-slate-700">{r.label}</span>
-              <span className="num text-slate-600">
-                <span style={{ color: readableText(leftColor) }}>{fmt(r.left)}</span>
-                <span className="mx-1">→</span>
-                <span style={{ color: readableText(rightColor) }}>{fmt(r.right)}</span>
-              </span>
-            </div>
-            <div className="mt-1 space-y-1">
-              <div className="h-2 overflow-hidden rounded-sm" style={{ background: CHROME.track }}>
-                <div className="h-full rounded-sm" style={{ width: `${(r.left / max) * 100}%`, background: onLight(leftColor) }} />
-              </div>
-              <div className="h-2 overflow-hidden rounded-sm" style={{ background: CHROME.track }}>
-                <div className="h-full rounded-sm" style={{ width: `${(r.right / max) * 100}%`, background: onLight(rightColor) }} />
-              </div>
-            </div>
-            {r.note && <div className="muted mt-1">{r.note}</div>}
-          </div>
-        );
-      })}
     </div>
   );
 }

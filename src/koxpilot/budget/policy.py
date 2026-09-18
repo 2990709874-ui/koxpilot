@@ -19,6 +19,7 @@ __all__ = [
     "MIN_UTILIZATION_TARGET",
     "PRICE_ESTIMATE_QUANTILE",
     "RATIO_CLAMP",
+    "REVIEW_SPEND_DISCOUNT",
     "SINGLE_KOX_MAX_SHARE",
     "constraint_snapshot",
 ]
@@ -86,6 +87,14 @@ MAX_REPAIR_ROUNDS: Final[int] = 8
 
 #: review 档默认不进分配池：review 的产品语义是"待人核"，自动分配不应替人拍板。
 INCLUDE_REVIEW_BY_DEFAULT: Final[bool] = False
+
+#: review 档"带折扣下单"的单人金额系数（**只用于预算放宽建议的测算**，
+#: 正式分配链路仍受 INCLUDE_REVIEW_BY_DEFAULT 约束，行为不变）。
+#:
+#: 为什么是 0.5：review 的语义是"待人核"，不是"不能投"。采购侧对待这类号的常规做法
+#: 是先给一个小额试投位（试水单），人核通过再追加到正常量级。取正常金额的一半，
+#: 对应"先投一半、留一半等复核结论"这个可执行的动作，而不是一个拟合出来的数。
+REVIEW_SPEND_DISCOUNT: Final[float] = 0.5
 
 # ---------------------------------------------------------------------------
 # 采购模型：按"条"买，而不是按"人"买

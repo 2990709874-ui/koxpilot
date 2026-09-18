@@ -15,6 +15,9 @@
 
 from __future__ import annotations
 
-SERVICE_VERSION = "1.0.0"
+#: 服务层版本。1.1.0 修正了一处口径事故：``options.top_n`` 曾同时截断进入计算的
+#: 召回集合，使同一条 brief 的线上预算方案与离线 CLI 差一个数量级（见 CONTRACT.md §4）。
+#: 现在它只裁返回给前端的明细条数，计算池一条不裁。
+SERVICE_VERSION = "1.1.0"
 
 __all__ = ["SERVICE_VERSION"]

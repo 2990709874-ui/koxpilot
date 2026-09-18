@@ -4,24 +4,30 @@
  * 避免各处自己拼字符串时把口径写歪（例如一处按预算算占比、另一处按花费算）。
  */
 
+/** −0 归一成 0：`Math.round(-0.4)` 会给 -0，直接格式化会印出 "$-0" 这种没人看得懂的数。 */
+const noNegZero = (x: number): number => (x === 0 ? 0 : x);
+
+/** 四舍五入后全是 0 的负数（-0.04% → "-0.0%"）同样按 0 印：页面上"负的零"只会让人以为算错了。 */
+const dropZeroSign = (s: string): string => (/^-0(\.0+)?$/.test(s) ? s.slice(1) : s);
+
 export const usd0 = (x: number | null | undefined): string =>
-  x === null || x === undefined || !Number.isFinite(x) ? '—' : `$${Math.round(x).toLocaleString('en-US')}`;
+  x === null || x === undefined || !Number.isFinite(x) ? '—' : `$${noNegZero(Math.round(x)).toLocaleString('en-US')}`;
 
 export const usd2 = (x: number | null | undefined): string =>
   x === null || x === undefined || !Number.isFinite(x)
     ? '—'
-    : `$${x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    : `$${noNegZero(x).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export const pct1 = (x: number | null | undefined, digits = 1): string =>
-  x === null || x === undefined || !Number.isFinite(x) ? '—' : `${(x * 100).toFixed(digits)}%`;
+  x === null || x === undefined || !Number.isFinite(x) ? '—' : `${dropZeroSign((noNegZero(x) * 100).toFixed(digits))}%`;
 
 export const signedPct1 = (x: number | null | undefined, digits = 1): string =>
   x === null || x === undefined || !Number.isFinite(x)
     ? '—'
-    : `${x >= 0 ? '+' : ''}${(x * 100).toFixed(digits)}%`;
+    : `${x >= 0 ? '+' : ''}${dropZeroSign((noNegZero(x) * 100).toFixed(digits))}%`;
 
 export const int0 = (x: number | null | undefined): string =>
-  x === null || x === undefined || !Number.isFinite(x) ? '—' : Math.round(x).toLocaleString('en-US');
+  x === null || x === undefined || !Number.isFinite(x) ? '—' : noNegZero(Math.round(x)).toLocaleString('en-US');
 
 /** 1.2万/4.7M 这类紧凑写法，只用于图表轴与徽标，正文一律给完整数字。 */
 export function compact(x: number | null | undefined, digits = 1): string {

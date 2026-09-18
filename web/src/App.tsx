@@ -9,7 +9,7 @@ import { TabErrorBoundary } from './components/TabErrorBoundary';
 import { GATE_ROLES, ablationVariant, evaluateDataset, runPipeline, sensitivityScan } from './lib/pipeline';
 import type { AblationRow, EvalReport, PipelineResult, SensitivityPoint, StageReport } from './lib/pipeline';
 import { loadArtifacts, type Artifacts } from './lib/artifacts';
-import { API_BASE } from './lib/api';
+import { apiBase } from './lib/api';
 import { SOURCE_LABEL, startProbe, useComputeSource } from './lib/computeSource';
 import type { Kox } from './engine/types';
 import { ALL_GATES } from './engine/policy';
@@ -282,12 +282,12 @@ export default function App(): React.ReactElement {
               <Hint
                 text={
                   cs.source === 'backend'
-                    ? `服务地址 ${API_BASE}｜服务侧数据集 sha256 ${String(cs.meta?.dataset_sha256 ?? '—').slice(0, 16)}…，共 ${int0(Number(cs.meta?.kox_count ?? 0))} 条｜探活往返 ${Math.round(cs.probeMs ?? 0)} ms`
+                    ? `服务地址 ${apiBase()}｜服务侧数据集 sha256 ${String(cs.meta?.dataset_sha256 ?? '—').slice(0, 16)}…，共 ${int0(Number(cs.meta?.kox_count ?? 0))} 条｜探活往返 ${Math.round(cs.probeMs ?? 0)} ms`
                     : cs.source === 'browser'
                       ? `${cs.note ?? '服务未响应'}。本次的解析、门禁、预算与审计由浏览器内的 TypeScript 引擎完成，功能与服务侧一致。`
                       : cs.warming
                         ? '服务正在加载数据集，3 秒后重试一次。'
-                        : `正在确认 Python 服务是否可用（${API_BASE}）。`
+                        : `正在确认 Python 服务是否可用（${apiBase()}）。`
                 }
               >
                 <Badge

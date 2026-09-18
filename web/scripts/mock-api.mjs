@@ -26,6 +26,7 @@ import { evaluate } from '../src/engine/engine.ts';
 import { parseBrief } from '../src/engine/briefParse.ts';
 import { specFromDict, NEUTRAL_SPEC } from '../src/engine/types.ts';
 import { counterfactualRow, gtIndex, planBaseline, planCampaign, targetingReason } from '../src/budget/index.ts';
+import { browserAdvice, browserArms, browserUnallocatedWhy } from '../src/lib/planView.ts';
 import { ruleLabel } from '../src/lib/pipeline.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -68,7 +69,7 @@ function meta(elapsedMs, extra = {}) {
   const s = load();
   return {
     engine: 'python',
-    engine_version: '1.0.0',
+    engine_version: '1.1.0',
     dataset_sha256: s.datasetSha256,
     kox_count: s.records.length,
     thresholds_source: 'output/thresholds.json',
@@ -122,8 +123,10 @@ function buildPlan(body) {
     source = 'free_text';
   }
 
+  // 契约 v1.1：top_n 与 explain_limit 都只裁「返回多少条明细」，一条都不裁计算池
   const topN = Math.min(Number(body.options?.top_n ?? 200) || 200, 500);
   const explainLimit = Math.min(Number(body.options?.explain_limit ?? 60) || 60, 200);
+  const detailRows = Math.min(topN, explainLimit);
 
   // A1
   const tA1 = performance.now();
@@ -144,7 +147,8 @@ function buildPlan(body) {
   for (const kox of s.records) {
     if (targetingReason(kox, spec) === null) pool.push(kox);
   }
-  const recalled = pool.slice(0, topN);
+  // 召回不截断：命中定向的全部候选都进门禁与预算（截断计算会让服务与离线 CLI 算两道题）
+  const recalled = pool;
   const a2Ms = performance.now() - tA2;
 
   // A3 门禁
@@ -170,7 +174,27 @@ function buildPlan(body) {
 
   // A6 审计
   const tA6 = performance.now();
-  const audit = counterfactualRow(spec.campaign_id, plan, baseline, gtIndex(recalled));
+  const gtById = gtIndex(recalled);
+  const audit = counterfactualRow(spec.campaign_id, plan, baseline, gtById);
+  const arms = browserArms({
+    records: recalled,
+    spec,
+    thresholds: s.thresholds,
+    results,
+    plan,
+    baseline,
+    gtById,
+    decay: 0.7,
+  });
+  const advice = browserAdvice({
+    records: recalled,
+    spec,
+    thresholds: s.thresholds,
+    results,
+    plan,
+    includeReview: false,
+    decay: 0.7,
+  });
   const a6Ms = performance.now() - tA6;
 
   const allocById = new Map(plan.selected.map((a) => [a.kox_id, a]));
@@ -183,7 +207,7 @@ function buildPlan(body) {
   );
   const byId = new Map(recalled.map((k) => [String(k.kox_id), k]));
 
-  const candidates = ordered.slice(0, explainLimit).map((r) => {
+  const candidates = ordered.slice(0, detailRows).map((r) => {
     const kox = byId.get(r.kox_id) ?? {};
     const alloc = allocById.get(r.kox_id) ?? null;
     return {
@@ -225,34 +249,29 @@ function buildPlan(body) {
         fields,
       },
       funnel: [
-        { stage: 'recall', label: '召回', count: recalled.length },
+        { stage: 'recall', label: '召回（命中定向的全部候选，计算不截断）', count: recalled.length },
         { stage: 'gate', label: '通过门禁', count: counts.pass },
         { stage: 'allocated', label: '进入清单', count: plan.n_selected },
       ],
+      scope: {
+        recall_total: recalled.length,
+        computed_on: recalled.length,
+        detail_rows: Math.min(detailRows, ordered.length),
+        truncated_for_compute: false,
+        note: `命中定向的 ${recalled.length} 人全部进入门禁与预算计算（召回不截断）。`,
+      },
       candidates,
       allocation: {
         budget_usd: plan.budget_usd,
         allocated_usd: Math.round(plan.spent_usd * 100) / 100,
         unallocated_usd: Math.round((plan.budget_usd - plan.spent_usd) * 100) / 100,
-        unallocated_why: '剩余额度低于单人最低起投',
+        unallocated_why: browserUnallocatedWhy(plan),
         picked: plan.n_selected,
-        arms: [
-          {
-            arm: 'koxpilot',
-            label: 'KOXPilot 决策',
-            spend: Math.round(plan.spent_usd * 100) / 100,
-            expected_value: Math.round(plan.est_effective_views),
-          },
-          {
-            arm: 'follower_rank',
-            label: '按粉丝量排序',
-            spend: Math.round(baseline.spent_usd * 100) / 100,
-            expected_value: Math.round(baseline.est_effective_views),
-          },
-        ],
+        arms,
         saved_usd: Math.round(audit.saved_usd * 100) / 100,
         saved_share: Number(audit.saved_share_of_budget.toFixed(4)),
       },
+      advice,
       timings: [
         { agent: 'A1', label: 'brief 解析', ms: Math.round(a1Ms) },
         { agent: 'A2', label: '定向召回', ms: Math.round(a2Ms) },

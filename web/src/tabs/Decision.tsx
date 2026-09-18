@@ -1,13 +1,16 @@
 import React from 'react';
 import { AlertTriangle, Check, Coins, X } from 'lucide-react';
-import { DuoBars, MixBar } from '../components/charts';
+import { MixBar } from '../components/charts';
 import { Collapse, Verdict } from '../components/Collapse';
 import { EvidenceBody } from '../components/EvidenceDrawer';
 import { Badge, CountUp, Drawer, Hint, Note, Panel, Segmented, Stat, TruthChip } from '../components/ui';
 import { useLiveRun } from './Console';
 import { BUCKET_ORDER, PLATFORM_LABEL } from '../engine/taxonomy';
+import { Thresholds, type ThresholdsPayload } from '../engine/thresholds';
 import type { Kox } from '../engine/types';
 import type { Allocation, BudgetPlan } from '../budget/allocator';
+import { planAudit, planDiversifiedNoGate } from '../budget';
+import type { AllocationArm } from '../lib/api';
 import type { Loose } from '../lib/artifacts';
 import {
   BUCKET_LABEL,
@@ -23,6 +26,8 @@ import {
   usd2,
 } from '../lib/format';
 import type { PipelineResult } from '../lib/pipeline';
+import { armRow, judgeBlock, valuePerDollar } from '../lib/planView';
+import { ArmsCompare } from './budgetBlocks';
 
 /** 清单默认只展开前 N 行，其余按需展开（避免整页被一张长表撑开）。 */
 const TOP_N = 15;
@@ -109,6 +114,38 @@ function useRobustSaved(): { mean: number; std: number; low: number; high: numbe
   return v;
 }
 
+/**
+ * 第三条选人方式（只做结构分散、不做质量门禁）在浏览器侧现算。
+ *
+ * 为什么要在这张对照表里给它一行：服务的 `allocation.arms[]` 一直是三条臂，
+ * 页面只画两条就等于替读者藏掉一个可能更划算的对手——尤其它经常"每美元买得更多、
+ * 但把更多钱花在水号上"，这正是这张表要读出来的取舍。
+ * 阈值表取不到时返回 `null`（少一行），不编数字顶上。
+ */
+function useDiversifiedArm(result: PipelineResult | null): AllocationArm | null {
+  const [arm, setArm] = React.useState<AllocationArm | null>(null);
+  React.useEffect(() => {
+    setArm(null);
+    if (!result) return;
+    let alive = true;
+    void (async () => {
+      try {
+        const res = await fetch(`${import.meta.env.BASE_URL}data/thresholds.json`, { cache: 'force-cache' });
+        if (!res.ok) return;
+        const thr = Thresholds.fromDict((await res.json()) as ThresholdsPayload);
+        const plan = planDiversifiedNoGate(result.pool, result.spec, thr, result.results, { decay: result.decay });
+        if (alive) setArm(armRow('diversified_no_gate', plan, planAudit(plan, result.gtById)));
+      } catch {
+        // 少一条对照臂总比给一个算不出来的数好
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [result]);
+  return arm;
+}
+
 export function DecisionTab({
   result: appResult,
   koxById,
@@ -139,8 +176,19 @@ export function DecisionTab({
    */
   const live = useLiveRun();
   const result = live?.result ?? appResult;
-  /** 当前结果不是「全量产物口径」（自定义 brief 或服务本次召回窗口）→ 关闭与产物的逐项对数。 */
-  const offArtifactScope = Boolean(live);
+  /** 第三条对照臂（只做结构分散、不做质量门禁）：与另外两臂同一份候选与报价。 */
+  const diversifiedArm = useDiversifiedArm(result);
+  /**
+   * 当前结果能不能和 Python 离线产物逐项对数。
+   *
+   * 判据只有一条：**产物里有没有这条 campaign**。
+   * 服务侧召回自 v1.1 起不再截断（命中定向的全部候选都进计算），
+   * 所以走服务跑的预置 brief 与离线 CLI 是同一道题，可以、也应该逐项对上；
+   * 只有自己敲的自由 brief 天然没有对应产物，那才是真的不可比。
+   * （v1.0 这里一律关掉对数，正好把"线上与离线差一个数量级"这件事藏了起来。）
+   */
+  const livePlans = ((budgetArtifact?.plans ?? []) as Loose[]).map((p) => String(p.campaign_id));
+  const offArtifactScope = Boolean(live) && !livePlans.includes(String(live?.result?.spec.campaign_id ?? ''));
 
   const plan = result ? (arm === 'koxpilot' ? result.plan : result.baseline) : null;
 
@@ -203,6 +251,19 @@ export function DecisionTab({
   const other = arm === 'koxpilot' ? result.baseline : result.plan;
   const audit = result.audit;
   const armAudit = arm === 'koxpilot' ? audit.koxpilot : audit.baseline;
+  /**
+   * 三条选人方式的可比口径（与服务返回的 `allocation.arms[]` 同名同义）：
+   * 每美元买到的有效曝光（按标注结算，主口径 + 宽松口径）+ 浪费金额。
+   */
+  const armsView = [
+    armRow('koxpilot', result.plan, audit.koxpilot),
+    armRow('follower_rank', result.baseline, audit.baseline),
+    ...(diversifiedArm ? [diversifiedArm] : []),
+  ];
+  /** 每美元有效曝光相对基线的变化：花费不同的两臂只有这个比法说得通。 */
+  const vpdKox = valuePerDollar(armsView[0]);
+  const vpdBase = valuePerDollar(armsView[1]);
+  const vpdLift = vpdKox !== null && vpdBase !== null && vpdBase > 0 ? vpdKox / vpdBase - 1 : null;
 
   // 产物口径下（不含 review、衰减 0.7）可以和 Python 产物直接对数；参数一改就不可比，如实说明
   // 自定义 brief 不在 Python 产物里，天然不可比 —— 这一点必须显式排除，否则会拿别的 campaign 的数对上去
@@ -258,9 +319,11 @@ export function DecisionTab({
             tone: armAudit.wasted_spend_share > 0.2 ? 'bad' : 'good',
           },
           {
-            label: '有效曝光提升',
-            value: signedPct1(audit.effective_view_uplift),
-            tone: audit.effective_view_uplift >= 0 ? 'good' : 'bad',
+            // 两臂花费能差十几倍，绝对有效曝光的涨跌读出来是"少花钱=做得差"；
+            // 主位放每美元买到的有效曝光，绝对口径降级到下面的对照表里看。
+            label: '每美元有效曝光 vs 基线',
+            value: vpdLift === null ? '—' : signedPct1(vpdLift),
+            tone: (vpdLift ?? 0) >= 0 ? 'good' : 'bad',
           },
         ]}
       />
@@ -278,7 +341,9 @@ export function DecisionTab({
         {live && (
           <Badge className="border-live-300 bg-live-50 text-live-700">
             {live.origin === 'service'
-              ? `候选集 = 服务本次召回的 ${int0(result.pool.length)} 人，与全量产物口径不同`
+              ? offArtifactScope
+                ? `候选集 = 服务本次参与计算的 ${int0(result.pool.length)} 人；这条 brief 不在离线产物里，不可比`
+                : `候选集 = 服务本次参与计算的全部 ${int0(result.pool.length)} 人（召回不截断），与离线产物同口径`
               : `当前是你自己敲的 brief（campaign_id = ${result.spec.campaign_id}），与 Python 产物不可比`}
           </Badge>
         )}
@@ -321,22 +386,17 @@ export function DecisionTab({
 
       <div className="grid gap-3 lg:grid-cols-[1.05fr_1fr]">
         <Panel
-          title="两臂对照：同预算、同候选口径，只换选人依据"
-          subtitle="浪费金额与有效曝光按真实标注结算，不使用引擎自身给出的分数"
+          title="选人方式对照：同一份候选与报价，只换选人依据"
+          subtitle="判优口径：每美元有效曝光 + 浪费金额，均按数据集标注结算"
           right={<TruthChip kind="audit" />}
         >
-          <DuoBars
-            leftName="按粉丝量基线"
-            rightName="KOXPilot"
-            rows={[
-              { label: '选中达人数', left: result.baseline.n_selected, right: result.plan.n_selected, note: '基线把预算堆在少数头部达人身上' },
-              { label: '花费（美元）', left: result.baseline.spent_usd, right: result.plan.spent_usd },
-              { label: '名义曝光', left: audit.baseline.nominal_views, right: audit.koxpilot.nominal_views, note: '名义曝光基线并不吃亏 —— 差距全在「有多少是真的」' },
-              { label: '有效曝光（真实标注）', left: audit.baseline.effective_views_gt, right: audit.koxpilot.effective_views_gt },
-              { label: '浪费金额（真实标注）', left: audit.baseline.wasted_spend_usd, right: audit.koxpilot.wasted_spend_usd },
-            ]}
-            fmt={(x) => (x > 1e5 ? compact(x) : int0(x))}
-          />
+          <ArmsCompare arms={armsView} judge={judgeBlock()} />
+          {/* 选中人数与名义曝光是"怎么来的"，不是"值不值"：压成一行次级口径，
+              主位留给上面那张每美元有效曝光 / 浪费金额的表。 */}
+          <div className="mt-2 text-[11.5px] leading-snug text-slate-600">
+            次级口径：选中 {int0(result.baseline.n_selected)} → {int0(result.plan.n_selected)} 人；名义曝光{' '}
+            {compact(audit.baseline.nominal_views)} → {compact(audit.koxpilot.nominal_views)}（名义上基线不吃亏，差距全在「有多少是真的」）
+          </div>
           <div className="mt-2.5 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px]">
             <span className="text-slate-600">
               少浪费{' '}
@@ -346,10 +406,6 @@ export function DecisionTab({
               </b>{' '}
               · 占预算 {signedPct1(audit.saved_share_of_budget)}
               {robust && robust !== 'missing' ? ` · 稳健区间 [${signedPct1(robust.low)}, ${signedPct1(robust.high)}]` : ''}
-            </span>
-            <span className="text-slate-600">
-              每千美元有效曝光 <b className="num text-live-700">{compact(audit.effective_views_per_1k_usd.koxpilot)}</b> · 基线{' '}
-              {compact(audit.effective_views_per_1k_usd.baseline)}
             </span>
           </div>
           {audit.saved_usd < 0 && (
@@ -377,36 +433,58 @@ export function DecisionTab({
             </span>
           </div>
           <div className="mt-2">
-            <Collapse
-              title="逐条约束的实际值 / 上限"
-              hint="头部金额占比 ≤45%、长尾 ≥25%、单一国家 ≤60%，这些配额在分配过程中即生效"
-            >
-              <ConstraintList plan={plan} />
-            </Collapse>
-          </div>
-          <div className="mt-3 space-y-3">
-            <div>
-              <div className="muted mb-1">层级分布（按金额）</div>
-              <MixBar
-                mix={plan.tier_mix}
-                order={[...BUCKET_ORDER]}
-                labels={BUCKET_LABEL}
-                limits={[
-                  { keys: ['macro', 'mega'], max: 0.45, name: '头部（macro+mega）金额占比' },
-                  { keys: ['nano', 'micro'], min: 0.25, name: '长尾（nano+micro）金额占比' },
-                ]}
-              />
+            {/* 三条配额"实际值 vs 线"就是这块要交代的事，一行说完；
+                明细与三张分布图默认收起 —— 第 2 步的版面留给"选了谁、值不值"。 */}
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px]">
+              {plan.constraints.checks
+                .filter((c) => c.name !== 'total_budget')
+                .map((c) => (
+                  <span key={c.name} className="flex items-center gap-1">
+                    <span className={!c.enforced ? 'text-slate-400' : c.satisfied ? 'text-emerald-600' : 'text-rose-600'}>
+                      {c.satisfied ? '✓' : '✕'}
+                    </span>
+                    <span className="text-slate-600">{c.desc}</span>
+                    <span className="num text-slate-700">{pct1(c.actual)}</span>
+                    {!c.enforced && (
+                      <Hint text="基线臂不施加结构约束（对应行业最朴素做法），这些检查仅作记录，不参与强制。">
+                        <span className="text-[11px] text-slate-500">仅记录</span>
+                      </Hint>
+                    )}
+                  </span>
+                ))}
             </div>
-            <div>
-              <div className="muted mb-1">国家分布（按金额）</div>
-              <MixBar
-                mix={plan.country_mix}
-                limits={Object.keys(plan.country_mix).length > 0 ? [{ keys: [Object.entries(plan.country_mix).sort((a, b) => b[1] - a[1])[0][0]], max: 0.6, name: '单一国家金额占比' }] : []}
-              />
-            </div>
-            <div>
-              <div className="muted mb-1">平台分布（按金额）</div>
-              <MixBar mix={plan.platform_mix} labels={PLATFORM_LABEL} />
+            <div className="mt-2">
+              <Collapse
+                title="逐条约束的实际值 / 上限 · 金额分布（层级 / 国家 / 平台）"
+                hint="同一笔预算的三种切法；配额在分配过程中即生效"
+              >
+                <div className="space-y-3">
+                  <ConstraintList plan={plan} />
+                  <div>
+                    <div className="muted mb-1">层级分布（按金额）</div>
+                    <MixBar
+                      mix={plan.tier_mix}
+                      order={[...BUCKET_ORDER]}
+                      labels={BUCKET_LABEL}
+                      limits={[
+                        { keys: ['macro', 'mega'], max: 0.45, name: '头部（macro+mega）金额占比' },
+                        { keys: ['nano', 'micro'], min: 0.25, name: '长尾（nano+micro）金额占比' },
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <div className="muted mb-1">国家分布（按金额）</div>
+                    <MixBar
+                      mix={plan.country_mix}
+                      limits={Object.keys(plan.country_mix).length > 0 ? [{ keys: [Object.entries(plan.country_mix).sort((a, b) => b[1] - a[1])[0][0]], max: 0.6, name: '单一国家金额占比' }] : []}
+                    />
+                  </div>
+                  <div>
+                    <div className="muted mb-1">平台分布（按金额）</div>
+                    <MixBar mix={plan.platform_mix} labels={PLATFORM_LABEL} />
+                  </div>
+                </div>
+              </Collapse>
             </div>
           </div>
           <div className="mt-2">
@@ -585,20 +663,18 @@ export function DecisionTab({
           title={
             comparable
               ? `与 Python 离线结果逐项对数（${allParity ? `${parityRows.length} 项全部一致` : '存在差异'}）`
-              : live?.origin === 'service'
-                ? '服务本次召回窗口与 Python 离线全量结果不可比（口径说明）'
-                : live
-                  ? '自定义 brief 与 Python 离线结果不可比（口径说明）'
-                  : '当前参数与离线结果口径不同，暂不可比（口径说明）'
+              : live
+                ? '自定义 brief 与 Python 离线结果不可比（口径说明）'
+                : '当前参数与离线结果口径不同，暂不可比（口径说明）'
           }
           hint={
             comparable
-              ? '当前参数与离线结果口径一致：不纳入待复核、边际衰减 0.7'
-              : live?.origin === 'service'
-                ? `本次候选集是服务按 top_n 上限召回的 ${int0(result.pool.length)} 人，离线结果按全量候选池计算，两者不同口径`
-                : live
-                  ? '自定义 brief 没有对应的离线结果可对照'
-                  : '已修改参数（纳入待复核或调整了边际衰减），与离线结果口径不同'
+              ? live?.origin === 'service'
+                ? `当前参数与离线结果口径一致，且服务本次把命中定向的 ${int0(result.pool.length)} 人全部送进了计算（召回不截断）`
+                : '当前参数与离线结果口径一致：不纳入待复核、边际衰减 0.7'
+              : live
+                ? '自定义 brief 没有对应的离线结果可对照'
+                : '已修改参数（纳入待复核或调整了边际衰减），与离线结果口径不同'
           }
         >
           {comparable && parityRows.length > 0 ? (

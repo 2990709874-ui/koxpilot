@@ -209,7 +209,7 @@ value = avg_views × authenticity_discount × fit_score × audience_match × kpi
 
 - **单种子的归因比例不稳。** 定稿种子上分散化占了 70.5%，但 12 种子重跑后分散化只有 **$12,636 ± $38,983**（4/12 个种子为负、95% CI 跨 0），而门禁与质量排序是 **$40,028 ± $12,560**（12/12 为正）。所以"价值主要来自分散化"是**单种子的采样运气，不能当结论**；稳定的那一段是门禁。详见 [06 表 1 附](06-robustness.md)。
 - **三臂人数不同量级**（基线 18 人 / 第三臂 516 人 / KOXPilot 181 人合计）。分散化贡献里本身就含"把钱摊到更多人"的大数效应——那正是这条臂要度量的东西，但不能拿人数本身论优劣。
-- **第三臂的绝对有效曝光反而比 KOXPilot 高**（19.7M vs 13.5M，12/12 个种子都如此）：它按每美元曝光排序，专挑 CPM 最便宜的长尾。KOXPilot 优化的是质量加权价值（含语义适配/KPI 权重/真实性折扣），会主动放弃便宜但不对味的曝光。所以三臂可比的口径是**浪费金额与有效曝光率**，绝对曝光数不是 KOXPilot 的优化目标——这条写在产物的 `caveats` 里，不用"我们曝光也最多"糊过去。
+- **第三臂的绝对有效曝光反而比 KOXPilot 高**（19.7M vs 13.5M，12/12 个种子都如此）：它按每美元曝光排序，专挑 CPM 最便宜的长尾。KOXPilot 优化的是质量加权价值（含语义适配/KPI 权重/真实性折扣），会主动放弃便宜但不对味的曝光。绝对曝光数不是 KOXPilot 的优化目标，这条写在产物的 `caveats` 里，不用"我们曝光也最多"糊过去。**但也别把这句读成免责**：把花费归一化之后（每美元有效曝光）第三臂在三条 brief 上仍然高出 44%~47%，完整论证与取舍见 [README「第三臂在主指标上打赢了我」](../README.md)。
 - **BRIEF-002 是负例**（多浪费 $5,117.70、有效曝光 −2.3%），根因是基线那 4 个头部号**恰好都是真号**（浪费率 0.84%），而 KOXPilot 的 39 人里有 3 个水号（12.21%）——两段贡献在这条 campaign 上都是负的（分散化 −$3,319、门禁 −$1,799）。对照 BRIEF-001 基线 8 人里有 5 个水号（浪费率 66.98%）——**n=4 的基线方差极大**。
 
 我把负例留在产物里没删。完整的边界讨论在 [05 §7](05-boundaries.md#反事实价值审计的边界)。
@@ -232,13 +232,25 @@ value = avg_views × authenticity_discount × fit_score × audience_match × kpi
 | matched / diff_count / match_rate | **5,000 / 0 / 1.0** |
 | 比对字段 | `verdict` / `group_key` / `rules[]` / `completeness` / `authenticity` / `consistency` / `brand_safety` / `fraud_score` |
 | 证据链抽样 | 200 条逐条比对，`diff_records = 0` |
-| 预算臂比对 | `compared_arms = 6`，`matched_arms = 6` |
+| 预算臂比对 | `compared_arms = 9`，`matched_arms = 9`（3 campaign × 3 臂）；`compared_audits = 3`，`matched_audits = 3` |
 
 三个关键性质：
 
 1. **这份 JSON 由 `web/scripts/verify-parity.mjs` 在每次 `pnpm run refresh`（即 `make web`）时重新生成**，页面直接读取——**不存在写死的数字**。要作弊就得改脚本，而脚本在仓库里。
 2. **两个实现读同一份 `output/thresholds.json`，TS 侧不做任何再标定。** 所以这条比对证明的是"**两套判定逻辑等价**"，**不**证明"标定过程也被复算了"——标定只有 Python 一份实现，正确性靠 pytest 保证，我不把它算进双实现互证的范围。
 3. `rules[]` 参与比对是重点。只比 `verdict` 太松：两个实现可能因为不同的规则命中而巧合得到同一个判定。比到规则 ID 级别，加上 200 条证据链的 `actual` / `threshold` 全等，才能说逻辑真的一致。
+
+上面这张表是**构建期**跑出来的（全库、离线）。服务上线后还有一层**运行期**的同类证据，两者别混：
+
+| | 构建期 | 运行期 |
+| --- | --- | --- |
+| 谁跟谁比 | Python 全库 vs 浏览器 TS 引擎 | **线上服务**返回的 `parity_payload.verdicts` vs 浏览器 TS 引擎现算 |
+| 规模 | 5,000 条判定 | 4 条 brief 合计 **1,431 条判定** |
+| 差异 | **0** | **0** |
+| 谁生成 | `web/scripts/verify-parity.mjs`（`make web`） | `web/scripts/verify-service-parity.mjs`；`make api-parity` 默认打**本地** `127.0.0.1:8399`，加 `--base <公网地址>` 就是打线上那台 |
+| 产物 | `web/public/data/consistency.json`（入库） | 不入库，自己跑一遍就有；部署当场的记录在 `api/DEPLOYED_URL.txt` |
+
+同一次 `make api-parity` 还会跑 `api/check_cli_parity.py`：**5 个 id** 的 `explain` 证据句与 CLI `koxpilot explain` **逐字一致、0 差异**。所以"服务和 CLI 是同一套逻辑"这句话是断言出来的，不是我说的。
 
 前端"真算 / 读固化"的分界：
 
@@ -253,7 +265,7 @@ value = avg_views × authenticity_discount × fit_score × audience_match × kpi
 | --- | --- | --- |
 | **没用向量检索做达人召回** | embedding + ANN | 候选规模 5,000，定向筛选（国家/平台/品类）已经把池子压到 50–93 人。这个量级上向量检索解决不了任何实际问题，只增加不可解释性。真实规模（百万级）下我会加，但那时召回的瓶颈也不是相似度，是**冷启动达人的标签质量**——恰好是 G2 在管的事 |
 | **没让 LLM 直接判水号** | prompt 里丢一个达人 profile 问"这是不是水号" | 水号判定的核心是"和同组同行比"，需要分位数分布；LLM 拿不到分布，只能凭常识给绝对判断。而且这条链要能回归、要能给运营解释门槛来自哪 |
-| **没做在线 LLM 推理** | 页面上点一下调模型 | 我用的 endpoint 在内网，公网评审调不通——在线调用会让 Demo 直接不可用。真实广告系统同样把语义判定做离线批处理 + 缓存。仓库留 provider 无关适配层，配任意 OpenAI 兼容 endpoint 即可复跑 |
+| **没把 A4 语义适配做成在线推理** | 页面上点一下就调模型打适配分 | A1 的 brief 解析**已经支持在线真调**：服务端探到 OpenAI 兼容凭据就走 LLM，凭据缺失或调用失败就落回确定性规则，并把 `llm_runtime.available` / `parse_path` / 降级原因写进响应（本轮实测 `available=true` 但调用被网关拒绝 HTTP 403，所以走的是 `parse_path=rule`）。A4 我**没有**放到在线链路上：它的正式链路是规则版，LLM 版覆盖率只有 14.9%、按判据不予升格（[05 §3.2](05-boundaries.md#32-这里有一个我必须点明的落差本轮已量化并给出不予升格的判据)），把一个不予升格的实现挂到线上没有意义。真实广告系统同样把语义判定做离线批处理 + 缓存 |
 
 安全纪律：**内网 API key 与内网域名一行都不进代码 / 不进仓库 / 不进文档**，只有 `.env.example` 里的占位符。
 

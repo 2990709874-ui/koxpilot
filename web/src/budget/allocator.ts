@@ -146,6 +146,16 @@ export function buildSlots(
 }
 
 /** 选择集的增量状态：所有份额 O(1) 可读，避免每步重算全表。 */
+interface SelectionSnapshot {
+  posts: Map<string, number>;
+  candById: Map<string, Candidate>;
+  pickedBy: Map<string, string>;
+  spent: number;
+  headUsd: number;
+  longtailUsd: number;
+  countryUsd: Map<string, number>;
+}
+
 class Selection {
   readonly budget: number;
   readonly decay: number;
@@ -197,6 +207,29 @@ class Selection {
 
   nPosts(koxId: string): number {
     return this.posts.get(koxId) ?? 0;
+  }
+
+  /** 浅拷贝全部增量状态，供修正阶段试探性退让后回滚（与 Python `Selection.snapshot` 同口径）。 */
+  snapshot(): SelectionSnapshot {
+    return {
+      posts: new Map(this.posts),
+      candById: new Map(this.candById),
+      pickedBy: new Map(this.pickedBy),
+      spent: this.spent,
+      headUsd: this.headUsd,
+      longtailUsd: this.longtailUsd,
+      countryUsd: new Map(this.countryUsd),
+    };
+  }
+
+  restore(snap: SelectionSnapshot): void {
+    this.posts = new Map(snap.posts);
+    this.candById = new Map(snap.candById);
+    this.pickedBy = new Map(snap.pickedBy);
+    this.spent = snap.spent;
+    this.headUsd = snap.headUsd;
+    this.longtailUsd = snap.longtailUsd;
+    this.countryUsd = new Map(snap.countryUsd);
   }
 
   amountOf(koxId: string): number {
@@ -320,6 +353,19 @@ const fmtPct0 = (x: number): string => `${Math.round(x * 100)}%`;
 /** 分层配额修正：把长尾金额占比抬到下限以上。优先加长尾，加不动才退非长尾腾预算。 */
 function repairLongtail(sel: Selection, slots: readonly Slot[], trace: string[]): void {
   const longtailSlots = slots.filter((s) => LONGTAIL_BUCKETS.has(s.candidate.bucket));
+  if (longtailSlots.length === 0) {
+    // 池子里根本没有长尾候选：退掉非长尾内容永远不可能把长尾占比抬起来，
+    // 只会把预算白扔掉（极端情况下把整盘方案退成 $0，还让报告里的比例型约束
+    // 因为"分母归零"而显示为满足）。这里直接停手并如实记账。
+    if (sel.longtailShare < LONGTAIL_MIN_SHARE) {
+      trace.push(
+        `分层修正：该定向下候选池里没有任何长尾（nano/micro）达人，` +
+          `长尾下限 ${fmtPct0(LONGTAIL_MIN_SHARE)} 在物理上不可满足；` +
+          `不做无意义的退让（退让只会损失预算而不改善结构），如实记录违规`,
+      );
+    }
+    return;
+  }
   let steps = 0;
   let addedTotal = 0;
   while (sel.spent > 0 && sel.longtailShare < LONGTAIL_MIN_SHARE && steps < MAX_REPAIR_STEPS) {
@@ -345,7 +391,18 @@ function repairLongtail(sel: Selection, slots: readonly Slot[], trace: string[])
       return;
     }
     const worst = argMinByEfficiency(sel, droppable);
+    const beforeShare = sel.longtailShare;
+    const snap = sel.snapshot();
     const cand = sel.giveBack(worst);
+    if (sel.spent <= 0 || sel.longtailShare <= beforeShare + 1e-12) {
+      // 退让没有换来任何结构改善（腾出的预算加不进长尾），继续退下去就是纯毁灭价值。
+      sel.restore(snap);
+      trace.push(
+        `分层修正：退让已无法改善长尾占比（停在 ${fmtPct1(sel.longtailShare)}，` +
+          `下限 ${fmtPct0(LONGTAIL_MIN_SHARE)}），停止退让并如实记录违规`,
+      );
+      break;
+    }
     trace.push(
       `分层修正：退掉非长尾达人 ${cand.handle}（${cand.bucket}）的 1 条内容` +
         `（${fmtUsd0(cand.cost_usd)}）以腾出长尾名额`,
@@ -381,7 +438,20 @@ function repairHead(sel: Selection, trace: string[]): void {
     steps += 1;
     const heads = [...sel.candById.entries()].filter(([, c]) => HEAD_BUCKETS.has(c.bucket)).map(([k]) => k);
     if (heads.length === 0) return;
+    const beforeShare = sel.headShare;
+    const snap = sel.snapshot();
     sel.giveBack(argMinByEfficiency(sel, heads));
+    if (sel.spent <= 0 || sel.headShare >= beforeShare - 1e-12) {
+      // 头部占比 = 头部金额 / 总花费；当在选内容**全是头部**时，
+      // 退让不改变这个比值（H/T 恒为 1），循环只会一路退到 $0，
+      // 然后因为分母归零让 head_max_share 在报告里"满足"——那是用不投放伪装合规。
+      sel.restore(snap);
+      trace.push(
+        `头部配额修正：在选内容全部来自头部（macro/mega），退让无法降低头部占比` +
+          `（停在 ${fmtPct1(sel.headShare)}，上限 ${fmtPct0(HEAD_MAX_SHARE)}）；停止退让并如实记录违规`,
+      );
+      break;
+    }
     dropped += 1;
   }
   if (dropped) {
@@ -408,7 +478,20 @@ function repairCountry(sel: Selection, trace: string[]): void {
     }
     const pool = [...sel.candById.entries()].filter(([, c]) => c.country === country).map(([k]) => k);
     if (pool.length === 0) return;
+    const beforeShare = sel.maxCountryShare;
+    const snap = sel.snapshot();
     sel.giveBack(argMinByEfficiency(sel, pool));
+    if (sel.spent <= 0 || sel.maxCountryShare >= beforeShare - 1e-12) {
+      // 单一国家占比 = 该国金额 / 总花费；若在选内容只来自一个国家，
+      // 这个比值恒为 1，退让改善不了任何东西，退到最后是整盘清零 + 报告假合规。
+      // 单国候选池（例如只投美国的 brief）会稳定命中这一支。
+      sel.restore(snap);
+      trace.push(
+        `地域分散修正：在选内容集中在单一国家，退让无法降低占比` +
+          `（停在 ${fmtPct1(sel.maxCountryShare)}，上限 ${fmtPct0(COUNTRY_MAX_SHARE)}）；停止退让并如实记录违规`,
+      );
+      break;
+    }
     dropped.set(country, (dropped.get(country) ?? 0) + 1);
   }
   for (const [country, n] of dropped) {
@@ -427,6 +510,33 @@ function structureOk(sel: Selection): boolean {
   );
 }
 
+/** 当前状态下未满足的结构约束名（与 validatePlan 的判定口径完全一致）。 */
+function structureViolations(sel: Selection): string[] {
+  const bad: string[] = [];
+  if (sel.headShare > HEAD_MAX_SHARE + 1e-6) bad.push('head_max_share');
+  if (sel.longtailShare < LONGTAIL_MIN_SHARE - 1e-6) bad.push('longtail_min_share');
+  if (sel.maxCountryShare > COUNTRY_MAX_SHARE + 1e-6) bad.push('country_max_share');
+  return bad;
+}
+
+/**
+ * 修正效果打分，**越小越好**：(未满足的结构约束数, -已花费)。
+ *
+ * 关键的一条特例：空方案（花费 0）永远是最差的。
+ * 因为比例型约束的分母是"实际花费"，把方案退成 $0 会让 head/country 占比变成 0/0 → 0.0，
+ * 在报告里显示为"满足"。那不是合规，那是**用不投放伪装合规**，
+ * 还会把违规指向错误的约束（只剩长尾下限报红），让运营看不到真正卡住的是哪一条。
+ */
+function repairScore(sel: Selection): [number, number] {
+  if (sel.spent <= 0) return [structureViolations(sel).length + 99, 0.0];
+  return [structureViolations(sel).length, -sel.spent];
+}
+
+/** (违规数, -花费) 的字典序比较：>0 表示 a 比 b 更差。 */
+function worseThan(a: [number, number], b: [number, number]): boolean {
+  return a[0] !== b[0] ? a[0] > b[0] : a[1] > b[1];
+}
+
 function stateFingerprint(sel: Selection): string {
   const posts = [...sel.posts.entries()].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
   return `${pyRound(sel.spent, 6)}|${posts.map(([k, v]) => `${k}:${v}`).join(',')}`;
@@ -436,24 +546,46 @@ function stateFingerprint(sel: Selection): string {
  * 多轮迭代修正到不动点。必须多轮：三条结构约束互相打架 ——
  * 退掉超配国家的内容时很可能同时退掉了长尾，把刚补好的占比又打下去。
  * 顺序是"先上限类（只减钱、单调收敛），再下限类（补钱）"，不再变化即停止，未达标如实记账。
+ *
+ * 另有一条安全网：**修正不允许把方案变得更差**。若某条配额在该候选池下不可满足，
+ * 退让会一路毁灭价值（最坏退成 $0 并让报告假合规），此时回滚到修正前的方案，
+ * 如实登记违规——宁可交付一个"结构不达标但说清楚了"的方案，
+ * 也不交付一个"什么都没投所以没违规"的空方案。
  */
 function repairToFixpoint(sel: Selection, ordered: readonly Slot[], trace: string[]): boolean {
+  const baseline = sel.snapshot();
+  const baseScore = repairScore(sel);
+  const local: string[] = [];
   for (let round = 0; round < MAX_REPAIR_ROUNDS; round += 1) {
-    if (structureOk(sel)) return true;
+    if (structureOk(sel)) {
+      trace.push(...local);
+      return true;
+    }
     const before = stateFingerprint(sel);
-    repairCountry(sel, trace);
-    repairHead(sel, trace);
-    repairLongtail(sel, ordered, trace);
+    repairCountry(sel, local);
+    repairHead(sel, local);
+    repairLongtail(sel, ordered, local);
     if (stateFingerprint(sel) === before) break;
   }
-  const ok = structureOk(sel);
-  if (!ok) {
-    trace.push(
-      '结构修正未能同时满足全部配额（候选池在该定向下的结构性不足），' +
-        '已在 constraints.violations 中如实标出，未做任何掩盖',
-    );
+  if (structureOk(sel)) {
+    trace.push(...local);
+    return true;
   }
-  return ok;
+  if (worseThan(repairScore(sel), baseScore)) {
+    sel.restore(baseline);
+    trace.push(
+      '结构修正在该候选池下无法达标，且退让反而在毁灭已选价值；' +
+        '已回滚到修正前的方案，并在 constraints.violations 中如实标出未满足的配额' +
+        '（绝不用「退成空方案」来让比例型约束的分母归零、伪装成合规）',
+    );
+    return false;
+  }
+  trace.push(...local);
+  trace.push(
+    '结构修正未能同时满足全部配额（候选池在该定向下的结构性不足），' +
+      '已在 constraints.violations 中如实标出，未做任何掩盖',
+  );
+  return false;
 }
 
 /** 把每条约束的实际值/上下限/是否满足写成可断言的报告。 */

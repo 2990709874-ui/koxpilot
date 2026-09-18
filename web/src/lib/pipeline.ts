@@ -296,6 +296,12 @@ export async function runPipeline(
   const tA6 = now();
   const gtById = gtIndex(records);
   const audit = counterfactualRow(spec.campaign_id, plan, baseline, gtById);
+  // 两臂花费能差十几倍（门禁只买得起过关的人），所以主口径是"每美元买到的有效曝光"；
+  // 绝对有效曝光的涨跌照旧写进 detail，不藏，但不当结论。
+  const vpdKox = audit.koxpilot.spent_usd > 0 ? audit.koxpilot.effective_views_gt / audit.koxpilot.spent_usd : null;
+  const vpdBase = audit.baseline.spent_usd > 0 ? audit.baseline.effective_views_gt / audit.baseline.spent_usd : null;
+  const vpdLift = vpdKox !== null && vpdBase !== null && vpdBase > 0 ? vpdKox / vpdBase - 1 : null;
+  const signed = (x: number): string => `${x >= 0 ? '+' : ''}${(x * 100).toFixed(1)}%`;
   await emit({
     id: 'A6',
     agent: 'A6 AuditAgent',
@@ -303,8 +309,10 @@ export async function runPipeline(
     kind: 'audit',
     elapsedMs: now() - tA6,
     items: plan.n_selected + baseline.n_selected,
-    headline: `少浪费 $${Math.round(audit.saved_usd).toLocaleString('en-US')}（有效曝光 ${audit.effective_view_uplift >= 0 ? '+' : ''}${(audit.effective_view_uplift * 100).toFixed(1)}%）`,
+    headline: `少浪费 $${Math.round(audit.saved_usd).toLocaleString('en-US')}（每美元有效曝光 ${vpdLift === null ? '—' : signed(vpdLift)}）`,
     detail: [
+      `两臂花费不同（KOXPilot $${Math.round(audit.koxpilot.spent_usd).toLocaleString('en-US')} vs 基线 $${Math.round(audit.baseline.spent_usd).toLocaleString('en-US')}），` +
+        `所以主口径是每美元有效曝光；绝对有效曝光变化 ${signed(audit.effective_view_uplift)}`,
       `基线臂：${baseline.n_selected} 人，浪费 $${Math.round(audit.baseline.wasted_spend_usd).toLocaleString('en-US')}（占花费 ${(audit.baseline.wasted_spend_share * 100).toFixed(1)}%）`,
       `KOXPilot 臂：${plan.n_selected} 人，浪费 $${Math.round(audit.koxpilot.wasted_spend_usd).toLocaleString('en-US')}（占花费 ${(audit.koxpilot.wasted_spend_share * 100).toFixed(1)}%）`,
       '浪费金额与有效曝光一律按 gt 计算，不使用引擎自身分数（防自证）',

@@ -35,6 +35,11 @@
 
 **读表方法**：凡是"真实计算"，任何人 clone 下来跑 `make all` 都应该得到**逐字节相同**的产物；凡是"真实 LLM"，需要自己配 endpoint 才能复跑，仓库里留的是调用代码 + 固化结果 + 真实 usage 账；凡是"合成"，数字只在这份数据集的假设下成立。
 
+**关于最后那台线上服务，两条必须先说清的边界**：
+
+- **它是演示实例，不是生产部署。** 单实例、无副本、无灰度、无鉴权与限流；冷启动的第一个请求要懒加载 5,000 条数据集，所以首次 `curl` 可能明显慢于后续（预热后 `/api/health` 实测约 0.12s）。缺的那些见 §12.8。
+- **A1 实测走的是规则解析，不是 LLM——但原因不是"没配凭据"。** 本地实测 `/api/health` 里 `llm_runtime.available` 是 `true`（凭据存在），但真调用被网关拒绝（HTTP 403 `model is not allowed`），于是 `/api/plan` 里 `brief.parse_path=rule`，降级原因由服务逐字写进 `brief.notes`。这不是降级事故，也不是功能缺失：机制是"探到可用凭据就真调、调用失败即降级并把原因写出来"，换一份有权限的凭据就会走 LLM 路径（详见 §3.1、§11.3）。
+
 ---
 
 ## 2. 边界一：数据是我自己造的
@@ -270,7 +275,7 @@
 | match_rate | **1.0** |
 | 比对字段 | `verdict` / `group_key` / `rules[]` / `completeness` / `authenticity` / `consistency` / `brand_safety` / `fraud_score` |
 | 证据链抽样 | 200 条逐条比对，`diff_records = 0` |
-| 预算臂比对 | `compared_arms = 6`，`matched_arms = 6` |
+| 预算臂比对 | `compared_arms = 9`，`matched_arms = 9`（3 campaign × 3 臂）；`compared_audits = 3`，`matched_audits = 3` |
 
 两个实现读**同一份** `output/thresholds.json`，**TS 侧不做任何再标定**——所以这条比对证明的是"两套判定逻辑等价"，**不**证明"阈值标定也被复算了"。标定只有 Python 一份实现，它的正确性靠 pytest 保证，不靠双实现互证。
 
@@ -291,8 +296,8 @@
 | 2 | SPEC / 注释写 G1.5 只要 `z > 2.5` | 源码是**双条件**：z>2.5 **且**该月增速高于同组"最好月份"增速的 P90 | 以源码为准 |
 | 3 | `datagen/config.py` 注释说"缺 1 个关键字段会制造 G0 漏检" | 已修：新增 **G0.2**（completeness 恰好 0.8 时转 review），漏检已堵，注释过期 | 注释待更新 |
 | 4 | `prompt_variants.py` 注释称 v3 与生产 prompt 一致 | 实际**不完全一致**：v3 system 1,607 字符，生产 `_tag_system()` 1,553 字符（user message 一致） | 见 [04](04-prompt-and-cost.md)，横评结论按"v3 ≈ 生产"读，不能读成"等于" |
-| 5 | `budget/policy.py` 注释说 metrics 会给 decay ∈ {0.5,0.7,0.9} 三档 | `metrics.json.budget` 里**没有**这个扫描 | 已在 §7 声明为"关键参数无敏感性证据" |
-| 6 | `README.md` Prompt 表写 v2 ≈44 万 / v3 ≈45 万 token | 当前产物是 v2 **467,327** / v3 **492,460** | 以产物为准（我不改 README，已在最终汇报中提出） |
+| 5 | `budget/policy.py` 注释说 metrics 会给 decay ∈ {0.5,0.7,0.9} 三档 | **已补，注释是对的**：扫描在 `metrics.json.budget_decay_sensitivity`（不在 `metrics.json.budget` 子树下，早期版本按后者去找所以判成"缺失"），`scan=[0.5,0.7,0.9]`、`reference_decay=0.7`、`status=ok` | 已修；仍缺的是真实重复触达数据——扫描只能证明结论不依赖该假设，不能证明 0.7 这个值本身对（§7、§12.5） |
+| 6 | ~~`README.md` Prompt 表写 v2 ≈44 万 / v3 ≈45 万 token~~ | **已修**：README 现在写的是产物里的 **467,327 / 492,460**，与 `output/prompt_bench.json` 一致 | 已消除；`tests/test_doc_numbers.py` 把这两个数钉在产物上，再漂就挂测试 |
 | 7 | `llm_cache.json` 有 A4 的 fit 分，但正式 budget/eval 不消费 | 见 §3.2 | 已声明，不偷偷接上 |
 | 8 | `eval/harness.py` 声明"落盘产物不含生成时间，同代码+同数据必须逐字节相同" | `metrics.json`/`audit.json`/`verdicts.json`/`budget.json`/`multiseed.json` 确实逐字节可复现，但 `thresholds.json` 的 `meta.calibrated_at_unix` 是**墙上时钟**（`int(time.time())`），该文件因此无法逐字节回归对比 | 不改字段（改了就和已发布的 `output/thresholds.json` 对不上）；改成**可执行约束**：`tests/test_e2e_smoke.py` 实测"重跑两次后唯一变化的产物是 thresholds.json，且唯一变化的叶子是 `meta.calibrated_at_unix`"，并要求 `metrics.json` 里不得出现该字段 |
 
@@ -304,7 +309,7 @@
 
 1. **不声称**这些指标能迁移到真实达人库。数据是合成的（§2）。
 2. **不声称**这是一个多 Agent 框架实现。6 个 Agent 是**概念编排**，源码里没有 `agents/` 目录、没有工具调用循环、没有多轮自主决策——是一条确定性流水线 + 构建期批量 LLM 调用。详见 [01 架构](01-architecture.md)。
-3. **不声称** LLM 在线上跑。运行期零模型调用（§3）。
+3. **不声称**本轮实测里 A1 真的在线调了 LLM。我这次跑的实例上 `llm_runtime.available` 是 `true`（凭据存在），但模型调用被网关拒绝（HTTP 403 `model is not allowed`），A1 因此走确定性规则解析（响应里 `brief.parse_path=rule`，`brief.notes` 逐字写着 403 原文，自己 curl 就能看到）。A1 **支持**在凭据可用时真调一次模型，但那是可选路径、失败即降级；A2/A3/A5/A6 在服务端全确定性，A4 不在线（§3、§3.2）。
 4. **不声称**预算方案最优。启发式贪心，无求解器对照（§7）。
 5. **不声称**门禁指标覆盖全部规则。5/20 条 campaign 规则未被评测（§4）。
 6. **不声称** azure 比 ark 好。0.0015 的 F1 差距在单轮实验里是噪声（§3.3）。
@@ -322,7 +327,8 @@
 4. **零膨胀分位守卫**：阈值标定时检测退化并显式降级（§5）。
 5. ~~**decay 敏感性扫描**~~ **已补**（`metrics.json.budget_decay_sensitivity`，见 §7）。仍缺的是「真实重复触达数据」——扫描只能证明结论不依赖该假设，不能证明 0.7 这个值本身对。
 6. **LLM 多轮重复实验**：至少 3 轮取均值与标准差，才谈模型/prompt 差异（§3.3）。
-7. **在线推理路径**：给 A1/A4 做真在线调用 + 缓存 + 降级，并把"LLM 挂了怎么办"写成显式策略（现在是"失败按未覆盖处理"，够诚实但不够产品）。
+7. **在线推理路径**：~~给 A1 做真在线调用 + 降级~~ **A1 已补**（服务端可配凭据真调，超时/报错/不可解析一律回落规则版，`parse_path` 写进响应）。仍缺两件：① A4 的在线路径——但前提是它先按 §3.2 的判据升格，现在覆盖率 14.9%，不该上线；② "LLM 挂了怎么办"在**构建期**仍是"失败按未覆盖处理"（够诚实但不够产品），缺的是缓存 + 重试 + 显式策略。
+8. **服务的生产化**：现在这台是**演示实例**——单实例、无副本、无灰度、无鉴权与限流，冷启动第一个请求要懒加载 5,000 条数据集。要真上线，副本、健康检查驱逐、限流、可观测性一件都不能少（§1）。
 
 ---
 
