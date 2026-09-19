@@ -40,7 +40,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22   # verify-parity.mjs 直接 import .ts，需要 Node 22.18+ 的原生类型剥离
           cache: pnpm
           cache-dependency-path: web/pnpm-lock.yaml
 
