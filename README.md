@@ -12,7 +12,7 @@
 cd web && pnpm install && pnpm run prepare-data && pnpm run dev   # → http://localhost:5173
 ```
 
-**方式二：GitHub Pages**——本仓库已配好自动发布（[`.github/workflows/pages.yml`](./.github/workflows/pages.yml)）。仓库 Settings → Pages → Source 选 `GitHub Actions` 后，站点地址即 `https://<你的-GitHub-用户名>.github.io/koxpilot/`。
+**方式二：GitHub Pages（公网可访问，面试官直接点开）**——本仓库已配好自动发布（[`.github/workflows/pages.yml`](./.github/workflows/pages.yml)）。仓库 Settings → Pages → Source 选 `GitHub Actions` 后，站点地址即 **https://2990709874-ui.github.io/koxpilot/** 。
 
 界面为**单页结构**，按决策顺序排列：投放需求 → 决策结论（建议签约、预算投入、判定不予投放、相较「按粉丝量投放」减少的无效支出）→ 候选筛查与拦截过程（可逐环节下钻到拦截对象与判定依据）→ 投放名单与预算分配 → 与两种常见投放方式的对照 → 折叠的「实现说明」。评测指标、双实现对照、阈值口径等工程内容**不进入界面**，统一写在本 README 与 [`docs/`](./docs)。
 
