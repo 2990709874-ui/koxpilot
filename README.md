@@ -6,13 +6,17 @@
 
 ### 🔗 打开 Demo
 
-**方式一：本地起，两条命令**（不依赖任何外部服务，最稳）
+**方式一：直接点开（公网，无需安装）**
+
+**https://2990709874-ui.github.io/koxpilot/**
+
+本仓库已开启 GitHub Pages 自动发布（[`.github/workflows/pages.yml`](./.github/workflows/pages.yml)），每次推到 `main` 自动重建。这个形态下全流程由浏览器内的 TypeScript 引擎完整执行，不依赖任何外部服务。
+
+**方式二：本地起，两条命令**（额外带上 Python 服务通道）
 
 ```bash
 cd web && pnpm install && pnpm run prepare-data && pnpm run dev   # → http://localhost:5173
 ```
-
-**方式二：GitHub Pages（公网可访问，面试官直接点开）**——本仓库已配好自动发布（[`.github/workflows/pages.yml`](./.github/workflows/pages.yml)）。仓库 Settings → Pages → Source 选 `GitHub Actions` 后，站点地址即 **https://2990709874-ui.github.io/koxpilot/** 。
 
 界面为**单页结构**，按决策顺序排列：投放需求 → 决策结论（建议签约、预算投入、判定不予投放、相较「按粉丝量投放」减少的无效支出）→ 候选筛查与拦截过程（可逐环节下钻到拦截对象与判定依据）→ 投放名单与预算分配 → 与两种常见投放方式的对照 → 折叠的「实现说明」。评测指标、双实现对照、阈值口径等工程内容**不进入界面**，统一写在本 README 与 [`docs/`](./docs)。
 
