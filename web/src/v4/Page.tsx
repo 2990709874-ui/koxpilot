@@ -36,7 +36,7 @@ import {
 } from './plain';
 
 const GATES = ['G0', 'G1', 'G2', 'G3'] as const;
-const REPO = 'https://github.com/';
+const REPO = 'https://github.com/2990709874-ui/koxpilot';
 
 /* ------------------------------------------------------------------ */
 /* 小组件                                                             */
