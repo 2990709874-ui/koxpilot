@@ -114,7 +114,7 @@ NEUTRAL_SPEC = CampaignSpec()
 class Reason:
     """一条门禁判定证据。前端证据链抽屉直接渲染这个结构。
 
-    字段语义（面试会被逐个问，所以固定死）：
+    字段语义（会被逐个追问，所以固定死）：
       gate       所属层（G0/G1/G2/G3）
       rule_id    规则号（G1.2 等），与 SPEC 第 4 节表格一一对应
       signal     被检查的可观测信号名（== kox JSON 里的字段名，可下钻）

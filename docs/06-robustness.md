@@ -118,7 +118,7 @@ PYTHONPATH=src python -m koxpilot.cli multiseed --seeds 12
 
 必须一起报的**反向事实**（都在产物的 `caveat` / `caveats` 里，不靠这段文字兜）：
 
-1. **第三臂的绝对有效曝光在 12/12 个种子上都高于 KOXPilot**（`n_seeds_third_arm_more_effective_views = 12`）。它按每美元名义曝光排序，专挑 CPM 最便宜的长尾；KOXPilot 优化质量加权价值（含语义适配/KPI 权重/真实性折扣），会主动放弃便宜但不对味的曝光。绝对曝光数不是 KOXPilot 的优化目标。**注意这不构成免责**：换成每美元有效曝光（归一化掉花费）第三臂照样赢，幅度 44%~47%，见 [README「第三臂在主指标上打赢了我」](../README.md)。
+1. **第三臂的绝对有效曝光在 12/12 个种子上都高于 KOXPilot**（`n_seeds_third_arm_more_effective_views = 12`）。它按每美元名义曝光排序，专挑 CPM 最便宜的长尾；KOXPilot 优化质量加权价值（含语义适配/KPI 权重/真实性折扣），会主动放弃便宜但不对味的曝光。绝对曝光数不是 KOXPilot 的优化目标。**注意这不构成免责**：换成每美元有效曝光（归一化掉花费）第三臂照样赢，幅度 44%~47%，见 [README「第三臂在主指标上打赢了 KOXPilot」](../README.md)。
 2. **第三臂平均选 516.4 ± 18.8 人**（`third_arm_n_selected`；跨种子只记录了第三臂的人数，另两臂的人数目前只有定稿种子的快照：基线 18 人 / KOXPilot 181 人，见 [01 §A6](01-architecture.md)）。它在真实采购里不可执行（沟通与履约成本），**只是对照臂，不是"更好的方案"**。
 3. **"门禁贡献"是"门禁过滤 + 质量排序"的合计**。第三臂 → KOXPilot 之间同时变了两件事，二者共用同一批真实性/适配分数，实现上无法再拆，因此字段名如实叫 `saved_usd_by_gating`（产物里全称 `by_gating_and_quality_ranking`），不谎报成纯门禁效果。要再拆需要第四臂（"过滤 pass 但仍按每美元曝光排序"），本轮没做。
 
@@ -144,7 +144,7 @@ PYTHONPATH=src python -m koxpilot.cli multiseed --seeds 12
 
 先说限定：上表最后一行的 `n_obs = 36` 是 **12 种子 × 3 campaign 的观测数**，不是 36 次独立试验。同一个种子下的三个 campaign **共享同一个达人库**（同一批 5,000 人、同一份阈值标定、同一批 `GateResult`），所以它们的浪费率不独立——这是典型的**伪重复（pseudo-replication）**。
 
-后果很具体：把 36 个相关观测当成 36 个独立样本喂给 F 检验，会**高估自由度**（df 记成 [35, 35]，实际独立单位只有 12），p 值被进一步压小。所以我之前报过的合并 p 值 **2.7e-21 量级不可当真**，本轮起不再拿它当证据。产物里现在有两个字段把这件事写死（`output/multiseed.json → B_variance_attribution`）：
+后果很具体：把 36 个相关观测当成 36 个独立样本喂给 F 检验，会**高估自由度**（df 记成 [35, 35]，实际独立单位只有 12），p 值被进一步压小。所以此前报告的合并 p 值 **2.7e-21 量级不可当真**，本轮起不再拿它当证据。产物里现在有两个字段把这件事写死（`output/multiseed.json → B_variance_attribution`）：
 
 | 字段 | 内容 |
 | --- | --- |
@@ -279,7 +279,7 @@ PYTHONPATH=src python -m koxpilot.cli multiseed --seeds 12
 ### 3. 反过来说，什么被这个实验加强了？
 
 - 门禁能力（F1 / AUC / 准确率）的稳定性从"一个数"变成了"CV ≤ 0.02 的窄区间"。
-- 基线的高方差从"我的判断"变成了"std 差 7 倍、25% 的局烧掉一半以上预算"的量化事实——**这反而是比 32.5% 更有说服力的卖点**：投放决策的价值不在于平均省多少，而在于消除尾部灾难。
+- 基线的高方差从"主观判断"变成了"std 差 7 倍、25% 的局烧掉一半以上预算"的量化事实——**这反而是比 32.5% 更有说服力的卖点**：投放决策的价值不在于平均省多少，而在于消除尾部灾难。
 - 硬约束满足率 12/12，没有任何种子出现约束违反。
 - **价值来源从"说不清"变成了可归因**：补了第三臂后，"少浪费"里门禁与质量排序那一段是 12/12 为正、CV = 0.31 的稳定项（表 1 附）。这比"总差额 21.5%"更接近可对外承诺的东西，因为它不依赖"基线选人少"这个对照臂缺陷。
 
@@ -300,7 +300,7 @@ PYTHONPATH=src python -m koxpilot.cli multiseed --seeds 12
 ## 实现过程中发现的既有代码问题
 
 1. ~~**`effective_view_uplift` 在 per-campaign 口径下是不稳定比率。**~~ **已修（本轮）。** 分母为基线有效曝光，而基线可能把 99.9% 预算花在水号上导致分母趋近 0，实测出现过单 campaign uplift 达 **+3585×** 的观测。这个字段在 `metrics.json` 的单种子快照里看不出问题，但任何跨样本平均都会被它污染。**修法**：`eval/audit.py` 为每条 per-campaign 与 totals 补 `effective_view_uplift_bounded`（`rate_gap_pp` ∈[−100,100]、`symmetric_uplift` ∈[−1,1]、`absolute_gain_views`）+ `ratio_denominator_fragile` 标记，分母不可靠时 `headline` 不再引用该比率；分母为 0 时相对提升给 `null` 而不是 `0.0`。`multiseed.py` 的 per-campaign 主结论换成有界口径，无界比率降级为 `effective_view_uplift_ratio_reference`（见上文表 1 下方的 ⚠️ 段）。守护测试 `tests/test_audit_value.py`（9 条）。
-2. ~~**`harness._budget_section` 是私有函数，但它是"两臂预算 + 复用同一批 GateResult"的唯一正确入口。**~~ **已修（本轮）。** 已重命名为公开 `harness.budget_section` 并写进 `__all__`，docstring 说明它是两臂共用同一批 `GateResult` 的唯一入口；`multiseed.py` 改为 import 公开名，`harness.run_full_eval` 内部那个同名局部变量改叫 `budget_rows`（原先局部变量与函数同名，读代码时容易误以为在自我调用）。改动是纯重命名：`make eval` 前后 `output/metrics.json` **逐字节相同**（`cmp` 通过），全量 pytest 649 passed。
+2. ~~**`harness._budget_section` 是私有函数，但它是"两臂预算 + 复用同一批 GateResult"的唯一正确入口。**~~ **已修（本轮）。** 已重命名为公开 `harness.budget_section` 并写进 `__all__`，docstring 说明它是两臂共用同一批 `GateResult` 的唯一入口；`multiseed.py` 改为 import 公开名，`harness.run_full_eval` 内部那个同名局部变量改叫 `budget_rows`（原先局部变量与函数同名，读代码时容易误以为在递归调用）。改动是纯重命名：`make eval` 前后 `output/metrics.json` **逐字节相同**（`cmp` 通过），全量 pytest 649 passed。
 3. ~~**`counterfactual_report` 的 `totals` 只给主口径 uplift，宽松口径（`FRAUD_RESIDUAL_VIEW_SHARE = 0.5`）只在 per-campaign 层有。**~~ **已修（本轮）。** `totals` 现在直接给 `effective_views_baseline_lenient` / `effective_views_koxpilot_lenient` / `effective_view_uplift_lenient`（定稿数据集：**+64.7%**，主口径 +98.6%，同向），`multiseed.py` 也改成直接引用它，不再在两处各算一遍——本文档汇总表里的 +69.1% ± 44.3% 是这个口径的跨种子分布，数值未变（同源算法，只是不再重复实现）。
 4. **`_repair_longtail` 在"长尾占比恰好为 0"时无法自举**（新发现，**未修**）。该循环先尝试"加长尾"，加不动才退让腾预算；但退让后立刻用 `longtail_share <= before_share` 判断"退让是否改善了结构"，而长尾金额为 0 时这个比值退让前后都是 0，于是必然回滚，永远补不进第一条长尾。构造用例见 `tests/test_value_attribution.py::TestThirdArmIgnoresQualitySignals::test_giving_back_slots_also_uses_the_arms_own_ruler`（该 case 如实记 `longtail_min_share` 违规，没有伪装合规，所以不是正确性事故）。真实数据的三个 campaign 上长尾占比都远大于 0（30% / 47% 量级），未触发；但这是一条真实的可达路径，改法（退让后先试补位再判断改善）会改变分配结果与全部产物，故本轮只登记不动手。
 5. **`llm_cache.json` 的 `_meta` 里没有数据集指纹**（新发现，**未修**）。缓存记了模型、采样数、采样种子与生成时间，却没记 `dataset_sha256`。于是"这批 LLM 分是给哪份数据集打的"只能靠 `kox_id` 是否还存在于当前库来反推——数据集重新生成而 id 空间不变时，错配是**静默**的。当前 `eval/llm_fit.py` 的兜底是把不存在的 id 计入 `n_scored_ids_not_in_dataset` 并如实报出来（定稿数据集上为 0），但这只是症状检测，不是指纹校验。正确修法是在 `llm/runner.py` 落盘时写入 `dataset_sha256`，代价是要等下一次 `make llm`（真花 token）才会出现在产物里，故本轮只登记。

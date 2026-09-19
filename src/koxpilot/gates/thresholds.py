@@ -17,7 +17,7 @@ TikTok nano 号 12% 互动率很正常，YouTube mega 号 12% 一定有鬼。
 }
 ```
 样本量不足（< MIN_GROUP_SAMPLES）的组自动回退，并在 ``source`` 字段里如实标注是哪一级，
-这样面试时可以直接指着 kwai|mega 说"这一组只有 9 个样本，我用的是平台级阈值"。
+这样核验时可以直接指着 kwai|mega 说明：这一组只有 9 个样本，采用的是平台级阈值。
 """
 
 from __future__ import annotations

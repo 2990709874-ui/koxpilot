@@ -3,7 +3,7 @@
 阈值全部来自 ``(platform, follower_bucket)`` 分组的经验分位数（thresholds.json），
 本文件里**没有任何判定用的裸数字**（唯一的常量是 SPEC 明写的 z>2.5，且在 policy.py 里带出处）。
 
-两个输出必须分清（面试高频追问点）
+两个输出必须分清（高频追问点）
 ----------------------------------
 - ``hard_hits`` / ``reasons``：**离散判定**，用于 pass/review/reject 合成；
 - ``fraud_score``：**连续异常分**，用于画 PR 曲线、算 AUC。
@@ -83,7 +83,7 @@ def _depth(
 def spike_evidence(kox: Mapping[str, Any]) -> dict[str, Any] | None:
     """G1.5 的证据计算：找出"最像买粉"的那个月。
 
-    步骤（面试可逐步复算）：
+    步骤（可逐步复算核验）：
       1. 由 12 个月粉丝历史求 11 个月度环比增速；
       2. 用**鲁棒 z-score**（中位数 + MAD）衡量每个月增速的异常度
          —— 用 MAD 而不是标准差，是因为突刺本身会把标准差撑大，造成掩蔽效应；

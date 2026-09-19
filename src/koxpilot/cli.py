@@ -7,7 +7,7 @@ CLI 只做三件事：**读文件、调库、写文件**。所有业务逻辑都
 （唯一需要保证的是"落盘的文件确实是库算出来的那份"）。
 
 每个子命令都打印**可核对的关键数字**而不是"done"：
-构建期日志本身就是交付物的一部分，面试时可以直接拿终端输出对照 metrics.json。
+构建期日志本身就是交付物的一部分，需要核验时可以直接拿终端输出对照 metrics.json。
 """
 
 from __future__ import annotations
@@ -289,7 +289,7 @@ def cmd_multiseed(args: argparse.Namespace) -> int:
 # explain
 # ---------------------------------------------------------------------------
 def cmd_explain(args: argparse.Namespace) -> int:
-    """打印单个达人的完整证据链（面试现场逐条复算用）。"""
+    """打印单个达人的完整证据链（用于逐条复算核验）。"""
     records, meta, briefs, sha = load_eval_inputs()
     target = args.kox_id
     kox = next((k for k in records if str(k.get("kox_id")) == target), None)

@@ -91,7 +91,7 @@ export function effectiveViews(arm: AllocationArm): number {
 
 /**
  * 在给定口径下每美元买得最多的那条臂。并列时取第一条。
- * 用来在表里如实标出"这次谁更划算"——包含标出不是我们的那次。
+ * 用来在表里如实标出"这次谁更划算"——包含标出领先方不是 KOXPilot 的那次。
  */
 export function leadingArm(
   arms: readonly AllocationArm[],
@@ -124,9 +124,9 @@ export function wasteShare(arm: AllocationArm): number | null {
  *
  * 全部由当次数据现算，不硬编任何数字与任何臂名——用户会用自由文本 brief 现场跑。
  * 三种情况都必须说得出口：
- * 1. 领先的不是我们：说它每美元买得更多，同时说它把多少钱花在水号 / 高风险号上、要签多少份合约；
- * 2. 领先的是我们：说我们赢在哪，也说对照臂输在哪，不只报喜；
- * 3. 我们既不是每美元最高、浪费占比也不是最低：如实说这条 brief 上门禁没起到应有作用，不粉饰。
+ * 1. 领先方不是 KOXPilot：说它每美元买得更多，同时说它把多少钱花在水号 / 高风险号上、要签多少份合约；
+ * 2. 领先方是 KOXPilot：说它赢在哪，也说对照臂输在哪，不只报喜；
+ * 3. KOXPilot 既不是每美元最高、浪费占比也不是最低：如实说这条 brief 上门禁没起到应有作用。
  */
 export function tradeoffLine(arms: readonly AllocationArm[]): string | null {
   const us = arms.find((a) => a.arm === 'koxpilot') ?? null;
@@ -149,7 +149,7 @@ export function tradeoffLine(arms: readonly AllocationArm[]): string | null {
   }
   const usShare = wasteShare(us);
   const usN = contractCount(us);
-  const ours = `我们${usN === null ? '' : ` ${usN} 份合约`}，浪费 ${usd0(us.waste_usd ?? 0)}${
+  const ours = `KOXPilot${usN === null ? '' : ` ${usN} 份合约`}，浪费 ${usd0(us.waste_usd ?? 0)}${
     usShare === null ? '' : `（${(usShare * 100).toFixed(1)}%）`
   }`;
 
@@ -165,17 +165,17 @@ export function tradeoffLine(arms: readonly AllocationArm[]): string | null {
         ? `，每美元比它多 ${(((vpd(us) as number) / (vpd(rival) as number) - 1) * 100).toFixed(1)}%`
         : '';
     const tail = rival ? `「${rival.label}」把 ${cost(rival)}${gap}。` : '';
-    return `这条 brief 上每美元有效曝光最高的是我们：${ours.replace(/^我们\s*/, '')}，买的都是过门禁的库存。${tail}`;
+    return `这条 brief 上每美元有效曝光最高的是 KOXPilot：${ours.replace(/^KOXPilot\s*/, '')}，买的都是过门禁的库存。${tail}`;
   }
 
   const lift =
     vpd(us) !== null && (vpd(us) as number) > 0 && vpd(lead) !== null
       ? `多 ${(((vpd(lead) as number) / (vpd(us) as number) - 1) * 100).toFixed(1)}%`
       : '更多';
-  const head = `「${lead.label}」每美元比我们${lift}，代价是把 ${cost(lead)}；${ours}，贵在只买过门禁的库存。`;
+  const head = `「${lead.label}」每美元比 KOXPilot ${lift}，代价是把 ${cost(lead)}；${ours}，贵在只买过门禁的库存。`;
   if (lowest && lowest.arm !== us.arm && usShare !== null) {
     const ls = wasteShare(lowest) as number;
-    return `${head}这条 brief 上我们既不是每美元最高，浪费占比也不是最低（我们 ${(usShare * 100).toFixed(1)}%，最低是「${lowest.label}」的 ${(ls * 100).toFixed(1)}%），门禁在这条 brief 上没起到应有作用。`;
+    return `${head}这条 brief 上 KOXPilot 既不是每美元最高，浪费占比也不是最低（KOXPilot ${(usShare * 100).toFixed(1)}%，最低是「${lowest.label}」的 ${(ls * 100).toFixed(1)}%），门禁在这条 brief 上没起到应有作用。`;
   }
   return head;
 }

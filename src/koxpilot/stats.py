@@ -4,7 +4,7 @@
 --------
 本模块是整个项目"阈值可解释"的地基。项目纪律要求：
 1. 任何门禁阈值都必须能追溯到**数据分位数**或**显式配置**，不允许魔法数字；
-2. 评测指标（AUC / P / R / F1）必须能在面试现场用几句话讲清算法，
+2. 评测指标（AUC / P / R / F1）必须能用几句话讲清算法，
    因此不引入 sklearn，而是自己实现（AUC 用 Mann–Whitney U 的秩和公式，含并列秩修正）。
 
 所有函数都是纯函数：输入序列 -> 输出数值，不读全局状态、不写文件。
@@ -49,7 +49,7 @@ def mean(values: Sequence[float]) -> float:
 def quantile(values: Sequence[float], q: float) -> float:
     """线性插值分位数（等价于 numpy 默认的 'linear' / R 的 type-7）。
 
-    手写原因：这是全项目所有 G1 阈值的唯一来源，必须能逐步复算给面试官看。
+    手写原因：这是全项目所有 G1 阈值的唯一来源，必须能逐步复算核对。
     实现：把 q 映射到排序后数组的实数位置 h = (n-1)*q，
     再在 floor(h) 与 ceil(h) 两个样本之间线性插值。
 
@@ -172,7 +172,7 @@ def roc_auc(scores: Sequence[float], labels: Sequence[int]) -> float:
         AUC = (R_pos - n_pos*(n_pos+1)/2) / (n_pos * n_neg)
 
     其中 R_pos 是正样本的秩和。含义：随机取一正一负，正样本分更高的概率
-    （并列算 0.5）。这是面试可讲版本：O(n log n)，不需要扫阈值画曲线。
+    （并列算 0.5）。这是可口述复算的版本：O(n log n)，不需要扫阈值画曲线。
 
     Args:
         scores: 连续预测分（越大越像正类）。

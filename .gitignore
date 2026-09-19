@@ -80,3 +80,6 @@ api/_bundle/
 # deploy/hf-space/_out/ 是 `python deploy/hf-space/build_space.py` 生成的 HF Space 包
 # （7.6 MB，含数据集副本），同理不入库。
 deploy/hf-space/_out/
+
+# pnpm 12 本地会自动生成，但 CI 上 pnpm 9 会因缺 packages 字段直接失败
+web/pnpm-workspace.yaml

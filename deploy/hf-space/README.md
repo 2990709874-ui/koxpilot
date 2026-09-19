@@ -1,6 +1,6 @@
 # KOXPilot 服务的公网托管包（Hugging Face Spaces）
 
-仓库里 `api/` 那份服务部署在公司内网，外部访问不到（DNS 解析到 `10.x` 私网地址）。
+仓库里 `api/` 那份服务部署在内网环境，外部访问不到（DNS 解析到 `10.x` 私网地址）。
 这个目录是同一份服务的**公网托管包**，用 Hugging Face Spaces 的 Docker 运行时，免费、公开、不需要信用卡。
 
 跑起来之后，公网 Demo 就能真的调到 Python 服务，而不是只靠浏览器内引擎。
@@ -64,7 +64,7 @@ curl -s https://<你的用户名>-koxpilot-api.hf.space/api/health
 { "apiBase": "https://<你的用户名>-koxpilot-api.hf.space" }
 ```
 
-提交并推到 GitHub，Pages 会自动重新构建。**这个文件是前端在首屏探活前运行时读取的，改它不需要改代码、也不需要重新构建前端**——已经发出去的静态产物里直接改 `dist/api-config.json` 同样生效（我实测过：一份构建时没有任何服务地址的产物，只靠这个文件就连上了服务，页头显示"计算源：Python 服务"）。
+提交并推到 GitHub，Pages 会自动重新构建。**这个文件是前端在首屏探活前运行时读取的，改它不需要改代码、也不需要重新构建前端**——已经发出去的静态产物里直接改 `dist/api-config.json` 同样生效（已实测：一份构建时没有任何服务地址的产物，只靠这个文件就连上了服务，页头显示"计算源：Python 服务"）。
 
 优先级是 `api-config.json` 的非空 `apiBase` > 构建期 `VITE_API_BASE` > 同源。
 
