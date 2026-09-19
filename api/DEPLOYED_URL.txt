@@ -1,6 +1,14 @@
-$SERVICE_BASE
+KOXPilot HTTP 服务：部署记录与线上实测
 
-KOXPilot HTTP 服务（公开访问，不需要 token）
+部署形态
+  作者的这份实例部署在公司内网（地址不写进公开仓库；外部网络访问不到），
+  所以下面的命令用 $SERVICE_BASE 占位。自己部一份的方式有两种：
+    本地   pip install -r api/requirements.txt && cd api && python3 main.py
+           → export SERVICE_BASE=http://127.0.0.1:8000
+    公网   按 deploy/hf-space/README.md 部到 Hugging Face Spaces
+           → export SERVICE_BASE=https://<你的-space-域名>
+  服务无鉴权、只读数据，可以直接 curl。
+
 契约：api/CONTRACT.md（v1.1；相对 v1 只改一处口径：top_n 只裁明细展示，不裁计算池）
 
 端点

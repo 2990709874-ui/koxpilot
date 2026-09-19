@@ -24,7 +24,7 @@ cd web && pnpm install && pnpm run prepare-data && pnpm run dev   # → http://l
 
 Demo 不播放预录结果，而是**两条通道**：首屏先探活 [Python 服务](./api/CONTRACT.md)，连上就由服务用 `src/koxpilot` 真算，同一批达人再由浏览器里的 TypeScript 引擎独立算一遍，界面上只留一句结论（多少人、结论是否一致），逐项对照留在 `pnpm run verify` 的产物里；**服务未连接时，浏览器引擎独立完成全流程、功能不缺项**——这也是 GitHub Pages 上的默认形态（全库离线比对产物 `web/public/data/consistency.json` 由 `pnpm run verify` 生成，5,000 条 0 差异）。
 
-> **关于线上服务地址**：本项目的 FastAPI 服务目前部署在公司内网（地址记录在 [`api/DEPLOYED_URL.txt`](./api/DEPLOYED_URL.txt)），**外部网络访问不到**。想让服务通道也公网可用，见 [`deploy/hf-space/`](./deploy/hf-space)（Hugging Face Spaces 一键包，已本地验证可跑）。不部署服务不影响体验完整性。
+> **关于线上服务地址**：作者的这份 FastAPI 服务实例部署在公司内网，**外部网络访问不到**，具体地址不写进公开仓库（部署记录、可用端点与线上实测数字见 [`api/DEPLOYED_URL.txt`](./api/DEPLOYED_URL.txt)，命令里用 `$SERVICE_BASE` 占位）。想让服务通道也公网可用，见 [`deploy/hf-space/`](./deploy/hf-space)（Hugging Face Spaces 一键包，已本地验证可跑）。不部署服务不影响体验完整性。
 
 > **关于大模型**：链路里唯一在**运行时**调模型的是 A1 需求解析，契约是「探到可用凭据就真调，凭据缺失 / 失败 / 超时回落确定性规则解析，并把路径与降级原因写进响应」。当前部署实例**没有配模型凭据**，所以 `/api/health` 的 `llm_runtime.available` 是 `false`、`/api/plan` 的 `brief.parse_path` 是 `rule`——这一点服务自己逐字写在响应里。模型路径本身跑通过：构建期真调过 ARK（doubao-seed）与 Azure OpenAI（GPT-5.5），token 账在 [`output/llm_bench.json`](./output/llm_bench.json)（172 次调用 / 110 万 token，取自 API 返回的 `usage`）。给服务环境配 `ARK_API_KEY` 或 Azure 变量后重启即走 LLM 路径，不需要改代码（模板见 [`.env.example`](./.env.example)）。
 
